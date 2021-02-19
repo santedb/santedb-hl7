@@ -98,7 +98,7 @@ namespace SanteDB.Messaging.HL7
 
                 if (!string.IsNullOrEmpty(xad.AddressType.Value) && !string.IsNullOrWhiteSpace(xad.AddressType.Value))
                 {
-                    var concept = conceptService?.FindConceptsByReferenceTerm(xad.AddressType.Value, AddressUseCodeSystem).FirstOrDefault();
+                    var concept = conceptService?.GetConceptByReferenceTerm(xad.AddressType.Value, AddressUseCodeSystem);
                     if (concept == null)
                         throw new HL7DatatypeProcessingException($"Error processing XAD", 6, new KeyNotFoundException($"Address use code {xad.AddressType.Value} not known"));
 
@@ -678,7 +678,7 @@ namespace SanteDB.Messaging.HL7
         /// </summary>
         public static Concept ToConcept(this IS me, String domain, bool throwIfNotFound = true)
         {
-            var concept = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().FindConceptsByReferenceTerm(me.Value, domain).FirstOrDefault();
+            var concept = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptByReferenceTerm(me.Value, domain);
             if (concept == null && throwIfNotFound)
                 throw new KeyNotFoundException($"Concept {me.Value} is not registered in {domain}");
             else
@@ -690,7 +690,7 @@ namespace SanteDB.Messaging.HL7
         /// </summary>
         public static Concept ToConcept(this ID me, String domain)
         {
-            return ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().FindConceptsByReferenceTerm(me.Value, domain).FirstOrDefault();
+            return ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptByReferenceTerm(me.Value, domain);
         }
 
         /// <summary>
@@ -713,9 +713,9 @@ namespace SanteDB.Messaging.HL7
             {
                 Concept concept = null;
                 if (!String.IsNullOrEmpty(preferredDomain))
-                    concept = termService.FindConceptsByReferenceTerm(code.Identifier.Value, preferredDomain).FirstOrDefault();
+                    concept = termService.GetConceptByReferenceTerm(code.Identifier.Value, preferredDomain);
                 if (concept == null)
-                    concept = termService.FindConceptsByReferenceTerm(code.Identifier.Value, code.NameOfCodingSystem.Value).FirstOrDefault();
+                    concept = termService.GetConceptByReferenceTerm(code.Identifier.Value, code.NameOfCodingSystem.Value);
 
                 if (concept == null && throwIfNotFound)
                     throw new HL7DatatypeProcessingException("Error processing CE", 1, new KeyNotFoundException($"Reference term {code.Identifier.Value} not found in {preferredDomain} or {code.NameOfCodingSystem.Value}"));
