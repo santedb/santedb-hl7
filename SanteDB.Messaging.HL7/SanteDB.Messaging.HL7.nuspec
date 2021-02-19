@@ -17,17 +17,9 @@
       <dependency id="SanteDB.Core.Api" version="2.0.80.0" />
       <dependency id="SanteDB.Core.Model" version="2.0.80.0" />
       <dependency id="SanteDB.Rest.Common" version="2.0.80.0" />
+      <dependency id="NHapi.Parser.Agfa" version="1.0.1" />
     </dependencies>
-    <references>
-      <group targetFramework="net47">
-        <reference file="SanteDB.Messaging.HL7.dll"/>
-        <reference file="NHapi.Base.dll"/>
-        <reference file="NHapi.Model.V25.dll"/>
-      </group>
-    </references>
+   
   </metadata>
-  <files>
-    <file src="..\Solution Items\NHapi.Base.dll" target="lib\net47"/>
-    <file src="..\Solution Items\NHapi.Model.V25.dll" target="lib\net47"/>
-  </files>
+  
 </package>
