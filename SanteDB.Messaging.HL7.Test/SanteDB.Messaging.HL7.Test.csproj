@@ -51,10 +51,6 @@
   <Choose>
     <When Condition="$(SolutionName.Contains('-ext'))">
       <ItemGroup>
-        <ProjectReference Include="..\..\SanteDB.Core.TestFramework\SanteDB.Core.TestFramework.csproj">
-          <Project>{ad73db46-cbb3-4746-b406-40fc435ab3db}</Project>
-          <Name>SanteDB.Core.TestFramework</Name>
-        </ProjectReference>
         <ProjectReference Include="..\..\santedb-api\SanteDB.Core.Api\SanteDB.Core.Api.csproj">
           <Project>{3A45F695-47A2-464C-ACE6-BDABBFA39FBC}</Project>
           <Name>SanteDB.Core.Api</Name>
@@ -87,7 +83,6 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    
     <ProjectReference Include="..\SanteDB.Messaging.HL7\SanteDB.Messaging.HL7.csproj">
       <Project>{c1f86ea3-fc84-456f-a9d9-0bf8db0d48d3}</Project>
       <Name>SanteDB.Messaging.HL7</Name>
