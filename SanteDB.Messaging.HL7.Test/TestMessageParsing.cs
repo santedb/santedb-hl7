@@ -16,7 +16,6 @@
  * User: fyfej (Justin Fyfe)
  * Date: 2019-11-27
  */
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NHapi.Base.Model;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
@@ -33,10 +32,11 @@ using System.Linq;
 using NHapi.Model.V25.Message;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Entities;
+using NUnit.Framework;
 
 namespace SanteDB.Messaging.HL7.Test
 {
-    [TestClass]
+    [TestFixture(Category = "Integration")]
     public class TestMessageParsing : DataTest
     {
 
@@ -44,13 +44,13 @@ namespace SanteDB.Messaging.HL7.Test
         /// Test context
         /// </summary>
         /// <param name="context"></param>
-        [ClassInitialize]
+        [SetUp]
         public static void Initialize(TestContext context)
         {
             // Force load of the DLL
             var p = FirebirdSql.Data.FirebirdClient.FbCharset.Ascii;
             TestApplicationContext.TestAssembly = typeof(TestMessageParsing).Assembly;
-            TestApplicationContext.Initialize(context.DeploymentDirectory);
+            TestApplicationContext.Initialize(context.TestDirectory);
 
             // Create the test harness device / application
             var securityDevService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityDevice>>();
@@ -104,7 +104,7 @@ namespace SanteDB.Messaging.HL7.Test
         /// <summary>
         /// Test that ADT message is parsed properly
         /// </summary>
-        [TestMethod]
+        [Test]
         public void TestParseADTMessage()
         {
             AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
@@ -125,7 +125,7 @@ namespace SanteDB.Messaging.HL7.Test
         /// <summary>
         /// Test that ADT message is parsed properly
         /// </summary>
-        [TestMethod]
+        [Test]
         public void TestUpdateAdt()
         {
             AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
@@ -153,7 +153,7 @@ namespace SanteDB.Messaging.HL7.Test
         /// <summary>
         /// Test that ADT message is parsed properly
         /// </summary>
-        [TestMethod]
+        [Test]
         public void TestParseComplexADTMessage()
         {
             AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
@@ -180,7 +180,7 @@ namespace SanteDB.Messaging.HL7.Test
         /// <summary>
         /// Tests that a query actually occurs
         /// </summary>
-        [TestMethod]
+        [Test]
         public void TestParseQBPMessage()
         {
             AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
@@ -200,7 +200,7 @@ namespace SanteDB.Messaging.HL7.Test
         /// <summary>
         /// Tests that a query actually occurs
         /// </summary>
-        [TestMethod]
+        [Test]
         public void TestParseComplexQBPMessage()
         {
             AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
@@ -223,7 +223,7 @@ namespace SanteDB.Messaging.HL7.Test
         /// <summary>
         /// Tests that a query actually occurs
         /// </summary>
-        [TestMethod]
+        [Test]
         public void TestParseAndQBPMessage()
         {
             AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
@@ -258,7 +258,7 @@ namespace SanteDB.Messaging.HL7.Test
         /// <summary>
         /// Tests that the error code and location are appropriate for the type of error that is encountered
         /// </summary>
-        [TestMethod]
+        [Test]
         public void TestErrorLocation()
         {
             AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
@@ -278,7 +278,7 @@ namespace SanteDB.Messaging.HL7.Test
         /// <summary>
         /// Tests that a query actually occurs
         /// </summary>
-        [TestMethod]
+        [Test]
         public void TestCrossReference()
         {
             AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
