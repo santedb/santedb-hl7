@@ -206,7 +206,7 @@ namespace SanteDB.Messaging.HL7
                 var retVal = ServiceEndpointCapabilities.None;
                 if (this.m_listenerThreads.Any(o => o.Definition.Configuration is SllpTransport.SllpConfigurationObject))
                     retVal |= ServiceEndpointCapabilities.CertificateAuth;
-                else if (this.m_configuration.Security == SecurityMethod.Msh8)
+                else if (this.m_configuration.Security == AuthenticationMethod.Msh8)
                     retVal |= ServiceEndpointCapabilities.BearerAuth;
                 return retVal;
             }

@@ -47,7 +47,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// Security method
         /// </summary>
         [XmlAttribute("security"), JsonProperty("security")]
-        public SecurityMethod Security { get; set; }
+        public AuthenticationMethod Security { get; set; }
 
         /// <summary>
         /// If no security method is being used, the principal of the anonymous user
@@ -187,8 +187,8 @@ namespace SanteDB.Messaging.HL7.Configuration
     /// <summary>
     /// Security methods
     /// </summary>
-    [XmlType(nameof(SecurityMethod), Namespace = "http://santedb.org/configuration")]
-    public enum SecurityMethod
+    [XmlType(nameof(AuthenticationMethod), Namespace = "http://santedb.org/configuration")]
+    public enum AuthenticationMethod
     {
         /// <summary>
         /// No security

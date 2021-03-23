@@ -116,7 +116,7 @@ namespace SanteDB.Messaging.HL7.Messages
             var sft = e.Message.GetStructure("SFT") as SFT;
             var sessionService = ApplicationServiceContext.Current.GetService<ISessionProviderService>();
 
-            if (String.IsNullOrEmpty(msh.Security.Value) && this.m_configuration.Security == SecurityMethod.Msh8)
+            if (string.IsNullOrEmpty(msh.Security.Value) && this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8)
                 throw new SecurityException("Must carry MSH-8 authorization token information");
             if (msh.Security.Value?.StartsWith("sid://") == true) // Session identifier
             {
@@ -135,19 +135,19 @@ namespace SanteDB.Messaging.HL7.Messages
                     throw new SecurityException("MSH-4 must be provided for authenticating device");
                 else if (String.IsNullOrEmpty(msh.SendingApplication.NamespaceID.Value))
                     throw new SecurityException("MSH-3 must be provided for authenticating device/application");
-                else if (this.m_configuration.Security == SecurityMethod.Sft4 && String.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
+                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
                     throw new SecurityException("SFT-4 must be provided for authenticating application");
-                else if (this.m_configuration.Security == SecurityMethod.Msh8 && String.IsNullOrEmpty(msh.Security.Value))
+                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
                     throw new SecurityException("MSH-8 must be provided for authenticating application");
 
                 String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
                     deviceSecret = BitConverter.ToString(auth.AuthorizationToken).Replace("-",""),
                     applicationId = msh.SendingApplication.NamespaceID.Value,
-                    applicationSecret = this.m_configuration.Security == SecurityMethod.Sft4 ? sft.SoftwareBinaryID.Value : // Authenticate app by SFT4
-                        this.m_configuration.Security == SecurityMethod.Msh8 ? msh.Security.Value : // Authenticate app by MSH-8
+                    applicationSecret = this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 ? sft.SoftwareBinaryID.Value : // Authenticate app by SFT4
+                        this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 ? msh.Security.Value : // Authenticate app by MSH-8
                         BitConverter.ToString(auth.AuthorizationToken).Replace("-", ""); // Authenticate app using X509 certificate on the device
 
-                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, AuthenticationMethod.Local),
+                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.Services.AuthenticationMethod.Local),
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
 
                 if (applicationPrincipal == null && ApplicationServiceContext.Current.HostType == SanteDBHostType.Server)
@@ -155,35 +155,35 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 principal = new SanteDBClaimsPrincipal(new IIdentity[] { devicePrincipal.Identity, applicationPrincipal?.Identity }.OfType<IClaimsIdentity>());
             }
-            else if (this.m_configuration.Security != SecurityMethod.None)
+            else if (this.m_configuration.Security != Configuration.AuthenticationMethod.None)
             {
                 // Ensure proper authentication exists
-                if (String.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value) || String.IsNullOrEmpty(msh.Security.Value))
+                if (string.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value) || string.IsNullOrEmpty(msh.Security.Value))
                     throw new SecurityException("MSH-4 and MSH-8 must always be provided for authenticating device when SLLP is not used");
-                else if (String.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value))
+                else if (string.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value))
                     throw new SecurityException("MSH-3 must be provided for authenticating application");
-                else if (this.m_configuration.Security == SecurityMethod.Sft4 && String.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
+                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
                     throw new SecurityException("SFT-4 must be provided for authenticating application");
-                else if (this.m_configuration.Security == SecurityMethod.Msh8 && String.IsNullOrEmpty(msh.Security.Value))
+                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
                     throw new SecurityException("MSH-8 must be provided for authenticating application");
 
                 String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
                    deviceSecret = msh.Security.Value,
                    applicationId = msh.SendingApplication.NamespaceID.Value,
-                   applicationSecret = this.m_configuration.Security == SecurityMethod.Sft4 ? sft.SoftwareBinaryID.Value :
-                                            this.m_configuration.Security == SecurityMethod.Msh8 ? msh.Security.Value : null;
+                   applicationSecret = this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 ? sft.SoftwareBinaryID.Value :
+                                            this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 ? msh.Security.Value : null;
 
                 if(applicationSecret == deviceSecret && applicationSecret.Contains("+")) // Both device and app are using same auth key? Odd, perhaps there is the delimeter
                 {
                     var secrets = applicationSecret.Split('+');
                     applicationSecret = secrets[1]; deviceSecret = secrets[0];
                 }
-                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, AuthenticationMethod.Local),
+                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.Services.AuthenticationMethod.Local),
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
 
                 if (applicationPrincipal == null && ApplicationServiceContext.Current.HostType == SanteDBHostType.Server)
                     throw new UnauthorizedAccessException("Server requires authenticated application");
-                principal = new SanteDBClaimsPrincipal(new IIdentity[] { devicePrincipal.Identity, applicationPrincipal?.Identity }.OfType<IClaimsIdentity>());
+                principal = new SanteDBClaimsPrincipal((new IIdentity[] { devicePrincipal.Identity, applicationPrincipal?.Identity }).OfType<IClaimsIdentity>());
             }
             else 
                 switch(this.m_configuration.AnonymousUser?.ToUpper())
