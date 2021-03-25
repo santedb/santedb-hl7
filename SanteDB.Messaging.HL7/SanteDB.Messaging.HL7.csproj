@@ -46,7 +46,7 @@
     <Compile Include="Configuration\Hl7EndpointConfiguration.cs" />
     <Compile Include="Configuration\Hl7X509ConfigurationElement.cs" />
     <Compile Include="DataConverter.cs" />
-    <Compile Include="Docker\Hl7Feature.cs" />
+    <Compile Include="Docker\Hl7DockerFeature.cs" />
     <Compile Include="Exceptions\HL7DatatypeProcessingException.cs" />
     <Compile Include="Exceptions\HL7ProcessingException.cs" />
     <Compile Include="Hl7Constants.cs" />
@@ -87,37 +87,37 @@
     <None Include="..\SanteDB.licenseheader">
       <Link>SanteDB.licenseheader</Link>
     </None>
-    <None Include="Data\009-HL7Ethnicity.dataset">
+    <None Include="data\009-HL7Ethnicity.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Data\009-HL7v2Relationship.dataset">
+    <None Include="data\009-HL7v2Relationship.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Data\009-HL7v2Religions.dataset">
+    <None Include="data\009-HL7v2Religions.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Data\009-HL7v2AdministrativeGenderCodes.dataset">
+    <None Include="data\009-HL7v2AdministrativeGenderCodes.dataset">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Data\009-HL7v2AddressUseCodes.dataset">
+    <None Include="data\009-HL7v2AddressUseCodes.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </None>
-    <None Include="Data\009-HL7v2LivingArrangement.dataset">
+    <None Include="data\009-HL7v2LivingArrangement.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Data\009-HL7v2MaritalStatusCodes.dataset">
+    <None Include="data\009-HL7v2MaritalStatusCodes.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Data\009-HL7v2NameUseCodes.dataset">
+    <None Include="data\009-HL7v2NameUseCodes.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </None>
-    <None Include="Data\009-HL7v2ReasonCodes.dataset">
+    <None Include="data\009-HL7v2ReasonCodes.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Data\009-HL7v2TelecommunicationUseCodes.dataset">
+    <None Include="data\009-HL7v2TelecommunicationUseCodes.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </None>
@@ -136,7 +136,10 @@
           <Project>{F1A82A4F-4A57-47D7-AE76-444C8A4FF54A}</Project>
           <Name>SanteDB.Core.Model</Name>
         </ProjectReference>
-        <ProjectReference Include="..\..\santedb-docker\SanteDB.Docker.Core\SanteDB.Docker.Core.csproj" />
+        <ProjectReference Include="..\..\santedb-docker\SanteDB.Docker.Core\SanteDB.Docker.Core.csproj">
+          <Project>{284CE885-78E0-48EA-A2E4-6957AD66EAB5}</Project>
+          <Name>SanteDB.Docker.Core</Name>
+        </ProjectReference>
       </ItemGroup>
     </When>
     <Otherwise>

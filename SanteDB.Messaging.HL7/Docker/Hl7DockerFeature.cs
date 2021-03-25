@@ -13,7 +13,7 @@ namespace SanteDB.Messaging.HL7.Docker
     /// <summary>
     /// Configures the HL7 feature in docker
     /// </summary>
-    public class Hl7Feature : IDockerFeature
+    public class Hl7DockerFeature : IDockerFeature
     {
 
         /// <summary>
