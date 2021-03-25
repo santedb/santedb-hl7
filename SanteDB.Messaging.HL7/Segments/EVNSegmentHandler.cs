@@ -48,7 +48,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// <summary>
         /// Create the event data
         /// </summary>
-        public IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, string[] exportDomains)
+        public IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, AssigningAuthority[] exportDomains)
         {
             if (data is Entity)
                 data = (data as Entity).LoadProperty<Act>("CreationAct");
