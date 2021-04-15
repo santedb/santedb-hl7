@@ -24,6 +24,7 @@ using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Security.Audit;
 using SanteDB.Core.Services;
+using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.Linq;
@@ -72,7 +73,7 @@ namespace SanteDB.Messaging.HL7.Messages
         {
             try
             {
-                var patient = insertBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == ".v2.segment" && t.Value == "PID"));
+                var patient = insertBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
                 if (patient == null)
                     throw new ArgumentNullException(nameof(insertBundle), "Message did not contain a patient");
 
@@ -86,10 +87,10 @@ namespace SanteDB.Messaging.HL7.Messages
                 // Create response message
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"{patient.Key} created");
             }
-            catch
+            catch (Exception ex)
             {
                 AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, null, insertBundle.Item.ToArray());
-                throw;
+                throw new HL7ProcessingException("Error performing admit", null, null, 0, 0, ex);
             }
         }
 
@@ -100,7 +101,7 @@ namespace SanteDB.Messaging.HL7.Messages
         {
             try
             {
-                var patient = updateBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == ".v2.segment" && t.Value == "PID"));
+                var patient = updateBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
                 if (patient == null)
                     throw new ArgumentNullException(nameof(updateBundle), "Message did not contain a patient");
                 else if (!patient.Key.HasValue)
@@ -115,10 +116,10 @@ namespace SanteDB.Messaging.HL7.Messages
                 // Create response message
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"{patient.Key} updated");
             }
-            catch
+            catch(Exception ex)
             {
                 AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, null, updateBundle.Item.ToArray());
-                throw;
+                throw new HL7ProcessingException("Error performing admit", null, null, 0, 0, ex);
             }
 
         }
@@ -126,9 +127,9 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// Performs a merge of the specified patient
         /// </summary>
-        protected virtual IMessage PerformMerge(Hl7MessageReceivedEventArgs e, Bundle b)
+        protected virtual IMessage PerformMerge(Hl7MessageReceivedEventArgs e, Bundle bundle)
         {
-            return null;
+            throw new NotImplementedException();
         }
 
         /// <summary>

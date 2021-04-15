@@ -45,12 +45,12 @@ namespace SanteDB.Messaging.HL7.Test
         /// </summary>
         /// <param name="context"></param>
         [SetUp]
-        public static void Initialize(TestContext context)
+        public void Initialize()
         {
             // Force load of the DLL
             var p = FirebirdSql.Data.FirebirdClient.FbCharset.Ascii;
             TestApplicationContext.TestAssembly = typeof(TestMessageParsing).Assembly;
-            TestApplicationContext.Initialize(context.TestDirectory);
+            TestApplicationContext.Initialize(TestContext.CurrentContext.TestDirectory);
 
             // Create the test harness device / application
             var securityDevService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityDevice>>();
@@ -294,6 +294,31 @@ namespace SanteDB.Messaging.HL7.Test
             Assert.AreEqual("AA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
             Assert.AreEqual("OK", (message.GetStructure("QAK") as QAK).QueryResponseStatus.Value);
             Assert.AreEqual("K23", (message.GetStructure("MSH") as MSH).MessageType.TriggerEvent.Value);
+        }
+
+        /// <summary>
+        /// Tests that a query actually occurs
+        /// </summary>
+        [Test]
+        public void TestMerge()
+        {
+            AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
+            var msg = TestUtil.GetMessage("ADT_MRG_PRE1");
+            var result = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+            var resultStr = TestUtil.ToString(result);
+            Assert.IsTrue(resultStr.Contains("|CA"));
+            msg = TestUtil.GetMessage("ADT_MRG_PRE2");
+            result = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+            resultStr = TestUtil.ToString(result);
+            Assert.IsTrue(resultStr.Contains("|CA"));
+            var patients = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "RJ-439" || i.Value == "RJ-999"), AuthenticationContext.Current.Principal);
+            Assert.AreEqual(2, patients.Count());
+
+            msg = TestUtil.GetMessage("ADT_MRG");
+            result = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+            resultStr = TestUtil.ToString(result);
+            Assert.IsTrue(resultStr.Contains("|CA"));
+
         }
     }
 }

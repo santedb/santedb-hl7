@@ -119,7 +119,7 @@ namespace SanteDB.Messaging.HL7.Utils
                             retVal.Item.AddRange(parsed.Item.Select(i =>
                             {
                                 var ret = i.Clone();
-                                (ret as ITaggable)?.AddTag(".v2.group", current.GetStructureName());
+                                (ret as ITaggable)?.AddTag("$v2.group", current.GetStructureName());
                                 return ret;
                             }));
                             retVal.ExpansionKeys.AddRange(parsed.ExpansionKeys);
@@ -139,7 +139,7 @@ namespace SanteDB.Messaging.HL7.Utils
                                 retVal.Item.AddRange(parsed.Select(i =>
                                 {
                                     var ret = i.Clone();
-                                    (ret as ITaggable)?.AddTag(".v2.segment", current.GetStructureName());
+                                    (ret as ITaggable)?.AddTag("$v2.segment", current.GetStructureName());
                                     return ret;
                                 }));
                             }
@@ -148,12 +148,7 @@ namespace SanteDB.Messaging.HL7.Utils
                     else if (current is AbstractGroup)
                     {
                         var subObject = Parse(current as AbstractGroup);
-                        retVal.Item.AddRange(subObject.Item.Select(i =>
-                        {
-                            var ret = i.Clone();
-                            (ret as ITaggable)?.AddTag(".v2.group", current.GetStructureName());
-                            return ret;
-                        }));
+                        retVal.Item.Add(subObject);
                         retVal.ExpansionKeys.AddRange(subObject.ExpansionKeys);
                     }
 

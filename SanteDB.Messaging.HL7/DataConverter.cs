@@ -249,7 +249,7 @@ namespace SanteDB.Messaging.HL7
 
                 if (!string.IsNullOrEmpty(xpn.NameTypeCode.Value))
                 {
-                    var concept = conceptService?.FindConceptsByReferenceTerm(xpn.NameTypeCode.Value, NameUseCodeSystem).FirstOrDefault();
+                    var concept = conceptService?.GetConceptByReferenceTerm(xpn.NameTypeCode.Value, NameUseCodeSystem);
                     if (concept == null)
                         throw new HL7DatatypeProcessingException("Error processing XPN", 6, new KeyNotFoundException($"Entity name use code {xpn.NameTypeCode.Value} not known"));
 
@@ -668,7 +668,7 @@ namespace SanteDB.Messaging.HL7
 
             if (!string.IsNullOrEmpty(xtn.TelecommunicationUseCode.Value))
             {
-                var concept = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().FindConceptsByReferenceTerm(xtn.TelecommunicationUseCode.Value, TelecomUseCodeSystem).FirstOrDefault();
+                var concept = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptByReferenceTerm(xtn.TelecommunicationUseCode.Value, TelecomUseCodeSystem);
 
                 if (concept == null)
                     throw new HL7DatatypeProcessingException("Error processing XTN", 1, new KeyNotFoundException($"Telecom use code {xtn.TelecommunicationUseCode.Value} not known"));
@@ -682,7 +682,7 @@ namespace SanteDB.Messaging.HL7
             Guid? type = null;
             if(!string.IsNullOrEmpty(xtn.TelecommunicationEquipmentType.Value))
             {
-                var concept = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().FindConceptsByReferenceTerm(xtn.TelecommunicationEquipmentType.Value, TelecomTypeCodeSystem).FirstOrDefault();
+                var concept = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptByReferenceTerm(xtn.TelecommunicationEquipmentType.Value, TelecomTypeCodeSystem);
                 if (concept == null)
                     throw new HL7DatatypeProcessingException("Error processing XTN", 2, new KeyNotFoundException($"Telecom equipment type {xtn.TelecommunicationEquipmentType.Value} not known"));
                 type = concept.Key.Value;

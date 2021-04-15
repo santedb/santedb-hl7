@@ -247,27 +247,31 @@ namespace SanteDB.Messaging.HL7.Messages
             while (error is TargetInvocationException)
                 error = error.InnerException;
 
+            var rootCause = error;
+            while (rootCause.InnerException != null)
+                rootCause = rootCause.InnerException;
+
             IMessage retVal = null;
-            if (error is DomainStateException)
+            if (rootCause is DomainStateException)
                 retVal = this.CreateACK(nackType, request, "AR", "Domain Error");
-            else if (error is PolicyViolationException || error is SecurityException)
+            else if (rootCause is PolicyViolationException || rootCause is SecurityException)
             {
                 retVal = this.CreateACK(nackType, request, "AR", "Security Error");
             }
-            else if (error is AuthenticationException || error is UnauthorizedAccessException)
+            else if (rootCause is AuthenticationException || rootCause is UnauthorizedAccessException)
             {
                 retVal = this.CreateACK(nackType, request, "AR", "Unauthorized");
             }
-            else if (error is Newtonsoft.Json.JsonException ||
-                error is System.Xml.XmlException)
+            else if (rootCause is Newtonsoft.Json.JsonException ||
+                rootCause is System.Xml.XmlException)
                 retVal = this.CreateACK(nackType, request, "AR", "Messaging Error");
-            else if (error is DuplicateNameException)
+            else if (rootCause is DuplicateNameException)
                 retVal = this.CreateACK(nackType, request, "CR", "Duplicate Data");
-            else if (error is FileNotFoundException || error is KeyNotFoundException)
+            else if (rootCause is FileNotFoundException || rootCause is KeyNotFoundException)
                 retVal = this.CreateACK(nackType, request, "CE", "Data not found");
-            else if (error is DetectedIssueException)
+            else if (rootCause is DetectedIssueException)
                 retVal = this.CreateACK(nackType, request, "CR", "Business Rule Violation");
-            else if (error is DataPersistenceException)
+            else if (rootCause is DataPersistenceException)
             {
                 // Data persistence failed because of D/I/E
                 if (error.InnerException is DetectedIssueException)
@@ -278,11 +282,11 @@ namespace SanteDB.Messaging.HL7.Messages
                 else
                     retVal = this.CreateACK(nackType, request, "CE", "Error committing data");
             }
-            else if (error is NotImplementedException)
+            else if (rootCause is NotImplementedException)
                 retVal = this.CreateACK(nackType, request, "AE", "Not Implemented");
-            else if (error is NotSupportedException)
+            else if (rootCause is NotSupportedException)
                 retVal = this.CreateACK(nackType, request, "AR", "Not Supported");
-            else if (error is HL7ProcessingException || error is HL7DatatypeProcessingException)
+            else if (rootCause is HL7ProcessingException || error is HL7DatatypeProcessingException)
                 retVal = this.CreateACK(nackType, request, "AR", "Invalid Message");
             else
                 retVal = this.CreateACK(nackType, request, "AE", "General Error");
@@ -294,9 +298,9 @@ namespace SanteDB.Messaging.HL7.Messages
 
             int erc = 0;
             // Detected issue exception
-            if (error is DetectedIssueException)
+            if (rootCause is DetectedIssueException dte)
             {
-                foreach (var itm in (error as DetectedIssueException).Issues)
+                foreach (var itm in dte.Issues)
                 {
                     var err = retVal.GetStructure("ERR", erc) as ERR;
                     if (retVal.IsRepeating("ERR"))

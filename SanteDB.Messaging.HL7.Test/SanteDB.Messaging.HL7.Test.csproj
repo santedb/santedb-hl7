@@ -67,6 +67,7 @@
           <Name>SanteDB.Persistence.Data.ADO</Name>
         </ProjectReference>
       </ItemGroup>
+	  
     </When>
     <Otherwise>
       <ItemGroup>
@@ -81,6 +82,10 @@
       </ItemGroup>
     </Otherwise>
   </Choose>
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="$(SolutionName.Contains('-ext'))">
+		<Exec Command="&quot;$(SolutionDir)\Solution Items\FirebirdSQL-3.0.3-Embedded.bat&quot; &quot;$(SolutionDir)\Solution Items&quot; &quot;$(TargetDir)&quot;" />
+		<Copy SourceFiles="$(SolutionDir)\Solution Items\santedb_test.fdb" DestinationFolder="$(TargetDir)" />
+  </Target>
   <ItemGroup>
     <ProjectReference Include="..\..\SanteDB.Core.TestFramework\SanteDB.Core.TestFramework.csproj">
       <Project>{ad73db46-cbb3-4746-b406-40fc435ab3db}</Project>
@@ -149,6 +154,15 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\QBP_OR.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\ADT_MRG_PRE1.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\ADT_MRG_PRE2.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\ADT_MRG.txt" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
