@@ -49,6 +49,8 @@ namespace SanteDB.Messaging.HL7.Segments
 
         // Next of kin relationship code system
         private const string RelationshipCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.63";
+        private const string AdministrativeGenderCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.1";
+        private const string ContactRoleRelationship = "1.3.6.1.4.1.33349.3.1.5.9.3.200.131";
 
         // Next of kin relationship types
         private Guid[] m_nextOfKinRelationshipTypes;
@@ -134,6 +136,9 @@ namespace SanteDB.Messaging.HL7.Segments
                             break;
                     }
                 }
+
+                // Gender
+                nk1.AdministrativeSex.FromModel(patient.LoadProperty<Concept>("GenderConcept"), AdministrativeGenderCodeSystem);
 
                 // Telecoms
                 foreach (var tel in person.LoadCollection<EntityTelecomAddress>(nameof(Entity.Telecoms)))
@@ -289,6 +294,7 @@ namespace SanteDB.Messaging.HL7.Segments
                             existing.CopyObjectData(model);
                     }
 
+                
                 // Address
                 fieldNo = 4;
                 if (nk1Segment.AddressRepetitionsUsed > 0)
@@ -315,47 +321,64 @@ namespace SanteDB.Messaging.HL7.Segments
                         existing.CopyObjectData(model);
                 }
 
+                fieldNo = 15;
+                if (!nk1Segment.AdministrativeSex.IsEmpty())
+                    retVal.GenderConcept = nk1Segment.AdministrativeSex.ToConcept(AdministrativeGenderCodeSystem);
+
+                // Organization
+                fieldNo = 13;
+                if(nk1Segment.OrganizationNameNK1RepetitionsUsed > 0)
+                {
+                    var orgService = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Organization>>();
+                    foreach(var xon in nk1Segment.GetOrganizationNameNK1())
+                    {
+                        var id = xon.ToModel();
+                        // Lookup the organization scoper
+                        if (id != null)
+                        {
+                            var organization = orgService?.Query(o => o.Identifiers.Any(i => i.Value == id.Value && i.AuthorityKey == id.AuthorityKey), AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                            if (organization == null && !this.m_configuration.StrictMetadataMatch)
+                            {
+                                organization = new Organization()
+                                {
+                                    Identifiers = new List<EntityIdentifier>() { id },
+                                    Names = new List<EntityName>() { new EntityName(NameUseKeys.Assigned, xon.OrganizationName.Value) }
+                                };
+                                retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization)
+                                {
+                                    ClassificationKey = RelationshipClassKeys.ContainedObjectLink
+                                });
+                            }
+                            else
+                            {
+                                retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization));
+                            }
+                        }
+                        else
+                        {
+                            throw new HL7DatatypeProcessingException("XON requires identifier", 10, new ArgumentNullException());
+                        }
+
+                    }
+                } 
                 // Context role, when the person should be contact
                 fieldNo = 7;
                 if (!nk1Segment.ContactRole.IsEmpty())
                 {
+                    retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Contact, retVal.Key)
+                    {
+                        SourceEntityKey = patient.Key
+                    });
                     var contactExtension = retVal.Extensions.FirstOrDefault(o => o.ExtensionTypeKey == ExtensionTypeKeys.ContactRolesExtension);
-
+                    var role = nk1Segment.ContactRole.ToModel(ContactRoleRelationship, true);
                     if (contactExtension == null)
                     {
-                        contactExtension = new EntityExtension(ExtensionTypeKeys.ContactRolesExtension, typeof(DictionaryExtensionHandler), new
-                        {
-                            roles = new[]
-                            {
-                                new {
-                                    patientKey = patient.Key.Value,
-                                    contact = nk1Segment.ContactRole.Identifier.Value
-                                }
-                            }.ToList()
-                        });
+                        contactExtension = new EntityExtension(ExtensionTypeKeys.ContactRolesExtension, typeof(ReferenceExtensionHandler), role);
                         retVal.Extensions.Add(contactExtension);
                     }
                     else
                     {
-                        var existingValue = (contactExtension.ExtensionValue as dynamic);
-                        var roles = existingValue.roles as IEnumerable<dynamic>;
-                        if (roles != null)
-                        {
-                            var contact = Enumerable.FirstOrDefault<dynamic>(roles, o => o.patientKey == patient.Key);
-                            if (contact != null)
-                                contact.contact = nk1Segment.ContactRole.Identifier.Value;
-                            else
-                            {
-                                var data = new
-                                {
-                                    patientKey = patient.Key.Value,
-                                    contact = nk1Segment.ContactRole.Identifier.Value
-                                };
-                                existingValue.roles.Add(data);
-                            }
-                        }
-                        contactExtension.ExtensionValue = existingValue;
-
+                        contactExtension.ExtensionValue = role;
                     }
 
                 }

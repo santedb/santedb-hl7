@@ -9,7 +9,7 @@
       <updatedBy>fadca076-3690-4a6e-af9e-f1cd68e8c7e8</updatedBy>
       <oid>1.3.6.1.4.1.33349.3.1.5.9.3.200.200</oid>
       <authority>0200</authority>
-      <url>http://hl7.org/fhir/v2/0200</url>
+      <url>http://terminology.hl7.org/CodeSystem/v2-0200</url>
       <description>HL7 Version 2 Name Types</description>
     </CodeSystem>
   </update>

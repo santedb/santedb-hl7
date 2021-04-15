@@ -454,6 +454,57 @@ namespace SanteDB.Messaging.HL7
             return entityIdentifiers.AsEnumerable();
         }
 
+        /// <summary>
+		/// Converts an <see cref="CX"/> instance to an <see cref="EntityIdentifier"/> instance.
+		/// </summary>
+		/// <param name="identifier">The identifier to be converted.</param>
+		/// <returns>Returns the converted identifier.</returns>
+		public static EntityIdentifier ToModel(this XON identifier)
+        {
+            return new XON[] { identifier }.ToModel().FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Converts a list of <see cref="CX"/> identifiers to a list of <see cref="EntityIdentifier"/> identifiers.
+        /// </summary>
+        /// <param name="identifiers">The list of identifiers to be converted.</param>
+        /// <returns>Returns a list of entity identifiers.</returns>
+        public static IEnumerable<EntityIdentifier> ToModel(this XON[] identifiers)
+        {
+            var entityIdentifiers = new List<EntityIdentifier>();
+
+            if (identifiers.Length == 0)
+                return entityIdentifiers.AsEnumerable();
+
+            foreach (var xon in identifiers)
+            {
+                try
+                {
+                    var assigningAuthority = xon.AssigningAuthority.ToModel();
+                    if (assigningAuthority != null && assigningAuthority.Key != m_configuration.LocalAuthority.Key)
+                    {
+                        var id = new EntityIdentifier(assigningAuthority, xon.OrganizationIdentifier.Value);
+
+                        if (!String.IsNullOrEmpty(xon.IdentifierTypeCode.Value))
+                        {
+                            int tr = 0;
+                            var idType = ApplicationServiceContext.Current.GetService<IDataPersistenceService<IdentifierType>>().Query(o => o.TypeConcept.ReferenceTerms.Any(r => r.ReferenceTerm.Mnemonic == xon.IdentifierTypeCode.Value && r.ReferenceTerm.CodeSystem.Oid == IdentifierTypeCodeSystem), 0, 1, out tr, AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                            id.IdentifierTypeKey = idType?.Key;
+                        }
+
+
+                        entityIdentifiers.Add(id);
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new HL7DatatypeProcessingException(e.Message, 3, e);
+                }
+            }
+
+            return entityIdentifiers.AsEnumerable();
+        }
+
         private static Dictionary<int, string> m_precisionFormats = new Dictionary<int, string>()
         {
             { 8, "yyyyMMdd" },

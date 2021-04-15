@@ -6,7 +6,7 @@
       <name>HL7v2 Relgion Codes</name>
       <oid>1.3.6.1.4.1.33349.3.1.5.9.3.200.6</oid>
       <authority>0006</authority>
-      <url>http://hl7.org/fhir/v2/0006/2.4</url>
+      <url>http://terminology.hl7.org/CodeSystem/v2-2.4</url>
     </CodeSystem>
   </insert>
   <insert skipIfError="true" skipIfExists="true">
