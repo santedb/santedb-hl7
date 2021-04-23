@@ -66,6 +66,16 @@ namespace SanteDB.Messaging.HL7.Test
             dev.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
             dev = securityDevService.Insert(dev);
 
+            // Create device
+            dev = new SecurityDevice()
+            {
+                DeviceSecret = "DEVICESECRET",
+                Name = "TEST_HARNESS|MASTER"
+            };
+            dev.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
+            dev.AddPolicy("1.3.6.1.4.1.33349.3.1.5.9.2.6");
+            dev = securityDevService.Insert(dev);
+
             var app = new SecurityApplication()
             {
                 Name = "TEST_HARNESS",
@@ -297,20 +307,38 @@ namespace SanteDB.Messaging.HL7.Test
         }
 
         /// <summary>
-        /// Tests that a query actually occurs
+        /// Tests that the MRG appropriately behaves according to HL7 SPEC
         /// </summary>
+        /// <remarks>
+        /// This test does not take into consideration MDM use cases such as MASTER->MASTER or LOCAL->LOCAL, it 
+        /// merely tests that at the interface level, the old identifier for a patient (QBP) results in 
+        /// the new redirected object being returned
+        /// </remarks>
         [Test]
         public void TestMerge()
         {
+
+            var entityRepository = ApplicationServiceContext.Current.GetService<IRepositoryService<Entity>>();
+            var patientRepository = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>();
+
+            // Register first patient
             AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
             var msg = TestUtil.GetMessage("ADT_MRG_PRE1");
             var result = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
             var resultStr = TestUtil.ToString(result);
             Assert.IsTrue(resultStr.Contains("|CA"));
+            Assert.AreEqual(1, patientRepository.Find(o => o.Identifiers.Any(id => id.Value == "RJ-439")).Count());
+            var patientA = patientRepository.Find(o => o.Identifiers.Any(id => id.Value == "RJ-439")).SingleOrDefault();
+
+            // Register second patient
             msg = TestUtil.GetMessage("ADT_MRG_PRE2");
             result = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
             resultStr = TestUtil.ToString(result);
             Assert.IsTrue(resultStr.Contains("|CA"));
+            Assert.AreEqual(1, patientRepository.Find(o => o.Identifiers.Any(id => id.Value == "RJ-999")).Count());
+            var patientB = patientRepository.Find(o => o.Identifiers.Any(id => id.Value == "RJ-999")).SingleOrDefault();
+
+            // There are 2 patients
             var patients = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "RJ-439" || i.Value == "RJ-999"), AuthenticationContext.Current.Principal);
             Assert.AreEqual(2, patients.Count());
 
@@ -319,6 +347,29 @@ namespace SanteDB.Messaging.HL7.Test
             resultStr = TestUtil.ToString(result);
             Assert.IsTrue(resultStr.Contains("|CA"));
 
+            // Validate QBP appropriately redirects as described in 3.6.2.1.2
+            msg = TestUtil.GetMessage("ADT_MRG_POST");
+            result = new QbpMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+            resultStr = TestUtil.ToString(result);
+            Assert.IsTrue(resultStr.Contains("|AA"));
+            Assert.IsTrue(resultStr.Contains("RJ-439"), "Missing Patient A identifier");
+            Assert.IsTrue(resultStr.Contains("RJ-999"), "Missing Patient B identifier");
+
+            // Validate -> Query for RJ-439 resolves to patient
+            var afterMergeA = patientRepository.Find(o => o.Identifiers.Any(id => id.Value == "RJ-439")).SingleOrDefault();
+            Assert.AreEqual(patientA.Key, afterMergeA.Key); // Remains unchanged (Patient A => After Merge A)
+
+            // Validate -> Query for RJ-999 resolves to same patient
+            var afterMergeB = patientRepository.Find(o => o.Identifiers.Any(id => id.Value == "RJ-999")).SingleOrDefault();
+            Assert.AreNotEqual(patientB.Key, afterMergeB.Key); // (Patient B no longer equals Merge B since it was merged into A)
+            Assert.AreEqual(patientA.Key, afterMergeB.Key); // Patient B => Patient A
+            var oldMaster = entityRepository.Get(patientB.Key.Value);
+            oldMaster.LoadProperty(o => o.StatusConcept);
+            Assert.AreEqual(StatusKeys.Obsolete, oldMaster.StatusConceptKey); // Old Master is obsolete
+
+
+            
         }
+
     }
 }

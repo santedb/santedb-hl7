@@ -98,7 +98,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 // HACK: This needs to be fixed on sync
                 if (person == null) continue;
 
-                nk1.Relationship.FromModel(rel.LoadProperty<Concept>(nameof(EntityRelationship.RelationshipType)), RelationshipCodeSystem);
+                nk1.Relationship.FromModel(rel.LoadProperty(o=>o.RelationshipType), RelationshipCodeSystem);
 
                 // Map person to NK1
                 if (exportDomains == null || exportDomains?.Length == 0 || exportDomains?.Any(d => d.Key == this.m_configuration.LocalAuthority.Key) == true)
@@ -150,24 +150,9 @@ namespace SanteDB.Messaging.HL7.Segments
                 }
 
                 // Contact extension
-                var contactExtension = person.LoadCollection<EntityExtension>(nameof(Entity.Extensions)).FirstOrDefault(o => o.ExtensionTypeKey == ExtensionTypeKeys.ContactRolesExtension);
-                if (contactExtension != null)
+                if(rel.RelationshipRoleKey.HasValue)
                 {
-                    var existingValue = (contactExtension.ExtensionValue as dynamic);
-                    var roles = existingValue.roles as IEnumerable<dynamic>;
-                    if (roles != null)
-                    {
-                        var contact = Enumerable.FirstOrDefault<dynamic>(roles, o => o.patientKey == patient.Key)?.contact;
-                        if (!String.IsNullOrEmpty(contact?.ToString()))
-                            nk1.ContactRole.Identifier.Value = contact;
-                        else if (patient.Tags.Any(o => o.TagKey == "$alt.keys")) // might be a composite
-                        {
-                            var altKeys = patient.Tags.FirstOrDefault(o => o.TagKey == "$alt.keys")?.Value.Split(';').Select(o => Guid.Parse(o));
-                            contact = Enumerable.FirstOrDefault<dynamic>(roles, o => altKeys.Contains((Guid)o.patientKey))?.contact;
-                            if (!String.IsNullOrEmpty(contact?.ToString()))
-                                nk1.ContactRole.Identifier.Value = contact;
-                        }
-                    }
+                    nk1.ContactRole.FromModel(rel.LoadProperty(o => o.RelationshipRole), ContactRoleRelationship);
                 }
 
                 // Load relationships
@@ -184,7 +169,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 }
 
                 // Language of communication
-                var lang = person.LoadCollection<PersonLanguageCommunication>(nameof(Person.LanguageCommunication)).FirstOrDefault(o => o.IsPreferred);
+                var lang = person.LoadCollection(o=>o.LanguageCommunication).FirstOrDefault(o => o.IsPreferred);
                 if (lang != null)
                     nk1.PrimaryLanguage.Identifier.Value = lang.LanguageCode;
 
@@ -367,20 +352,9 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Contact, retVal.Key)
                     {
-                        SourceEntityKey = patient.Key
+                        SourceEntityKey = patient.Key,
+                        RelationshipRole = nk1Segment.ContactRole.ToModel(ContactRoleRelationship, true)
                     });
-                    var contactExtension = retVal.Extensions.FirstOrDefault(o => o.ExtensionTypeKey == ExtensionTypeKeys.ContactRolesExtension);
-                    var role = nk1Segment.ContactRole.ToModel(ContactRoleRelationship, true);
-                    if (contactExtension == null)
-                    {
-                        contactExtension = new EntityExtension(ExtensionTypeKeys.ContactRolesExtension, typeof(ReferenceExtensionHandler), role);
-                        retVal.Extensions.Add(contactExtension);
-                    }
-                    else
-                    {
-                        contactExtension.ExtensionValue = role;
-                    }
-
                 }
 
                 fieldNo = 16;

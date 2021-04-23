@@ -129,6 +129,37 @@ namespace SanteDB.Messaging.HL7.Messages
         /// </summary>
         protected virtual IMessage PerformMerge(Hl7MessageReceivedEventArgs e, Bundle bundle)
         {
+            // A merge should be parsed as a series of bundles within bundles representing the merge pairs...
+            try
+            {
+                var mergePairs = bundle.Item.OfType<Bundle>();
+                if(!mergePairs.Any())
+                {
+                    throw new InvalidOperationException("Merge requires at least one pair of PID and MRG");
+                }
+
+                var mergeService = ApplicationServiceContext.Current.GetService<IRecordMergingService<Patient>>();
+                var patientService = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>();
+                foreach(var mrgPair in mergePairs)
+                {
+                    var survivor = mrgPair.Item.OfType<Patient>().FirstOrDefault(o => o.GetTag("$v2.segment") == "PID");
+                    var victims = mrgPair.Item.OfType<Patient>().Where(o => o.GetTag("$v2.segment") == "MRG");
+                    if(survivor ==null || !victims.Any())
+                    {
+                        throw new InvalidOperationException("Merge requires at least one PID and one or more MRG");
+                    }
+
+                    // Perform the merge
+                    mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value));
+                }
+
+                return this.CreateACK(typeof(ACK), e.Message, "CA", $"Merge accepted");
+            }
+            catch (Exception ex)
+            {
+                AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, null, bundle.Item.OfType<Bundle>());
+                throw new HL7ProcessingException("Error performing merge", null, null, 0, 0, ex);
+            }
             throw new NotImplementedException();
         }
 
