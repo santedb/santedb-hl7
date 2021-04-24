@@ -354,6 +354,8 @@ namespace SanteDB.Messaging.HL7.Test
             Assert.IsTrue(resultStr.Contains("|AA"));
             Assert.IsTrue(resultStr.Contains("RJ-439"), "Missing Patient A identifier");
             Assert.IsTrue(resultStr.Contains("RJ-999"), "Missing Patient B identifier");
+            Assert.IsTrue(resultStr.Contains(patientA.Key.ToString()), "Missing Master Key for Patient A");
+            Assert.IsFalse(resultStr.Contains(patientB.Key.ToString()), "Should not have Master Key for Patient B");
 
             // Validate -> Query for RJ-439 resolves to patient
             var afterMergeA = patientRepository.Find(o => o.Identifiers.Any(id => id.Value == "RJ-439")).SingleOrDefault();
