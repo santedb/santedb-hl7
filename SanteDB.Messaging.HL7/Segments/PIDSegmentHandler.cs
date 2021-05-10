@@ -216,7 +216,6 @@ namespace SanteDB.Messaging.HL7.Segments
         public virtual IEnumerable<IdentifiedData> Parse(ISegment segment, IEnumerable<IdentifiedData> context)
         {
             var patientService = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>();
-            var personService = ApplicationServiceContext.Current.GetService<IRepositoryService<Person>>();
             var pidSegment = segment as PID;
             int fieldNo = 0;
 
@@ -248,30 +247,19 @@ namespace SanteDB.Messaging.HL7.Segments
                         if (authority == null)
                             throw new HL7ProcessingException($"No authority configured for {id.AssigningAuthority.NamespaceID.Value}", "PID", pidSegment.SetIDPID.Value, 3, 4);
                         Guid idguid = Guid.Empty;
-                        Person found = null;
+                        Patient found = null;
                         if (authority.Key == this.m_configuration.LocalAuthority.Key)
                         {
                             found = patientService.Get(Guid.Parse(id.IDNumber.Value), Guid.Empty);
-                            if (found == null)
-                                found = personService.Get(Guid.Parse(id.IDNumber.Value), Guid.Empty);
                         }
                         else if (authority?.IsUnique == true)
                         {
                             found = patientService.Find(o => o.Identifiers.Any(i => i.Authority.Key == authority.Key && i.Value == idnumber)).FirstOrDefault();
-                            if (found == null)
-                                found = personService.Find(o => o.Identifiers.Any(i => i.Authority.Key == authority.Key && i.Value == idnumber)).FirstOrDefault();
-
                         }
 
                         if (found != null)
                         {
-                            if (found is Patient)
-                                retVal = (Patient)found.Clone();
-                            else // We need to upgrade this person
-                            {
-                                retVal.CopyObjectData(found, false, true);
-                                retVal.Tags.Add(new EntityTag("$sys.reclass", "true"));
-                            }
+                            retVal = (Patient)found.Clone();
                             break;
                         }
                     }
@@ -322,6 +310,9 @@ namespace SanteDB.Messaging.HL7.Segments
                 // Mother's maiden name, create a relationship for mother
                 if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.MotherSIdentifierRepetitionsUsed > 0)
                 {
+                    var personService = ApplicationServiceContext.Current.GetService<IRepositoryService<Person>>();
+                    Person foundMother = null;
+
                     // Attempt to find the mother
                     foreach (var id in pidSegment.GetMotherSIdentifier())
                     {
@@ -343,45 +334,32 @@ namespace SanteDB.Messaging.HL7.Segments
 
                     fieldNo = 6;
                     // Mother doesn't exist, so add it
-                    var foundById = motherEntity != null;
-                    if (!foundById)
+                    if (foundMother == null || foundMother is Patient)
+                    {
                         motherEntity = new Person()
                         {
                             Key = Guid.NewGuid(),
                             Identifiers = pidSegment.GetMotherSIdentifier().ToModel().ToList(),
                             Names = pidSegment.GetMotherSMaidenName().ToModel(NameUseKeys.MaidenName).ToList(),
                             StatusConceptKey = StatusKeys.Active
-
                         };
-
-                    var existingRelationship = retVal.Relationships.FirstOrDefault(r => r.SourceEntityKey == retVal.Key && r.TargetEntityKey == motherEntity.Key);
-                    if (existingRelationship == null)
-                    {
-                        // Find by mother relationship
-                        existingRelationship = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother);
-                        if (existingRelationship == null) // No current mother relationship
-                            retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Mother, motherEntity.Key));
-                        else
+                        if (foundMother != null)
                         {
-                            var mother = existingRelationship.LoadProperty<Entity>("TargetEntity");
-
-                            // Was the data found by ID? If so point at it
-                            if (foundById)
-                                existingRelationship.TargetEntityKey = motherEntity.Key;
-                            else
-                            {
-                                // was not found by ID so only update the name of existing mother entity - Check for validity
-                                var newMaidenName = pidSegment.GetMotherSMaidenName().ToModel(NameUseKeys.MaidenName).FirstOrDefault();
-                                if (!mother.GetNames().Any(e => e.SemanticEquals(newMaidenName)))
-                                {
-                                    mother.Names.Add((newMaidenName)); // Add it
-                                    motherEntity = mother as Person;
-                                }
-                            }
+                            retCollection.Add(new EntityRelationship(EntityRelationshipTypeKeys.EquivalentEntity, motherEntity.Key) { SourceEntityKey = foundMother.Key });
                         }
+                        retCollection.Add(motherEntity);
                     }
                     else
-                        existingRelationship.RelationshipTypeKey = EntityRelationshipTypeKeys.Mother;
+                        motherEntity = foundMother;
+
+                    retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Mother, motherEntity.Key));
+
+                    var existingRelationship = retVal.Relationships.FirstOrDefault(r => r.SourceEntityKey == retVal.Key && r.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother);
+                    if (existingRelationship != null && existingRelationship.TargetEntityKey != motherEntity.Key)
+                    {
+                        existingRelationship.ObsoleteVersionSequenceId = Int32.MaxValue;
+                        retCollection.Add(existingRelationship);
+                    }
 
                 }
 
@@ -585,8 +563,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 //        retVal.CreatedBy = user;
                 //}
 
-                if (motherEntity != null)
-                    retCollection.Add(motherEntity);
+                
                 retCollection.Add(retVal);
                 return retCollection;
             }

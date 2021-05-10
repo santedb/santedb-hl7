@@ -97,6 +97,12 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// </summary>
         [XmlAttribute("strictMetadata")]
         public bool StrictMetadataMatch { get; set; }
+
+        /// <summary>
+        /// True if authenticated applications (Application Secret) is required
+        /// </summary>
+        [XmlAttribute("requireAppAuth")]
+        public bool RequireAuthenticatedApplication { get; set; }
     }
 
     /// <summary>

@@ -196,6 +196,7 @@ namespace SanteDB.Messaging.HL7.Segments
             var fieldNo = 0;
             // Person persistence service
             var personService = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Person>>();
+            List<IdentifiedData> retVal = new List<IdentifiedData>();
 
             try
             {
@@ -205,8 +206,8 @@ namespace SanteDB.Messaging.HL7.Segments
                     throw new InvalidOperationException("NK1 Requires PID segment to be processed");
 
                 // Next of kin is a person
-                Person retVal = new Person() { Key = Guid.NewGuid() };
-                EntityRelationship retValRelation = new EntityRelationship(EntityRelationshipTypeKeys.NextOfKin, retVal.Key) { SourceEntityKey = patient.Key };
+                Person retPerson = new Person() { Key = Guid.NewGuid() };
+                EntityRelationship retValRelation = new EntityRelationship(EntityRelationshipTypeKeys.NextOfKin, retPerson.Key) { SourceEntityKey = patient.Key };
                 bool foundByKey = false;
 
                 // Look for existing person
@@ -225,18 +226,50 @@ namespace SanteDB.Messaging.HL7.Segments
                     }
                     Guid idguid = Guid.Empty;
                     int tr = 0;
+
+                    // Find a patient which matches in the database
                     Person found = null;
+
                     if (authority.Key == this.m_configuration.LocalAuthority.Key)
+                    {
                         found = personService.Get(Guid.Parse(id.IDNumber.Value), null, true, AuthenticationContext.SystemPrincipal);
+                    }
                     else if (authority?.IsUnique == true)
-                        found = personService.Query(o => o.Identifiers.Any(i => i.Value == idnumber &&
-                            i.Authority.Key == authority.Key), 0, 1, out tr, AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                    {
+                        // Attempt to find in the bundle
+                        found = context.OfType<Person>().FirstOrDefault(o => o.Identifiers.Any(i => i.Value == idnumber && i.Authority.Key == authority.Key));
+                        if (found == null) {
+                            var tFound = personService.Query(o =>  o.Identifiers.Any(i => i.Value == idnumber &&
+                                i.Authority.Key == authority.Key), 0, 2, out tr, AuthenticationContext.SystemPrincipal);
+
+                            var personLink = tFound.FirstOrDefault(o => o is Patient);
+                            found = tFound.FirstOrDefault(o => !(o is Patient));
+
+                            // If tFound has a Patient add a link
+                            if(personLink != null)
+                            {
+                                retVal.Add(new EntityRelationship(EntityRelationshipTypeKeys.EquivalentEntity, retPerson.Key) { SourceEntityKey = personLink.Key });
+                            }
+                        }
+                    }
+
                     if (found != null)
                     {
-                        retVal = found;
-                        foundByKey = true;
-                        // Existing relationship?
-                        retValRelation = ApplicationServiceContext.Current.GetService<IDataPersistenceService<EntityRelationship>>().Query(r => r.SourceEntityKey == patient.Key.Value && r.TargetEntityKey == retVal.Key.Value, AuthenticationContext.SystemPrincipal).FirstOrDefault() ?? retValRelation;
+                        // Updated to match FHIR interface
+                        // If the found by identifier is a patient - we don't directly 
+                        // link them , instead we create an intermediary person 
+                        // so the relationship is: PID -(relationship)-> NK1 (person) -(equivalent)-> found patient matching NK1
+                        if (found is Patient fpatient)
+                        {
+                            retVal.Add(new EntityRelationship(EntityRelationshipTypeKeys.EquivalentEntity, retPerson.Key) { SourceEntityKey = fpatient.Key });
+                        }
+                        else
+                        {
+                            retPerson.Key = found.Key;
+                            foundByKey = true;
+                            // Existing relationship?
+                            retValRelation = ApplicationServiceContext.Current.GetService<IDataPersistenceService<EntityRelationship>>().Query(r => r.SourceEntityKey == patient.Key.Value && r.TargetEntityKey == retPerson.Key.Value, AuthenticationContext.SystemPrincipal).FirstOrDefault() ?? retValRelation;
+                        }
                         break;
                     }
                 }
@@ -253,15 +286,15 @@ namespace SanteDB.Messaging.HL7.Segments
                     retValRelation = existingNokRel;
                     if (!foundByKey) // We didn't actually resolve anyone by current key so we should try to find them in the DB
                     {
-                        retVal = context.FirstOrDefault(o => o.Key == existingNokRel.TargetEntityKey) as Person;
+                        retPerson = context.FirstOrDefault(o => o.Key == existingNokRel.TargetEntityKey) as Person;
                         // Mother isn't in context, load
-                        if (retVal == null)
-                            retVal = personService.Get(existingNokRel.TargetEntityKey.Value, null, true, AuthenticationContext.SystemPrincipal);
-                        if (retVal == null)
+                        if (retPerson == null)
+                            retPerson = personService.Get(existingNokRel.TargetEntityKey.Value, null, true, AuthenticationContext.SystemPrincipal);
+                        if (retPerson == null)
                             throw new InvalidOperationException("Cannot locate described NOK entity on patient record");
 
                         // IF the person is a PATIENT and not a PERSON we will not update them - too dangerous - ignore the NOK entry
-                        if (retVal is Patient && !foundByKey)
+                        if (retPerson is Patient && !foundByKey)
                             return new IdentifiedData[0];
                     }
                 }
@@ -272,9 +305,9 @@ namespace SanteDB.Messaging.HL7.Segments
                     foreach (var itm in nk1Segment.GetName())
                     {
                         var model = itm.ToModel();
-                        var existing = retVal.Names.FirstOrDefault(o => o.NameUseKey == model.NameUseKey);
+                        var existing = retPerson.Names.FirstOrDefault(o => o.NameUseKey == model.NameUseKey);
                         if (existing == null)
-                            retVal.Names.Add(model);
+                            retPerson.Names.Add(model);
                         else
                             existing.CopyObjectData(model);
                     }
@@ -286,9 +319,9 @@ namespace SanteDB.Messaging.HL7.Segments
                     foreach (var itm in nk1Segment.GetAddress())
                     {
                         var model = itm.ToModel();
-                        var existing = retVal.Addresses.FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
+                        var existing = retPerson.Addresses.FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
                         if (existing == null)
-                            retVal.Addresses.Add(model);
+                            retPerson.Addresses.Add(model);
                         else
                             existing.CopyObjectData(model);
                     }
@@ -299,16 +332,16 @@ namespace SanteDB.Messaging.HL7.Segments
                 foreach (var itm in telecoms)
                 {
                     var model = itm.ToModel();
-                    var existing = retVal.Telecoms.FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
+                    var existing = retPerson.Telecoms.FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
                     if (existing == null)
-                        retVal.Telecoms.Add(model);
+                        retPerson.Telecoms.Add(model);
                     else
                         existing.CopyObjectData(model);
                 }
 
                 fieldNo = 15;
                 if (!nk1Segment.AdministrativeSex.IsEmpty())
-                    retVal.GenderConcept = nk1Segment.AdministrativeSex.ToConcept(AdministrativeGenderCodeSystem);
+                    retPerson.GenderConcept = nk1Segment.AdministrativeSex.ToConcept(AdministrativeGenderCodeSystem);
 
                 // Organization
                 fieldNo = 13;
@@ -329,14 +362,14 @@ namespace SanteDB.Messaging.HL7.Segments
                                     Identifiers = new List<EntityIdentifier>() { id },
                                     Names = new List<EntityName>() { new EntityName(NameUseKeys.Assigned, xon.OrganizationName.Value) }
                                 };
-                                retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization)
+                                retPerson.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization)
                                 {
                                     ClassificationKey = RelationshipClassKeys.ContainedObjectLink
                                 });
                             }
                             else
                             {
-                                retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization));
+                                retPerson.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization));
                             }
                         }
                         else
@@ -350,7 +383,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 fieldNo = 7;
                 if (!nk1Segment.ContactRole.IsEmpty())
                 {
-                    retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Contact, retVal.Key)
+                    retPerson.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Contact, retPerson.Key)
                     {
                         SourceEntityKey = patient.Key,
                         RelationshipRole = nk1Segment.ContactRole.ToModel(ContactRoleRelationship, true)
@@ -360,8 +393,8 @@ namespace SanteDB.Messaging.HL7.Segments
                 fieldNo = 16;
                 if (!nk1Segment.DateTimeOfBirth.IsEmpty())
                 {
-                    retVal.DateOfBirth = nk1Segment.DateTimeOfBirth.ToModel();
-                    retVal.DateOfBirthPrecision = nk1Segment.DateTimeOfBirth.ToDatePrecision();
+                    retPerson.DateOfBirth = nk1Segment.DateTimeOfBirth.ToModel();
+                    retPerson.DateOfBirthPrecision = nk1Segment.DateTimeOfBirth.ToDatePrecision();
                 }
 
                 // Citizenship
@@ -372,13 +405,13 @@ namespace SanteDB.Messaging.HL7.Segments
                     {
                         var places = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == AssigningAuthorityKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal);
                         if (places.Count() == 1)
-                            retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Citizen, places.First().Key));
+                            retPerson.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Citizen, places.First().Key));
                     }
                 }
 
                 fieldNo = 20;
                 if (!nk1Segment.PrimaryLanguage.IsEmpty())
-                    retVal.LanguageCommunication = new List<PersonLanguageCommunication>()
+                    retPerson.LanguageCommunication = new List<PersonLanguageCommunication>()
                 {
                     new PersonLanguageCommunication(nk1Segment.PrimaryLanguage.Identifier.Value.ToLower(), true)
                 };
@@ -389,9 +422,9 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     var pip = ApplicationServiceContext.Current.GetService<IDataPersistenceService<SecurityPolicy>>();
                     if (nk1Segment.ProtectionIndicator.Value == "Y")
-                        retVal.AddPolicy(DataPolicyIdentifiers.RestrictedInformation);
+                        retPerson.AddPolicy(DataPolicyIdentifiers.RestrictedInformation);
                     else if (nk1Segment.ProtectionIndicator.Value == "N")
-                        retVal.Policies.Clear();
+                        retPerson.Policies.Clear();
                     else
                         throw new ArgumentOutOfRangeException($"Protection indicator {nk1Segment.ProtectionIndicator.Value} is invalid");
                 }
@@ -401,7 +434,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 fieldNo = 33;
                 if (nk1Segment.NextOfKinAssociatedPartySIdentifiersRepetitionsUsed > 0)
                 {
-                    retVal.Identifiers.AddRange(nk1Segment.GetNextOfKinAssociatedPartySIdentifiers().ToModel().ToList().Where(i => !retVal.Identifiers.Any(e => e.SemanticEquals(i))));
+                    retPerson.Identifiers.AddRange(nk1Segment.GetNextOfKinAssociatedPartySIdentifiers().ToModel().ToList().Where(i => !retPerson.Identifiers.Any(e => e.SemanticEquals(i))));
                 }
 
                 // Find the existing relationship on the patient
@@ -409,11 +442,11 @@ namespace SanteDB.Messaging.HL7.Segments
                 patient.Relationships.RemoveAll(o => o.SourceEntityKey == retValRelation.SourceEntityKey && o.TargetEntityKey == retValRelation.TargetEntityKey);
                 patient.Relationships.Add(retValRelation);
 
-                if (!context.Contains(retVal))
-                    return new IdentifiedData[] { retVal };
-                else
-                    return new IdentifiedData[0];
-
+                if (!context.Contains(retPerson))
+                {
+                    retVal.Add(retPerson);
+                }
+                return retVal;
             }
             catch (HL7ProcessingException) // Just re-throw
             {

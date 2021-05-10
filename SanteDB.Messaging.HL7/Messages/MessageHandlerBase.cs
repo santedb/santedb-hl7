@@ -150,7 +150,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.Services.AuthenticationMethod.Local),
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
 
-                if (applicationPrincipal == null && ApplicationServiceContext.Current.HostType == SanteDBHostType.Server)
+                if (applicationPrincipal == null && this.m_configuration.RequireAuthenticatedApplication)
                     throw new UnauthorizedAccessException("Server requires authenticated application");
 
                 principal = new SanteDBClaimsPrincipal(new IIdentity[] { devicePrincipal.Identity, applicationPrincipal?.Identity }.OfType<IClaimsIdentity>());
