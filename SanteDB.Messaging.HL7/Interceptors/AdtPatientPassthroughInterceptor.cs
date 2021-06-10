@@ -367,7 +367,7 @@ namespace SanteDB.Messaging.HL7.Interceptors
         protected void AdtPatientRegistrationInterceptor_Bundle(object sender, DataPersistingEventArgs<Bundle> e)
         {
             foreach (var itm in e.Data.Item.OfType<Patient>())
-                AdtPatientRegistrationInterceptor_Behavior(sender, new DataPersistingEventArgs<Patient>(itm, e.Principal));
+                AdtPatientRegistrationInterceptor_Behavior(sender, new DataPersistingEventArgs<Patient>(itm, TransactionMode.Commit, e.Principal));
             e.Cancel = true;
         }
 

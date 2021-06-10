@@ -265,11 +265,9 @@ namespace SanteDB.Messaging.HL7.Segments
                     }
                 }
 
-
                 fieldNo = 2;
                 if (!pidSegment.PatientID.IsEmpty())
                     retVal.Identifiers.Add(pidSegment.PatientID.ToModel());
-
 
                 fieldNo = 3;
                 if (pidSegment.PatientIdentifierListRepetitionsUsed > 0)
