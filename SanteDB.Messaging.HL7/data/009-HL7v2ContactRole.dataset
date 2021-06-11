@@ -47,7 +47,7 @@
   </update>
   <update insertIfNotExists="true">
     <ReferenceTerm xmlns="http://santedb.org/model">
-      <id>93432d5a4-72de-11eb-9439-0242ac130002</id>
+      <id>9332d5a4-72de-11eb-9439-0242ac130002</id>
       <mnemonic>U</mnemonic>
       <codeSystem>fde945a5-936b-4bfd-99c9-b41b6151748b</codeSystem>
       <name>
@@ -60,7 +60,7 @@
   <update insertIfNotExists="true">
     <ConceptReferenceTerm xmlns="http://santedb.org/model">
       <source>70FE34CE-CAFF-4F46-B6E6-9CD6D8F289D6</source>
-      <term>93432d5a4-72de-11eb-9439-0242ac130002</term>
+      <term>9332d5a4-72de-11eb-9439-0242ac130002</term>
       <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
     </ConceptReferenceTerm>
   </update>
