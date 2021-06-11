@@ -232,7 +232,7 @@ namespace SanteDB.Messaging.HL7.Segments
 
                     if (authority.Key == this.m_configuration.LocalAuthority.Key)
                     {
-                        found = personService.Get(Guid.Parse(id.IDNumber.Value), null, true, AuthenticationContext.SystemPrincipal);
+                        found = personService.Get(Guid.Parse(id.IDNumber.Value), null, AuthenticationContext.SystemPrincipal);
                     }
                     else if (authority?.IsUnique == true)
                     {
@@ -289,7 +289,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         retPerson = context.FirstOrDefault(o => o.Key == existingNokRel.TargetEntityKey) as Person;
                         // Mother isn't in context, load
                         if (retPerson == null)
-                            retPerson = personService.Get(existingNokRel.TargetEntityKey.Value, null, true, AuthenticationContext.SystemPrincipal);
+                            retPerson = personService.Get(existingNokRel.TargetEntityKey.Value, null, AuthenticationContext.SystemPrincipal);
                         if (retPerson == null)
                             throw new InvalidOperationException("Cannot locate described NOK entity on patient record");
 

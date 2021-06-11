@@ -492,7 +492,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     }
                     else
                     {
-                        var places = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Names.Any(n => n.Component.Any(c => c.Value == pidSegment.BirthPlace.Value)), AuthenticationContext.SystemPrincipal);
+                        IEnumerable<Place> places = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Names.Any(n => n.Component.Any(c => c.Value == pidSegment.BirthPlace.Value)), AuthenticationContext.SystemPrincipal);
                         if (this.m_configuration.BirthplaceClassKeys.Any())
                             places = places.Where(o =>
                                 this.m_configuration.BirthplaceClassKeys.Contains(o.ClassConceptKey.Value));

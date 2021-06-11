@@ -128,7 +128,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         // Find the org or SDL
                         Place place = null;
                         if (authority.Key == this.m_configuration.LocalAuthority.Key)
-                            place = sdlRepo.Get(Guid.Parse(idnumber), null, true, AuthenticationContext.SystemPrincipal);
+                            place = sdlRepo.Get(Guid.Parse(idnumber), null, AuthenticationContext.SystemPrincipal);
                         else
                             place = sdlRepo.Query(o => o.ClassConceptKey == EntityClassKeys.ServiceDeliveryLocation && o.Identifiers.Any(i => i.Value == idnumber && i.Authority.Key == authority.Key), AuthenticationContext.SystemPrincipal).SingleOrDefault();
                         if (place != null)
