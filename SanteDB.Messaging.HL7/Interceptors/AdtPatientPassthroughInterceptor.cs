@@ -169,8 +169,7 @@ namespace SanteDB.Messaging.HL7.Interceptors
             // Original has modified on?
             if (filter.ContainsKey("modifiedOn"))
                 queryFilter.Add("modifiedOn", filter["modifiedOn"]);
-            e.Results = this.SendQuery(queryFilter, e.Count ?? 25, out tr);
-            e.TotalResults = tr;
+            e.Results = this.SendQuery(queryFilter, 25, out tr);
 
         }
 
@@ -184,9 +183,8 @@ namespace SanteDB.Messaging.HL7.Interceptors
             var parmMap = s_map.Map.FirstOrDefault(o => o.Trigger == "Q22");
             var nvc = QueryExpressionBuilder.BuildQuery(e.Query);
            
-            e.Results = this.SendQuery(new NameValueCollection(nvc.ToArray()), e.Count ?? 25, out int tr);
-            e.TotalResults = tr;
-
+            e.Results = this.SendQuery(new NameValueCollection(nvc.ToArray()), 25, out int tr);
+            
         }
 
         /// <summary>
@@ -349,13 +347,13 @@ namespace SanteDB.Messaging.HL7.Interceptors
             if (this.m_retrieveHacks.TryGetValue(e.Id.Value, out IEnumerable<EntityIdentifier> ids))
             {
                 var id = ids.Last();
-                var qryParms = new QueryRequestEventArgs<Patient>(o => o.Identifiers.Any(i=>i.Value == id.Value && i.Authority.DomainName == id.Authority.DomainName), 0, 1, Guid.NewGuid(), e.Principal);
+                var qryParms = new QueryRequestEventArgs<Patient>(o => o.Identifiers.Any(i=>i.Value == id.Value && i.Authority.DomainName == id.Authority.DomainName),  e.Principal);
                 AdtPatientPassthroughInterceptor_Querying(sender, qryParms);
                 e.Result = qryParms.Results.FirstOrDefault();
             }
             else
             {
-                var qryParms = new QueryRequestEventArgs<Patient>(o => o.Key == e.Id.Value, 0, 1, Guid.NewGuid(), e.Principal);
+                var qryParms = new QueryRequestEventArgs<Patient>(o => o.Key == e.Id.Value, e.Principal);
                 AdtPatientPassthroughInterceptor_Querying(sender, qryParms);
                 e.Result = qryParms.Results.FirstOrDefault();
             }

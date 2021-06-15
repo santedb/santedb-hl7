@@ -231,8 +231,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         found = personService.Get(Guid.Parse(id.IDNumber.Value), null, AuthenticationContext.SystemPrincipal);
                     }
                     else if (authority?.IsUnique == true)
-                        found = personService.Query(o => o.Identifiers.Any(i => i.Value == idnumber &&
-                            i.Authority.Key == authority.Key), 0, 1, out tr, AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                        found = personService.Query(o => o.Identifiers.Any(i => i.Value == idnumber && i.Authority.Key == authority.Key), AuthenticationContext.SystemPrincipal).AsResultSet().Take(1).FirstOrDefault();
                     if (found != null)
                     {
                         retVal = found;
@@ -257,11 +256,11 @@ namespace SanteDB.Messaging.HL7.Segments
                     {
                         retVal = context.FirstOrDefault(o => o.Key == existingNokRel.TargetEntityKey) as Person;
                         // Mother isn't in context, load
-                        if (retPerson == null)
+                        if (retVal == null)
                         {
-                            retPerson = personService.Get(existingNokRel.TargetEntityKey.Value, null, AuthenticationContext.SystemPrincipal);
+                            retVal = personService.Get(existingNokRel.TargetEntityKey.Value, null, AuthenticationContext.SystemPrincipal);
                         }
-                        if (retPerson == null)
+                        if (retVal == null)
                         {
                             throw new InvalidOperationException("Cannot locate described NOK entity on patient record");
                         }
