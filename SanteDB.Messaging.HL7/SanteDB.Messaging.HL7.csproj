@@ -192,5 +192,8 @@
     <None Update="data\009-HL7v2ContactRole.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="data\009-HL7v2IdentifierType.dataset">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
