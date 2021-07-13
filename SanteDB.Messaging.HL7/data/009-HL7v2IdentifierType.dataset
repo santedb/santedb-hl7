@@ -1,0 +1,259 @@
+<?xml version="1.0"?>
+<dataset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" id="Imported Dataset" xmlns="http://santedb.org/data">
+  <update skipIfError="false" insertIfNotExists="true">
+    <CodeSystem xmlns="http://santedb.org/model">
+      <id>c4184b13-0934-4e8d-bff7-bafa72fe917e</id>
+      <name>HL7 Version 2 Identifier Types</name>
+      <oid>1.3.6.1.4.1.33349.3.1.5.9.3.200.203</oid>
+      <authority>203</authority>
+      <url>http://terminology.hl7.org/CodeSystem/v2-0203</url>
+    </CodeSystem>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>e0844826-0f76-4d38-a444-1c5fe78964b1</id>
+      <mnemonic>BA</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Bank Account Number</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>61fd1f07-56d1-4a5e-8277-a69b4b97acf4</id>
+      <source>cb6e4fb2-5a78-408e-9b5e-a41018057fb1</source>
+      <term>e0844826-0f76-4d38-a444-1c5fe78964b1</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>05ce28ca-77a8-4dca-9d40-c34370590abe</id>
+      <mnemonic>DL</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Drivers License Number</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>854a51b3-d803-4ae7-9a7f-673d760d93a1</id>
+      <source>cb6e4f39-5a78-408e-9b5e-a41018057fb1</source>
+      <term>05ce28ca-77a8-4dca-9d40-c34370590abe</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>f5c21061-b312-4117-bbc0-5bbd5e969de5</id>
+      <mnemonic>EI</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Eployee Number</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>dd67301f-1361-4266-a1f3-d653b8799d20</id>
+      <source>cb6e4f4a-5a6c-408e-9b5e-a41018057fb1</source>
+      <term>f5c21061-b312-4117-bbc0-5bbd5e969de5</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>8d0f1453-cf73-4737-914c-a7acc3a1f401</id>
+      <mnemonic>PT</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Patient External Identifier</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>8d2ccc98-f229-4837-84cb-32d6b5eb7db2</id>
+      <source>cb6e4fe5-5a78-408e-9b5e-a41018057fb1</source>
+      <term>8d0f1453-cf73-4737-914c-a7acc3a1f401</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>a7f6643e-1160-4e85-ac31-b2865251831d</id>
+      <mnemonic>JHN</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Jurisdictional Health Number</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>89967030-0f11-491d-9be4-7d34a4ce114c</id>
+      <source>cb6e4fb1-5a78-408e-9b5e-a41018057fb1</source>
+      <term>a7f6643e-1160-4e85-ac31-b2865251831d</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>cfe82b9a-786c-4e96-896f-288f8133d4cd</id>
+      <mnemonic>MD</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Medical License Number</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>fc47b92a-3946-43a5-9739-4e2052a13fd2</id>
+      <source>cb6e4fa0-5a78-408e-9b5e-a41018057fb1</source>
+      <term>cfe82b9a-786c-4e96-896f-288f8133d4cd</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>24defa8b-0e31-4487-90f3-5f8c49f9fbaf</id>
+      <mnemonic>MR</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Medical Record Number</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>d98eb159-fd85-451c-ae51-851c40fdb8b3</id>
+      <source>cb6e4f5b-5a78-408e-9b5e-a41018057fb1</source>
+      <term>24defa8b-0e31-4487-90f3-5f8c49f9fbaf</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>b47c245f-804b-4369-bcc5-f6daa8c19412</id>
+      <mnemonic>NH</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>National Health Plan Identifier</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>99559370-5760-40f1-aab8-58590b039251</id>
+      <source>cb6e4f8e-5a78-408e-9b5e-a41018057fb1</source>
+      <term>b47c245f-804b-4369-bcc5-f6daa8c19412</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>f2fbf655-d770-46f2-9db6-fbf3b2a89821</id>
+      <mnemonic>PPN</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Passport Number</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>48b465dc-4457-4bc0-b5c5-9fb1b3dfb2a1</id>
+      <source>cb6e4f4a-5a78-408e-9b5e-a41018057fb1</source>
+      <term>f2fbf655-d770-46f2-9db6-fbf3b2a89821</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>e9925d32-b416-43d5-8edf-1af8237eff05</id>
+      <mnemonic>PN</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Person Identifier</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>2372fa69-8338-4f37-a333-cc52dc5354bd</id>
+      <source>cb6e4fd4-5a78-408e-9b5e-a41018057fb1</source>
+      <term>e9925d32-b416-43d5-8edf-1af8237eff05</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>eb3ccb7b-4735-44f0-b9fe-79f5ae28c120</id>
+      <mnemonic>PI</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Patient Internal Identifier</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>1acc4cca-11b4-4008-a81a-885f338ec805</id>
+      <source>cb6e4f9f-5a78-408e-9b5e-a41018057fb1</source>
+      <term>eb3ccb7b-4735-44f0-b9fe-79f5ae28c120</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>e3cd0111-be48-4bb8-87aa-5969efe0412e</id>
+      <mnemonic>TAX</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Tax ID Number</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>a241b37c-456d-4586-9a9e-c261ece9b7fc</id>
+      <source>cb6e4f7d-5a78-408e-9b5e-a41018057fb1</source>
+      <term>e3cd0111-be48-4bb8-87aa-5969efe0412e</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="true" insertIfNotExists="true">
+    <ReferenceTerm xmlns="http://santedb.org/model">
+      <id>edbc613f-0140-4ff6-8530-d2b0e02642d2</id>
+      <mnemonic>MRT</mnemonic>
+      <codeSystem>c4184b13-0934-4e8d-bff7-bafa72fe917e</codeSystem>
+      <name>
+        <language>en</language>
+        <value>Temporary Medical Record Number</value>
+      </name>
+    </ReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>906b1f8a-5f04-4a43-9882-70bf2259f96a</id>
+      <source>cb6e4fc3-5a78-408e-9b5e-a41018057fb1</source>
+      <term>edbc613f-0140-4ff6-8530-d2b0e02642d2</term>
+      <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+</dataset>
