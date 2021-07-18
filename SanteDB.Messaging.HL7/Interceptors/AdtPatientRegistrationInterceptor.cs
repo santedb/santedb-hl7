@@ -92,7 +92,7 @@ namespace SanteDB.Messaging.HL7.Interceptors
         /// </summary>
         protected void AdtPatientRegistrationInterceptor_Bundle(object sender, DataPersistedEventArgs<Bundle> e)
         {
-            foreach (var itm in e.Data.Item.Where(o => !e.Data.ExpansionKeys.Contains(o.Key.Value)).OfType<Patient>())
+            foreach (var itm in e.Data.Item.Where(o => e.Data.FocalObjects.Contains(o.Key.Value)).OfType<Patient>())
                 AdtPatientRegistrationInterceptor_Behavior(sender, new DataPersistedEventArgs<Patient>(itm, TransactionMode.Commit, e.Principal));
         }
 

@@ -17,7 +17,7 @@
  * Date: 2019-11-27
  */
 using SanteDB.Core;
-using SanteDB.Core.Auditing;
+using SanteDB.Core.Model.Audit;
 using SanteDB.Core.Configuration;
 using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Security;
@@ -295,7 +295,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 			catch (AuthenticationException e)
 			{
 				// Trace authentication error
-				AuditData ad = new AuditData(
+				AuditEventData ad = new AuditEventData(
 					DateTime.Now,
 					ActionType.Execute,
 					OutcomeIndicator.MinorFail,
@@ -327,7 +327,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 					}
 				};
 
-                ApplicationServiceContext.Current.GetService<IRepositoryService<AuditData>>()?.Insert(ad);
+                ApplicationServiceContext.Current.GetService<IRepositoryService<AuditEventData>>()?.Insert(ad);
                 ApplicationServiceContext.Current.GetService<IAuditDispatchService>()?.SendAudit(ad);
 				this.m_traceSource.TraceEvent(EventLevel.Error,  e.ToString());
 			}

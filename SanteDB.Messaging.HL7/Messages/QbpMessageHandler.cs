@@ -187,7 +187,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     offset.Value + count.GetValueOrDefault() < totalResults)
                     ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>()?.SetQueryTag(queryId, count);
 
-                AuditUtil.AuditQuery(Core.Auditing.OutcomeIndicator.Success, PipeParser.Encode(qpd, new EncodingCharacters('|', "^~\\&")), results.OfType<IdentifiedData>().ToArray());
+                AuditUtil.AuditQuery(Core.Model.Audit.OutcomeIndicator.Success, PipeParser.Encode(qpd, new EncodingCharacters('|', "^~\\&")), results.OfType<IdentifiedData>().ToArray());
 
                 // Query basics
                 return this.CreateQueryResponse(e, filterQuery, map, results, queryId, offset.GetValueOrDefault(), count ?? 100, totalResults);
@@ -195,7 +195,7 @@ namespace SanteDB.Messaging.HL7.Messages
             catch (Exception ex)
             {
                 this.m_traceSource.TraceEvent(EventLevel.Error,  "Error executing query: {0}", ex);
-                AuditUtil.AuditQuery<IdentifiedData>(Core.Auditing.OutcomeIndicator.MinorFail, PipeParser.Encode(qpd, new EncodingCharacters('|', "^~\\&")));
+                AuditUtil.AuditQuery<IdentifiedData>(Core.Model.Audit.OutcomeIndicator.MinorFail, PipeParser.Encode(qpd, new EncodingCharacters('|', "^~\\&")));
 
                 // Now we construct the response
                 return this.CreateNACK(map.ResponseType, e.Message, ex, e);

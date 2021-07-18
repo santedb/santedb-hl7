@@ -83,13 +83,13 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 insertBundle = repoService.Insert(insertBundle);
 
-                AuditUtil.AuditCreate(Core.Auditing.OutcomeIndicator.Success, null, insertBundle.Item.ToArray());
+                AuditUtil.AuditCreate(Core.Model.Audit.OutcomeIndicator.Success, null, insertBundle.Item.ToArray());
                 // Create response message
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"{patient.Key} created");
             }
             catch (Exception ex)
             {
-                AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, null, insertBundle.Item.ToArray());
+                AuditUtil.AuditUpdate(Core.Model.Audit.OutcomeIndicator.MinorFail, null, insertBundle.Item.ToArray());
                 throw new HL7ProcessingException("Error performing admit", null, null, 0, 0, ex);
             }
         }
@@ -111,14 +111,14 @@ namespace SanteDB.Messaging.HL7.Messages
                     throw new InvalidOperationException("Cannot find repository for Patient");
 
                 updateBundle = repoService.Save(updateBundle);
-                AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.Success, null, updateBundle.Item.ToArray());
+                AuditUtil.AuditUpdate(Core.Model.Audit.OutcomeIndicator.Success, null, updateBundle.Item.ToArray());
 
                 // Create response message
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"{patient.Key} updated");
             }
             catch(Exception ex)
             {
-                AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, null, updateBundle.Item.ToArray());
+                AuditUtil.AuditUpdate(Core.Model.Audit.OutcomeIndicator.MinorFail, null, updateBundle.Item.ToArray());
                 throw new HL7ProcessingException("Error performing admit", null, null, 0, 0, ex);
             }
 
@@ -157,7 +157,7 @@ namespace SanteDB.Messaging.HL7.Messages
             }
             catch (Exception ex)
             {
-                AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, null, bundle.Item.OfType<Bundle>());
+                AuditUtil.AuditUpdate(Core.Model.Audit.OutcomeIndicator.MinorFail, null, bundle.Item.OfType<Bundle>());
                 throw new HL7ProcessingException("Error performing merge", null, null, 0, 0, ex);
             }
             throw new NotImplementedException();
