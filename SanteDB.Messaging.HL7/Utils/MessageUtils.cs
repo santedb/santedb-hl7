@@ -122,7 +122,7 @@ namespace SanteDB.Messaging.HL7.Utils
                                 (ret as ITaggable)?.AddTag("$v2.group", current.GetStructureName());
                                 return ret;
                             }));
-                            retVal.ExpansionKeys.AddRange(parsed.ExpansionKeys);
+                            retVal.FocalObjects.AddRange(parsed.FocalObjects);
                         }
                     else if (current is AbstractSegment)
                     {
@@ -135,7 +135,13 @@ namespace SanteDB.Messaging.HL7.Utils
                             var parsed = handler.Parse(current as AbstractSegment, retVal.Item);
                             if (parsed.Any())
                             {
-                                retVal.ExpansionKeys.Add(parsed.First().Key.GetValueOrDefault());
+                                retVal.FocalObjects.AddRange(parsed
+                                    .OfType<ITaggable>()
+                                    .Where(o => o.GetTag(Hl7Constants.FocalObjectTag) == "true")
+                                    .OfType<IIdentifiedEntity>()
+                                    .Select(o => o.Key.GetValueOrDefault())
+                                    .Where(o => Guid.Empty != o)
+                                );
                                 retVal.Item.AddRange(parsed.Select(i =>
                                 {
                                     var ret = i.Clone();
@@ -149,12 +155,13 @@ namespace SanteDB.Messaging.HL7.Utils
                     {
                         var subObject = Parse(current as AbstractGroup);
                         retVal.Item.Add(subObject);
-                        retVal.ExpansionKeys.AddRange(subObject.ExpansionKeys);
+                        retVal.FocalObjects.AddRange(subObject.FocalObjects);
                     }
 
                     // Tag the objects 
                 }
             }
+
             return retVal;
 
         }

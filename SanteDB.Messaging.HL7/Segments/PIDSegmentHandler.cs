@@ -561,8 +561,10 @@ namespace SanteDB.Messaging.HL7.Segments
                 //        retVal.CreatedBy = user;
                 //}
 
-                
+
+                retVal.AddTag(Hl7Constants.FocalObjectTag, "true");
                 retCollection.Add(retVal);
+                
                 return retCollection;
             }
             catch (HL7ProcessingException e) // Just re-throw

@@ -25,5 +25,8 @@ namespace SanteDB.Messaging.HL7
     {
         // Trace source name
         public const string TraceSourceName = "SanteDB.Messaging.HL7";
+
+        // Focal object
+        public const string FocalObjectTag = "$hl7.focal";
     }
 }
