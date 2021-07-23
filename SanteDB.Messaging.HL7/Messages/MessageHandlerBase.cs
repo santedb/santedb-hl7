@@ -93,11 +93,13 @@ namespace SanteDB.Messaging.HL7.Messages
         {
             try
             {
-                this.Authenticate(e);
-                if (!this.Validate(e.Message))
-                    throw new ArgumentException("Invalid message");
+                using (this.Authenticate(e))
+                {
+                    if (!this.Validate(e.Message))
+                        throw new ArgumentException("Invalid message");
 
-                return this.HandleMessageInternal(e, MessageUtils.Parse(e.Message));
+                    return this.HandleMessageInternal(e, MessageUtils.Parse(e.Message));
+                }
             }
             catch (Exception ex)
             {
@@ -109,7 +111,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// Authetnicate
         /// </summary>
-        private void Authenticate(Hl7MessageReceivedEventArgs e)
+        private IDisposable Authenticate(Hl7MessageReceivedEventArgs e)
         {
             IPrincipal principal = null;
             var msh = e.Message.GetStructure("MSH") as MSH;
@@ -198,8 +200,8 @@ namespace SanteDB.Messaging.HL7.Messages
                 }
             // Pricipal
             if(principal != null)
-                AuthenticationContext.Current = new AuthenticationContext(principal);
-
+                return AuthenticationContext.EnterContext(principal);
+            return AuthenticationContext.EnterContext(AuthenticationContext.AnonymousPrincipal);
         }
 
         /// <summary>
