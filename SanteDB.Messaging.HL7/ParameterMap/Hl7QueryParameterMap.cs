@@ -184,6 +184,11 @@ namespace SanteDB.Messaging.HL7.ParameterMap
         [XmlAttribute("transform")]
         public String ValueTransform { get; set; }
 
+        /// <summary>
+        /// True if fuzzy is allowed
+        /// </summary>
+        [XmlAttribute("fuzzy")]
+        public bool AllowFuzzy { get; set; }
     }
 
 }

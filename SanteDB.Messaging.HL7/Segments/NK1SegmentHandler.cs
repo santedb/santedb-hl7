@@ -350,11 +350,16 @@ namespace SanteDB.Messaging.HL7.Segments
                 fieldNo = 7;
                 if (!nk1Segment.ContactRole.IsEmpty())
                 {
-                    retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Contact, retVal.Key)
+                    var existingConRole = patient.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Contact && retVal.Key == o.TargetEntityKey);
+                    if (existingConRole == null)
                     {
-                        SourceEntityKey = patient.Key,
-                        RelationshipRole = nk1Segment.ContactRole.ToModel(ContactRoleRelationship, true)
-                    });
+                        patient.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Contact, retVal.Key)
+                        {
+                            RelationshipRole = nk1Segment.ContactRole.ToModel(ContactRoleRelationship, true)
+                        });
+                    }
+                    else
+                        existingConRole.RelationshipRole = nk1Segment.ContactRole.ToModel(ContactRoleRelationship, true);
                 }
 
                 fieldNo = 16;
@@ -370,9 +375,18 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     foreach (var cit in nk1Segment.GetCitizenship())
                     {
-                        var places = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == AssigningAuthorityKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal);
-                        if (places.Count() == 1)
-                            retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Citizen, places.First().Key));
+                        var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == AssigningAuthorityKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                        if (place != null)
+                        {
+                            if (!retVal.Relationships.Any(r => r.RelationshipTypeKey == EntityRelationshipTypeKeys.Citizen && r.TargetEntityKey == place.Key))
+                            {
+                                retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Citizen, place.Key));
+                            }
+                        }
+                        else
+                        {
+                            throw new KeyNotFoundException($"Cannot find country with code {cit.Identifier.Value}");
+                        }
                     }
                 }
 
@@ -405,9 +419,10 @@ namespace SanteDB.Messaging.HL7.Segments
                 }
 
                 // Find the existing relationship on the patient
-
-                patient.Relationships.RemoveAll(o => o.SourceEntityKey == retValRelation.SourceEntityKey && o.TargetEntityKey == retValRelation.TargetEntityKey);
-                patient.Relationships.Add(retValRelation);
+                if(!patient.Relationships.Any(o => o.RelationshipTypeKey == retValRelation.RelationshipTypeKey && o.TargetEntityKey == retValRelation.TargetEntityKey))
+                {
+                    patient.Relationships.Add(retValRelation);
+                }
 
                 if (!context.Contains(retVal))
                     return new IdentifiedData[] { retVal };
