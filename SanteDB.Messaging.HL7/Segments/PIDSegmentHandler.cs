@@ -331,7 +331,8 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         else if (authority?.IsUnique == true)
                         {
-                            foundMother = personService.Get(Guid.Parse(id.IDNumber.Value)) ?? patientService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault();
+                            foundMother = personService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault() ?? 
+                                patientService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault();
                         }
 
                         if (foundMother != null)
