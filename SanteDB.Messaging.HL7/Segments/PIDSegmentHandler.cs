@@ -325,7 +325,7 @@ namespace SanteDB.Messaging.HL7.Segments
                             throw new HL7ProcessingException("Error processing mother's identifiers", "PID", pidSegment.SetIDPID.Value, 21, 3);
                         }
 
-                        if (authority.Key == this.m_configuration.LocalAuthority.Key && Guid.TryParse(id.IDNumber.Value, out Guid idNumberUuid))
+                        if ((authority.Key == this.m_configuration.LocalAuthority.Key || authority.DomainName == this.m_configuration.LocalAuthority.DomainName) && Guid.TryParse(id.IDNumber.Value, out Guid idNumberUuid))
                         {
                             foundMother = personService.Get(idNumberUuid) ?? patientService.Get(idNumberUuid);
                         }
