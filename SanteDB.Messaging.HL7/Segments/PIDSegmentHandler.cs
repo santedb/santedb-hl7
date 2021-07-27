@@ -306,14 +306,14 @@ namespace SanteDB.Messaging.HL7.Segments
 
                 fieldNo = 21;
                 // Mother's maiden name, create a relationship for mother
-                if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.MotherSIdentifierRepetitionsUsed > 0)
+                if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.GetMotherSIdentifier().Any(o=>!o.IsEmpty()))
                 {
                     var personService = ApplicationServiceContext.Current.GetService<IRepositoryService<Person>>();
                     Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o=>o.TargetEntity) as Person;
                     Person foundMother = null;
 
                     // Attempt to find the existing mother in the database based on ID 
-                    foreach (var id in pidSegment.GetMotherSIdentifier())
+                    foreach (var id in pidSegment.GetMotherSIdentifier().Where(o=>!o.IsEmpty()))
                     {
                         AssigningAuthority authority = null;
                         try
