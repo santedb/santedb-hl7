@@ -203,7 +203,7 @@ namespace SanteDB.Messaging.HL7.Segments
             // Primary language
             var lang = patient.LoadCollection<PersonLanguageCommunication>(nameof(Patient.LanguageCommunication)).FirstOrDefault(o => o.IsPreferred);
             if (lang != null)
-                retVal.PrimaryLanguage.Identifier.Value = lang.LanguageCode;
+                retVal.PrimaryLanguage.Identifier.Value = lang.LanguageCode.Trim();
 
             return new ISegment[] { retVal };
         }
