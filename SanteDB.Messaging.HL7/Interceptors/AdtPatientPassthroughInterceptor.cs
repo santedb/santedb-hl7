@@ -374,100 +374,101 @@ namespace SanteDB.Messaging.HL7.Interceptors
         /// </summary>
         protected void AdtPatientRegistrationInterceptor_Behavior(object sender, DataPersistingEventArgs<Patient> e)
         {
-            AuthenticationContext.Current = new AuthenticationContext(AuthenticationContext.SystemPrincipal);
-
-            e.Cancel = true;
-
-            Patient pat = e.Data;
-
-            // Perform notification
-            IMessage notificationMessage;
-            IGroup patientGroup;
-
-            if (pat.PreviousVersionKey == null)
+            using (AuthenticationContext.EnterSystemContext())
             {
-                // Set the tag value and send an ADMIT
-                patientGroup = notificationMessage = new ADT_A01();
-                (notificationMessage.GetStructure("MSH") as MSH).MessageType.TriggerEvent.Value = "A04";
-                (notificationMessage.GetStructure("MSH") as MSH).MessageType.MessageStructure.Value = "ADT_A01";
-            }
-            else if (pat.Relationships.Any(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Replaces && o.EffectiveVersionSequenceId == pat.VersionSequence))
-            {
-                // Set the tag value and send an ADMIT
-                notificationMessage = new ADT_A39();
-                patientGroup = (notificationMessage as ADT_A39).GetPATIENT();
-                (notificationMessage.GetStructure("MSH") as MSH).MessageType.TriggerEvent.Value = "A40";
-                (notificationMessage.GetStructure("MSH") as MSH).MessageType.MessageStructure.Value = "ADT_A40";
 
-                foreach (var mrg in pat.Relationships.Where(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Replaces && o.EffectiveVersionSequenceId == pat.VersionSequence))
+                e.Cancel = true;
+
+                Patient pat = e.Data;
+
+                // Perform notification
+                IMessage notificationMessage;
+                IGroup patientGroup;
+
+                if (pat.PreviousVersionKey == null)
                 {
-                    var seg = patientGroup.GetStructure("MRG", patientGroup.GetAll("MRG").Length) as MRG;
+                    // Set the tag value and send an ADMIT
+                    patientGroup = notificationMessage = new ADT_A01();
+                    (notificationMessage.GetStructure("MSH") as MSH).MessageType.TriggerEvent.Value = "A04";
+                    (notificationMessage.GetStructure("MSH") as MSH).MessageType.MessageStructure.Value = "ADT_A01";
+                }
+                else if (pat.Relationships.Any(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Replaces && o.EffectiveVersionSequenceId == pat.VersionSequence))
+                {
+                    // Set the tag value and send an ADMIT
+                    notificationMessage = new ADT_A39();
+                    patientGroup = (notificationMessage as ADT_A39).GetPATIENT();
+                    (notificationMessage.GetStructure("MSH") as MSH).MessageType.TriggerEvent.Value = "A40";
+                    (notificationMessage.GetStructure("MSH") as MSH).MessageType.MessageStructure.Value = "ADT_A40";
 
-                    if (this.Configuration.ExportDomains.Any(o=>o.DomainName == this.m_configuration.LocalAuthority.DomainName))
+                    foreach (var mrg in pat.Relationships.Where(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Replaces && o.EffectiveVersionSequenceId == pat.VersionSequence))
                     {
-                        var key = seg.PriorAlternatePatientIDRepetitionsUsed;
-                        seg.GetPriorAlternatePatientID(key).IDNumber.Value = mrg.TargetEntityKey.Value.ToString();
-                        seg.GetPriorAlternatePatientID(key).IdentifierTypeCode.Value = "PI";
-                        seg.GetPriorAlternatePatientID(key).AssigningAuthority.NamespaceID.Value = this.m_configuration.LocalAuthority.DomainName;
-                        seg.GetPriorAlternatePatientID(key).AssigningAuthority.UniversalID.Value = this.m_configuration.LocalAuthority.Oid;
-                        seg.GetPriorAlternatePatientID(key).AssigningAuthority.UniversalIDType.Value = "ISO";
-                    }
+                        var seg = patientGroup.GetStructure("MRG", patientGroup.GetAll("MRG").Length) as MRG;
 
-                    // Alternate identifiers
-                    foreach (var extrn in pat.Identifiers)
-                    {
-                        var key = seg.PriorAlternatePatientIDRepetitionsUsed;
-                        if (this.Configuration.ExportDomains.Any(o=>o.DomainName == extrn.LoadProperty<AssigningAuthority>("Authority").DomainName))
+                        if (this.Configuration.ExportDomains.Any(o => o.DomainName == this.m_configuration.LocalAuthority.DomainName))
                         {
-                            seg.GetPriorAlternatePatientID(key).IDNumber.Value = extrn.Value;
-                            seg.GetPriorAlternatePatientID(key).IdentifierTypeCode.Value = "PT";
-                            seg.GetPriorAlternatePatientID(key).AssigningAuthority.NamespaceID.Value = extrn.LoadProperty<AssigningAuthority>("Authority")?.DomainName;
-                            seg.GetPriorAlternatePatientID(key).AssigningAuthority.UniversalID.Value = extrn.LoadProperty<AssigningAuthority>("Authority")?.Oid;
+                            var key = seg.PriorAlternatePatientIDRepetitionsUsed;
+                            seg.GetPriorAlternatePatientID(key).IDNumber.Value = mrg.TargetEntityKey.Value.ToString();
+                            seg.GetPriorAlternatePatientID(key).IdentifierTypeCode.Value = "PI";
+                            seg.GetPriorAlternatePatientID(key).AssigningAuthority.NamespaceID.Value = this.m_configuration.LocalAuthority.DomainName;
+                            seg.GetPriorAlternatePatientID(key).AssigningAuthority.UniversalID.Value = this.m_configuration.LocalAuthority.Oid;
                             seg.GetPriorAlternatePatientID(key).AssigningAuthority.UniversalIDType.Value = "ISO";
+                        }
+
+                        // Alternate identifiers
+                        foreach (var extrn in pat.Identifiers)
+                        {
+                            var key = seg.PriorAlternatePatientIDRepetitionsUsed;
+                            if (this.Configuration.ExportDomains.Any(o => o.DomainName == extrn.LoadProperty<AssigningAuthority>("Authority").DomainName))
+                            {
+                                seg.GetPriorAlternatePatientID(key).IDNumber.Value = extrn.Value;
+                                seg.GetPriorAlternatePatientID(key).IdentifierTypeCode.Value = "PT";
+                                seg.GetPriorAlternatePatientID(key).AssigningAuthority.NamespaceID.Value = extrn.LoadProperty<AssigningAuthority>("Authority")?.DomainName;
+                                seg.GetPriorAlternatePatientID(key).AssigningAuthority.UniversalID.Value = extrn.LoadProperty<AssigningAuthority>("Authority")?.Oid;
+                                seg.GetPriorAlternatePatientID(key).AssigningAuthority.UniversalIDType.Value = "ISO";
+                            }
                         }
                     }
                 }
-            }
-            else
-            {
-                // Set the tag value and send an ADMIT
-                patientGroup = notificationMessage = new ADT_A01();
-                (notificationMessage.GetStructure("MSH") as MSH).MessageType.TriggerEvent.Value = "A08";
-                (notificationMessage.GetStructure("MSH") as MSH).MessageType.MessageStructure.Value = "ADT_A08";
-            }
-
-            if (!String.IsNullOrEmpty(this.Configuration.Version))
-            {
-                (notificationMessage.GetStructure("MSH") as MSH).VersionID.VersionID.Value = this.Configuration.Version;
-            }
-
-            // Add SFT
-            if (new Version(this.Configuration.Version ?? "2.5") >= new Version(2, 4))
-                (notificationMessage.GetStructure("SFT", 0) as SFT).SetDefault();
-
-            // Create the PID segment
-            SegmentHandlers.GetSegmentHandler("PID").Create(e.Data, patientGroup, this.Configuration.ExportDomains.ToArray());
-            SegmentHandlers.GetSegmentHandler("PD1").Create(e.Data, patientGroup, this.Configuration.ExportDomains.ToArray());
-            SegmentHandlers.GetSegmentHandler("NK1").Create(e.Data, patientGroup, this.Configuration.ExportDomains.ToArray());
-            //SegmentHandlers.GetSegmentHandler("EVN").Create(e.Data, patientGroup, this.Configuration.ExportDomains.ToArray());
-
-            foreach (var itm in this.Configuration.Endpoints)
-            {
-                try
+                else
                 {
-                    // TODO: Create an HL7 Queue
-                    (notificationMessage.GetStructure("MSH") as MSH).SetDefault(itm.ReceivingDevice, itm.ReceivingFacility, itm.SecurityToken);
-                    var response = itm.GetSender().SendAndReceive(notificationMessage);
-
-                    if (!(response.GetStructure("MSA") as MSA).AcknowledgmentCode.Value.EndsWith("A"))
-                        throw new HL7Exception("Remote server rejected message");
+                    // Set the tag value and send an ADMIT
+                    patientGroup = notificationMessage = new ADT_A01();
+                    (notificationMessage.GetStructure("MSH") as MSH).MessageType.TriggerEvent.Value = "A08";
+                    (notificationMessage.GetStructure("MSH") as MSH).MessageType.MessageStructure.Value = "ADT_A08";
                 }
-                catch (Exception ex)
+
+                if (!String.IsNullOrEmpty(this.Configuration.Version))
                 {
-                    this.m_tracer.TraceEvent(EventLevel.Error,  "Error dispatching message {0} to {1}: {2} \r\n {3}", pat, itm.Address, ex, new PipeParser().Encode(notificationMessage));
+                    (notificationMessage.GetStructure("MSH") as MSH).VersionID.VersionID.Value = this.Configuration.Version;
+                }
+
+                // Add SFT
+                if (new Version(this.Configuration.Version ?? "2.5") >= new Version(2, 4))
+                    (notificationMessage.GetStructure("SFT", 0) as SFT).SetDefault();
+
+                // Create the PID segment
+                SegmentHandlers.GetSegmentHandler("PID").Create(e.Data, patientGroup, this.Configuration.ExportDomains.ToArray());
+                SegmentHandlers.GetSegmentHandler("PD1").Create(e.Data, patientGroup, this.Configuration.ExportDomains.ToArray());
+                SegmentHandlers.GetSegmentHandler("NK1").Create(e.Data, patientGroup, this.Configuration.ExportDomains.ToArray());
+                //SegmentHandlers.GetSegmentHandler("EVN").Create(e.Data, patientGroup, this.Configuration.ExportDomains.ToArray());
+
+                foreach (var itm in this.Configuration.Endpoints)
+                {
+                    try
+                    {
+                        // TODO: Create an HL7 Queue
+                        (notificationMessage.GetStructure("MSH") as MSH).SetDefault(itm.ReceivingDevice, itm.ReceivingFacility, itm.SecurityToken);
+                        var response = itm.GetSender().SendAndReceive(notificationMessage);
+
+                        if (!(response.GetStructure("MSA") as MSA).AcknowledgmentCode.Value.EndsWith("A"))
+                            throw new HL7Exception("Remote server rejected message");
+                    }
+                    catch (Exception ex)
+                    {
+                        this.m_tracer.TraceEvent(EventLevel.Error, "Error dispatching message {0} to {1}: {2} \r\n {3}", pat, itm.Address, ex, new PipeParser().Encode(notificationMessage));
+                    }
                 }
             }
-
         }
 
         /// <summary>

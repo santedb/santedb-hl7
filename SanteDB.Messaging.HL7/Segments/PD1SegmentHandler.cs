@@ -131,8 +131,14 @@ namespace SanteDB.Messaging.HL7.Segments
                             place = sdlRepo.Get(Guid.Parse(idnumber), null, AuthenticationContext.SystemPrincipal);
                         else
                             place = sdlRepo.Query(o => o.ClassConceptKey == EntityClassKeys.ServiceDeliveryLocation && o.Identifiers.Any(i => i.Value == idnumber && i.Authority.Key == authority.Key), AuthenticationContext.SystemPrincipal).SingleOrDefault();
+                        
                         if (place != null)
-                            retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.DedicatedServiceDeliveryLocation, place));
+                        {
+                            if (!retVal.Relationships.Any(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.DedicatedServiceDeliveryLocation && o.TargetEntityKey == place.Key))
+                            {
+                                retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.DedicatedServiceDeliveryLocation, place));
+                            }
+                        }
                         else
                             throw new KeyNotFoundException($"Facility {idnumber} could not be found");
                     }

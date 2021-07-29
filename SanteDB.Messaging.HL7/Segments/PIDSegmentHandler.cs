@@ -203,7 +203,7 @@ namespace SanteDB.Messaging.HL7.Segments
             // Primary language
             var lang = patient.LoadCollection<PersonLanguageCommunication>(nameof(Patient.LanguageCommunication)).FirstOrDefault(o => o.IsPreferred);
             if (lang != null)
-                retVal.PrimaryLanguage.Identifier.Value = lang.LanguageCode;
+                retVal.PrimaryLanguage.Identifier.Value = lang.LanguageCode.Trim();
 
             return new ISegment[] { retVal };
         }
@@ -306,13 +306,14 @@ namespace SanteDB.Messaging.HL7.Segments
 
                 fieldNo = 21;
                 // Mother's maiden name, create a relationship for mother
-                if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.MotherSIdentifierRepetitionsUsed > 0)
+                if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.GetMotherSIdentifier().Any(o=>!o.IsEmpty()))
                 {
                     var personService = ApplicationServiceContext.Current.GetService<IRepositoryService<Person>>();
+                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o=>o.TargetEntity) as Person;
                     Person foundMother = null;
 
-                    // Attempt to find the mother
-                    foreach (var id in pidSegment.GetMotherSIdentifier())
+                    // Attempt to find the existing mother in the database based on ID 
+                    foreach (var id in pidSegment.GetMotherSIdentifier().Where(o=>!o.IsEmpty()))
                     {
                         AssigningAuthority authority = null;
                         try
@@ -324,15 +325,25 @@ namespace SanteDB.Messaging.HL7.Segments
                             throw new HL7ProcessingException("Error processing mother's identifiers", "PID", pidSegment.SetIDPID.Value, 21, 3);
                         }
 
-                        if (authority.Key == this.m_configuration.LocalAuthority.Key)
-                            motherEntity = personService.Get(Guid.Parse(id.IDNumber.Value), Guid.Empty);
+                        if ((authority.Key == this.m_configuration.LocalAuthority.Key || authority.DomainName == this.m_configuration.LocalAuthority.DomainName) && Guid.TryParse(id.IDNumber.Value, out Guid idNumberUuid))
+                        {
+                            foundMother = personService.Get(idNumberUuid) ?? patientService.Get(idNumberUuid);
+                        }
                         else if (authority?.IsUnique == true)
-                            motherEntity = personService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault();
+                        {
+                            foundMother = personService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault() ?? 
+                                patientService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault();
+                        }
+
+                        if (foundMother != null)
+                        {
+                            break;
+                        }
                     }
 
                     fieldNo = 6;
-                    // Mother doesn't exist, so add it
-                    if (foundMother == null || foundMother is Patient)
+                    // Mother doesn't exist and there's no mother currently, so add it
+                    if (foundMother == null && existingMother == null)
                     {
                         motherEntity = new Person()
                         {
@@ -341,22 +352,35 @@ namespace SanteDB.Messaging.HL7.Segments
                             Names = pidSegment.GetMotherSMaidenName().ToModel(NameUseKeys.MaidenName).ToList(),
                             StatusConceptKey = StatusKeys.Active
                         };
-                        if (foundMother != null)
-                        {
-                            retCollection.Add(new EntityRelationship(EntityRelationshipTypeKeys.EquivalentEntity, motherEntity.Key) { SourceEntityKey = foundMother.Key });
-                        }
                         retCollection.Add(motherEntity);
+                    }
+                    else if(existingMother != null) // existing mother - update
+                    {
+                        if (!existingMother.LoadCollection(o => o.Identifiers).Any()) // update identifiers 
+                        {
+                            existingMother.Identifiers = pidSegment.GetMotherSIdentifier().ToModel().ToList();
+                        }
+                        existingMother.Names = pidSegment.GetMotherSMaidenName().ToModel(NameUseKeys.MaidenName).ToList();
+                        motherEntity = existingMother;
+                        retCollection.Add(motherEntity);
+
                     }
                     else
                         motherEntity = foundMother;
 
-                    retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Mother, motherEntity.Key));
 
                     var existingRelationship = retVal.Relationships.FirstOrDefault(r => r.SourceEntityKey == retVal.Key && r.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother);
-                    if (existingRelationship != null && existingRelationship.TargetEntityKey != motherEntity.Key)
+                    if (existingRelationship == null)
                     {
+                        retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Mother, motherEntity.Key));
+                    }
+                    else if (existingRelationship.TargetEntityKey != motherEntity.Key)
+                    {
+                        // Was the mother found? 
                         existingRelationship.ObsoleteVersionSequenceId = Int32.MaxValue;
                         retCollection.Add(existingRelationship);
+                        retVal.Relationships.Remove(existingRelationship);
+                        retCollection.Add(new EntityRelationship(EntityRelationshipTypeKeys.Mother, motherEntity.Key) { SourceEntityKey = retVal.Key });
                     }
 
                 }
@@ -498,10 +522,10 @@ namespace SanteDB.Messaging.HL7.Segments
                         // Still conflicts? Check for same region as address
                         if (places.Count() > 1 && !this.m_configuration.StrictMetadataMatch)
                         {
-                            var placeClasses = places.GroupBy(o=>o.ClassConceptKey).OrderBy(o => Array.IndexOf(AddressHierarchy, o.Key.Value));
+                            var placeClasses = places.GroupBy(o => o.ClassConceptKey).OrderBy(o => Array.IndexOf(AddressHierarchy, o.Key.Value));
                             // Take the first wrung of the address hierarchy
                             places = placeClasses.First();
-                            if(places.Count() > 1) // Still more than one type of place
+                            if (places.Count() > 1) // Still more than one type of place
                                 places = places.Where(p => p.LoadCollection<EntityAddress>(nameof(Entity.Addresses)).Any(a => a.Component.All(a2 => retVal.LoadCollection<EntityAddress>(nameof(Entity.Addresses)).Any(pa => pa.Component.Any(pc => pc.Value == a2.Value && pc.ComponentTypeKey == a2.ComponentTypeKey)))));
                         }
 
@@ -530,11 +554,18 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     foreach (var cit in pidSegment.GetCitizenship())
                     {
-                        var places = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == AssigningAuthorityKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal);
-                        if (places.Count() == 1)
-                            retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Citizen, places.First().Key));
+                        var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == AssigningAuthorityKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                        if (place != null)
+                        {
+                            if (!retVal.Relationships.Any(r => r.RelationshipTypeKey == EntityRelationshipTypeKeys.Citizen && r.TargetEntityKey == place.Key))
+                            {
+                                retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Citizen, place.Key));
+                            }
+                        }
                         else
+                        {
                             throw new KeyNotFoundException($"Cannot find country with code {cit.Identifier.Value}");
+                        }
 
                     }
                 }
@@ -561,8 +592,10 @@ namespace SanteDB.Messaging.HL7.Segments
                 //        retVal.CreatedBy = user;
                 //}
 
-                
+
+                retVal.AddTag(Hl7Constants.FocalObjectTag, "true");
                 retCollection.Add(retVal);
+
                 return retCollection;
             }
             catch (HL7ProcessingException e) // Just re-throw

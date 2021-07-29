@@ -135,7 +135,13 @@ namespace SanteDB.Messaging.HL7.Utils
                             var parsed = handler.Parse(current as AbstractSegment, retVal.Item);
                             if (parsed.Any())
                             {
-                                retVal.FocalObjects.Add(parsed.First().Key.GetValueOrDefault());
+                                retVal.FocalObjects.AddRange(parsed
+                                    .OfType<ITaggable>()
+                                    .Where(o => o.GetTag(Hl7Constants.FocalObjectTag) == "true")
+                                    .OfType<IIdentifiedEntity>()
+                                    .Select(o => o.Key.GetValueOrDefault())
+                                    .Where(o => Guid.Empty != o)
+                                );
                                 retVal.Item.AddRange(parsed.Select(i =>
                                 {
                                     var ret = i.Clone();
@@ -155,6 +161,7 @@ namespace SanteDB.Messaging.HL7.Utils
                     // Tag the objects 
                 }
             }
+
             return retVal;
 
         }
@@ -223,41 +230,48 @@ namespace SanteDB.Messaging.HL7.Utils
                         break;
                     case "string": // Enables phonetic matching
                         String transform = null;
-                        switch ((matchAlgorithm ?? "approx").ToLower())
+                        if (parm.AllowFuzzy)
                         {
-                            case "approx":
-                                transform = ":(approx|{0})";
-                                break;
-                            case "exact":
-                                transform = "{0}";
-                                break;
-                            case "pattern":
-                                transform = "~*{0}*";
-                                break;
-                            case "soundex":
-                                if (matchStrength.HasValue)
-                                    transform = ":(soundex){0}";
-                                else
-                                    transform = $":(phonetic_diff|{{0}},soundex)<={matchStrength * qvalue.Length}";
-                                break;
-                            case "metaphone":
-                                if (matchStrength.HasValue)
-                                    transform = ":(metaphone){0}";
-                                else
-                                    transform = $":(phonetic_diff|{{0}},metaphone)<={matchStrength * qvalue.Length}";
-                                break;
-                            case "dmetaphone":
-                                if (matchStrength.HasValue)
-                                    transform = ":(dmetaphone){0}";
-                                else
-                                    transform = $":(phonetic_diff|{{0}},dmetaphone)<={matchStrength * qvalue.Length}";
-                                break;
-                            case "alias":
-                                transform = $":(alias|{{0}})>={matchStrength ?? 3}";
-                                break;
-                            default:
-                                transform = ":(approx|{0})";
-                                break;
+                            switch ((matchAlgorithm ?? "pattern").ToLower())
+                            {
+                                case "approx":
+                                    transform = ":(approx|{0})";
+                                    break;
+                                case "exact":
+                                    transform = "{0}";
+                                    break;
+                                case "pattern":
+                                    transform = "~*{0}*";
+                                    break;
+                                case "soundex":
+                                    if (matchStrength.HasValue)
+                                        transform = ":(soundex){0}";
+                                    else
+                                        transform = $":(phonetic_diff|{{0}},soundex)<={matchStrength * qvalue.Length}";
+                                    break;
+                                case "metaphone":
+                                    if (matchStrength.HasValue)
+                                        transform = ":(metaphone){0}";
+                                    else
+                                        transform = $":(phonetic_diff|{{0}},metaphone)<={matchStrength * qvalue.Length}";
+                                    break;
+                                case "dmetaphone":
+                                    if (matchStrength.HasValue)
+                                        transform = ":(dmetaphone){0}";
+                                    else
+                                        transform = $":(phonetic_diff|{{0}},dmetaphone)<={matchStrength * qvalue.Length}";
+                                    break;
+                                case "alias":
+                                    transform = $":(alias|{{0}})>={matchStrength ?? 3}";
+                                    break;
+                                default:
+                                    transform = "~{0}";
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            transform = "{0}";
                         }
                         retVal.Add(parm.ModelName, transform.Split(',').Select(tx => String.Format(tx, qvalue)).ToList());
                         break;

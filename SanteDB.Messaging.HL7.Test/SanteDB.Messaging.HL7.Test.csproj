@@ -29,6 +29,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -86,6 +87,10 @@
     <Copy SourceFiles="$(SolutionDir)\Solution Items\santedb_test.fdb" DestinationFolder="$(TargetDir)" />
   </Target>
   <ItemGroup>
+    <ProjectReference Include="..\..\santedb-cache-memory\SanteDB.Caching.Memory\SanteDB.Caching.Memory.csproj">
+      <Project>{8553abc7-abfa-4a21-b0e8-68b7de76129d}</Project>
+      <Name>SanteDB.Caching.Memory</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\santedb-mdm\SanteDB.Persistence.MDM\SanteDB.Persistence.MDM.csproj">
       <Project>{20960967-3647-41a2-9df6-3e15e2aa7019}</Project>
       <Name>SanteDB.Persistence.MDM</Name>
