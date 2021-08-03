@@ -377,7 +377,8 @@ namespace SanteDB.Messaging.HL7.Segments
                     else if (existingRelationship.TargetEntityKey != motherEntity.Key)
                     {
                         // Was the mother found? 
-                        existingRelationship.ObsoleteVersionSequenceId = Int32.MaxValue;
+
+                        existingRelationship.BatchOperation = BatchOperationType.Obsolete;
                         retCollection.Add(existingRelationship);
                         retVal.Relationships.Remove(existingRelationship);
                         retCollection.Add(new EntityRelationship(EntityRelationshipTypeKeys.Mother, motherEntity.Key) { SourceEntityKey = retVal.Key });
