@@ -198,8 +198,12 @@ namespace SanteDB.Messaging.HL7.Messages
                         principal = AuthenticationContext.AnonymousPrincipal;
                         break;
                 }
+
+            // Clear authentication cache for principal (NB: we're doing this because we're not establishing a session)
+            ApplicationServiceContext.Current.GetService<IPolicyDecisionService>().ClearCache(principal);
+
             // Pricipal
-            if(principal != null)
+            if (principal != null)
                 return AuthenticationContext.EnterContext(principal);
             return AuthenticationContext.EnterContext(AuthenticationContext.AnonymousPrincipal);
         }
