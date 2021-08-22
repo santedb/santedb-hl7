@@ -1,5 +1,7 @@
 ﻿/*
- * Portions Copyright 2019-2020, Fyfe Software Inc. and the SanteSuite Contributors (See NOTICE)
+ * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
+ * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you 
  * may not use this file except in compliance with the License. You may 
@@ -13,8 +15,8 @@
  * License for the specific language governing permissions and limitations under 
  * the License.
  * 
- * User: fyfej (Justin Fyfe)
- * Date: 2019-11-27
+ * User: fyfej
+ * Date: 2021-8-5
  */
 using System;
 using System.Collections.Generic;
