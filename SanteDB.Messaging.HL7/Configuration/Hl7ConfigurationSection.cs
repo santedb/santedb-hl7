@@ -105,6 +105,12 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// </summary>
         [XmlAttribute("requireAppAuth")]
         public bool RequireAuthenticatedApplication { get; set; }
+
+        /// <summary>
+        /// Strict assigning authority 
+        /// </summary>
+        [XmlAttribute("strictCx4")]
+        public bool StrictAssigningAuthorities { get; set; }
     }
 
     /// <summary>

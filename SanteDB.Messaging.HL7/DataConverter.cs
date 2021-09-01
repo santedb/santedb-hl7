@@ -27,6 +27,7 @@ using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.DataTypes;
 using SanteDB.Core.Model.Entities;
 using SanteDB.Core.Security;
+using SanteDB.Core.Security.Principal;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
@@ -35,6 +36,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Security;
+using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -375,7 +378,7 @@ namespace SanteDB.Messaging.HL7
                 if (assigningAuthority == null)
                     throw new HL7DatatypeProcessingException("Error processing HD", 1, new KeyNotFoundException($"Authority {id.NamespaceID.Value} not found"));
             }
-
+            
             if (!string.IsNullOrEmpty(id.UniversalID.Value))
             {
                 var tAssigningAuthority = assigningAuthorityRepositoryService.Get(new Uri($"urn:oid:{id.UniversalID.Value}"));
@@ -388,6 +391,25 @@ namespace SanteDB.Messaging.HL7
                     assigningAuthority = tAssigningAuthority;
             }
 
+            // Fuzzy lookup based on principal 
+            if(!m_configuration.StrictAssigningAuthorities && id.NamespaceID.IsEmpty() && id.UniversalID.IsEmpty())
+            {
+                var claimsPrincipal = AuthenticationContext.Current.Principal as ClaimsPrincipal;
+                if(claimsPrincipal == null)
+                {
+                    throw new HL7DatatypeProcessingException($"Cannot perform application<>identity domain XREF - authentication provider must be claims principal", 4);
+                }
+                var appPrincipal = claimsPrincipal.Identities.OfType<IApplicationIdentity>().FirstOrDefault();
+                if(appPrincipal == null)
+                {
+                    throw new SecurityException($"Cannot perform application<>identity domain XREF - no application principal present");
+                }
+                assigningAuthority = assigningAuthorityRepositoryService.Find(o => o.AssigningApplication.Name == appPrincipal.Name, 0, 2, out int tr).FirstOrDefault();
+                if(tr > 1)
+                {
+                    throw new HL7DatatypeProcessingException($"Ambiguous authority - {appPrincipal.Name} there are {tr} candidates but expected 1.", 4);
+                }
+            }
             return assigningAuthority;
         }
 
