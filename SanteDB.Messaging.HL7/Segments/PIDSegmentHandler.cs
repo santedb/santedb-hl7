@@ -246,8 +246,12 @@ namespace SanteDB.Messaging.HL7.Segments
                             throw new HL7ProcessingException("Error processig assigning authority", "PID", pidSegment.SetIDPID.Value, 3, 4, e);
                         }
 
+                        // Authority not found?
                         if (authority == null)
+                        {
                             throw new HL7ProcessingException($"No authority configured for {id.AssigningAuthority.NamespaceID.Value}", "PID", pidSegment.SetIDPID.Value, 3, 4);
+                        }
+
                         Guid idguid = Guid.Empty;
                         Patient found = null;
                         if (authority.Key == this.m_configuration.LocalAuthority.Key)
