@@ -15,6 +15,7 @@ using NHapi.Model.V25.Message;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Entities;
 using NUnit.Framework;
+using SanteDB.Core.Security.Services;
 
 namespace SanteDB.Messaging.HL7.Test
 {
@@ -38,6 +39,7 @@ namespace SanteDB.Messaging.HL7.Test
             // Create the test harness device / application
             var securityDevService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityDevice>>();
             var securityAppService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityApplication>>();
+            var pipService = ApplicationServiceContext.Current.GetService<IPolicyInformationService>();
             var metadataService = ApplicationServiceContext.Current.GetService<IAssigningAuthorityRepositoryService>();
             AuthenticationContext.EnterSystemContext();
             // Create device
@@ -46,8 +48,8 @@ namespace SanteDB.Messaging.HL7.Test
                 DeviceSecret = "DEVICESECRET",
                 Name = "TEST_HARNESS|TEST"
             };
-            dev.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
             dev = securityDevService.Insert(dev);
+            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService);
 
             // Create device
             dev = new SecurityDevice()
@@ -55,19 +57,16 @@ namespace SanteDB.Messaging.HL7.Test
                 DeviceSecret = "DEVICESECRET",
                 Name = "TEST_HARNESS|MASTER"
             };
-            dev.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
-            dev.AddPolicy("1.3.6.1.4.1.33349.3.1.5.9.2.6");
             dev = securityDevService.Insert(dev);
+            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, "1.3.6.1.4.1.33349.3.1.5.9.2.6");
 
             var app = new SecurityApplication()
             {
                 Name = "TEST_HARNESS",
                 ApplicationSecret = "APPLICATIONSECRET"
             };
-            app.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
-            app.AddPolicy(PermissionPolicyIdentifiers.UnrestrictedClinicalData);
-            app.AddPolicy(PermissionPolicyIdentifiers.ReadMetadata);
             app = securityAppService.Insert(app);
+            pipService.AddPolicies(app, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, PermissionPolicyIdentifiers.UnrestrictedClinicalData, PermissionPolicyIdentifiers.ReadMetadata);
             metadataService.Insert(new Core.Model.DataTypes.AssigningAuthority("TEST", "TEST", "1.2.3.4.5.6.7")
             {
                 IsUnique = true,
@@ -80,18 +79,16 @@ namespace SanteDB.Messaging.HL7.Test
                 DeviceSecret = "DEVICESECRET2",
                 Name = "TEST_HARNESS2|TEST"
             };
-            dev.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
             dev = securityDevService.Insert(dev);
+            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService);
 
             app = new SecurityApplication()
             {
                 Name = "TEST_HARNESS2",
                 ApplicationSecret = "APPLICATIONSECRET2"
             };
-            app.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
-            app.AddPolicy(PermissionPolicyIdentifiers.UnrestrictedClinicalData);
-            app.AddPolicy(PermissionPolicyIdentifiers.ReadMetadata);
             app = securityAppService.Insert(app);
+            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService);
         }
 
         /// <summary>
