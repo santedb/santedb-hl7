@@ -1,5 +1,7 @@
 ﻿/*
- * Portions Copyright 2019-2020, Fyfe Software Inc. and the SanteSuite Contributors (See NOTICE)
+ * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
+ * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you 
  * may not use this file except in compliance with the License. You may 
@@ -13,8 +15,8 @@
  * License for the specific language governing permissions and limitations under 
  * the License.
  * 
- * User: fyfej (Justin Fyfe)
- * Date: 2019-11-27
+ * User: fyfej
+ * Date: 2021-8-5
  */
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Acts;
@@ -244,8 +246,12 @@ namespace SanteDB.Messaging.HL7.Segments
                             throw new HL7ProcessingException("Error processig assigning authority", "PID", pidSegment.SetIDPID.Value, 3, 4, e);
                         }
 
+                        // Authority not found?
                         if (authority == null)
+                        {
                             throw new HL7ProcessingException($"No authority configured for {id.AssigningAuthority.NamespaceID.Value}", "PID", pidSegment.SetIDPID.Value, 3, 4);
+                        }
+
                         Guid idguid = Guid.Empty;
                         Patient found = null;
                         if (authority.Key == this.m_configuration.LocalAuthority.Key)
@@ -377,7 +383,8 @@ namespace SanteDB.Messaging.HL7.Segments
                     else if (existingRelationship.TargetEntityKey != motherEntity.Key)
                     {
                         // Was the mother found? 
-                        existingRelationship.ObsoleteVersionSequenceId = Int32.MaxValue;
+
+                        existingRelationship.BatchOperation = BatchOperationType.Obsolete;
                         retCollection.Add(existingRelationship);
                         retVal.Relationships.Remove(existingRelationship);
                         retCollection.Add(new EntityRelationship(EntityRelationshipTypeKeys.Mother, motherEntity.Key) { SourceEntityKey = retVal.Key });
