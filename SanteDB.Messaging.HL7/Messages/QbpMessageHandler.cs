@@ -37,6 +37,7 @@ using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.IO;
@@ -50,6 +51,7 @@ namespace SanteDB.Messaging.HL7.Messages
     /// <summary>
     /// Query by parameter messge handler
     /// </summary>
+    [DisplayName("SanteDB QBP Message Handler")]
     public class QbpMessageHandler : MessageHandlerBase
     {
 
