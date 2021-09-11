@@ -106,6 +106,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 					if(value && this.ClientCaCertificate == null)
                     {
 						this.ClientCaCertificate = new X509ConfigurationElement();
+						this.ClientCaCertificate.ValidationOnly = true;
                     }
 				}
 			}
@@ -278,7 +279,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 
 						this.m_traceSource.TraceInfo("Received message from sllp://{0} : {1}", tcpClient.Client.RemoteEndPoint, messageData.ToString());
 
-						messageArgs = new AuthenticatedHl7MessageReceivedEventArgs(message, localEndpoint, remoteEndpoint, DateTime.Now, stream.RemoteCertificate.GetPublicKey());
+						messageArgs = new AuthenticatedHl7MessageReceivedEventArgs(message, localEndpoint, remoteEndpoint, DateTime.Now, stream.RemoteCertificate?.GetPublicKey());
 
                         HL7OperationContext.Current = new HL7OperationContext(messageArgs);
 

@@ -130,9 +130,8 @@ namespace SanteDB.Messaging.HL7.Messages
                                     .ToArray());
                 principal = ApplicationServiceContext.Current.GetService<ISessionIdentityProviderService>().Authenticate(session) as IClaimsPrincipal;
             }
-            else if (e is AuthenticatedHl7MessageReceivedEventArgs)
+            else if (e is AuthenticatedHl7MessageReceivedEventArgs auth && auth.AuthorizationToken != null)
             {
-                var auth = e as AuthenticatedHl7MessageReceivedEventArgs;
 
                 // Ensure proper authentication exists
                 if (String.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value))
@@ -145,17 +144,31 @@ namespace SanteDB.Messaging.HL7.Messages
                     throw new SecurityException("MSH-8 must be provided for authenticating application");
 
                 String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
-                    deviceSecret = BitConverter.ToString(auth.AuthorizationToken).Replace("-",""),
-                    applicationId = msh.SendingApplication.NamespaceID.Value,
-                    applicationSecret = this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 ? sft.SoftwareBinaryID.Value : // Authenticate app by SFT4
-                        this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 ? msh.Security.Value : // Authenticate app by MSH-8
-                        BitConverter.ToString(auth.AuthorizationToken).Replace("-", ""); // Authenticate app using X509 certificate on the device
+                    deviceSecret = BitConverter.ToString(auth.AuthorizationToken).Replace("-", ""),
+                    applicationId = msh.SendingApplication.NamespaceID.Value, applicationSecret = null;
+
+                switch (this.m_configuration.Security)
+                {
+                    case Configuration.AuthenticationMethod.None: // No special - authenticate the app using device creds
+                        applicationSecret = this.m_configuration.NoAuthenticationSecret;
+                        break;
+                    case Configuration.AuthenticationMethod.Msh8:
+                        applicationSecret = msh.Security.Value;
+                        break;
+                    case Configuration.AuthenticationMethod.Sft4:
+                        applicationSecret = sft.SoftwareBinaryID.Value;
+                        break;
+                }
+
 
                 IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.Services.AuthenticationMethod.Local),
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
 
                 if (applicationPrincipal == null && this.m_configuration.RequireAuthenticatedApplication)
+                {
                     throw new UnauthorizedAccessException("Server requires authenticated application");
+                }
+
 
                 principal = new SanteDBClaimsPrincipal(new IIdentity[] { devicePrincipal.Identity, applicationPrincipal?.Identity }.OfType<IClaimsIdentity>());
             }
@@ -177,11 +190,16 @@ namespace SanteDB.Messaging.HL7.Messages
                    applicationSecret = this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 ? sft.SoftwareBinaryID.Value :
                                             this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 ? msh.Security.Value : null;
 
-                if(applicationSecret == deviceSecret && applicationSecret.Contains("+")) // Both device and app are using same auth key? Odd, perhaps there is the delimeter
+                if (applicationSecret == deviceSecret && applicationSecret.Contains("+")) // Both device and app are using same auth key? Odd, perhaps there is the delimeter
                 {
                     var secrets = applicationSecret.Split('+');
                     applicationSecret = secrets[1]; deviceSecret = secrets[0];
                 }
+                else
+                {
+                    applicationSecret = this.m_configuration.NoAuthenticationSecret;
+                }
+
                 IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.Services.AuthenticationMethod.Local),
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
 
@@ -189,17 +207,10 @@ namespace SanteDB.Messaging.HL7.Messages
                     throw new UnauthorizedAccessException("Server requires authenticated application");
                 principal = new SanteDBClaimsPrincipal((new IIdentity[] { devicePrincipal.Identity, applicationPrincipal?.Identity }).OfType<IClaimsIdentity>());
             }
-            else 
-                switch(this.m_configuration.AnonymousUser?.ToUpper())
-                {
-                    case "SYSTEM":
-                        principal = AuthenticationContext.SystemPrincipal;
-                        break;
-                    case "ANONYMOUS":
-                    default:
-                        principal = AuthenticationContext.AnonymousPrincipal;
-                        break;
-                }
+            else
+            {
+                principal = ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>().Authenticate(msh.SendingApplication.NamespaceID.Value, this.m_configuration.NoAuthenticationSecret);
+            }
 
             // Clear authentication cache for principal (NB: we're doing this because we're not establishing a session)
             ApplicationServiceContext.Current.GetService<IPolicyDecisionService>().ClearCache(principal);

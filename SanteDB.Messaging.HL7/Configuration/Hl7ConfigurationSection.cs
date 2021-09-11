@@ -69,9 +69,10 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// <summary>
         /// If no security method is being used, the principal of the anonymous user
         /// </summary>
-        [XmlAttribute("anonUser"), JsonProperty("anonUser")]
-        [DisplayName("Anonymous User"), Description("If you set the authentication mode to NONE then the user principal which all HL7 messages will run on")]
-        public String AnonymousUser { get; set; }
+        [XmlAttribute("noAuthSecret"), JsonProperty("noAuthSecret")]
+        [DisplayName("No Auth Secret"), Description("If you set the authentication mode to NONE then the secret for the (MSH-3) which all HL7 messages will run on")]
+        public String NoAuthenticationSecret { get; set; }
+
 
         /// <summary>
         /// The address to which to bind
