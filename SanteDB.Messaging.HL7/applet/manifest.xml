@@ -19,7 +19,7 @@
  - Date: 2021-8-5
  -->
 <AppletManifest xmlns="http://santedb.org/applet">
-  <info id="org.santedb.hl7" version="2.1.38.0">
+  <info id="org.santedb.hl7" version="2.1.50.0">
     <icon>/org.santedb.core/img/icon.png</icon>
     <name lang="en">SanteDB HL7v2 Receiver</name>
     <author>Mohawk College of Applied Arts and Technology - mHealth &amp; eHealth Development &amp; Innovation Centre</author>
