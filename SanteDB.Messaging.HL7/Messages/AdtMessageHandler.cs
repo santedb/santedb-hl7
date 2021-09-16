@@ -29,6 +29,7 @@ using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
+using System.ComponentModel;
 using System.Linq;
 
 namespace SanteDB.Messaging.HL7.Messages
@@ -36,6 +37,7 @@ namespace SanteDB.Messaging.HL7.Messages
     /// <summary>
     /// Represents a message handler that handles ADT messages
     /// </summary> 
+    [DisplayName("SanteDB ADT Message Handler")]
     public class AdtMessageHandler : MessageHandlerBase
     {
 

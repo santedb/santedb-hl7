@@ -116,8 +116,8 @@ namespace SanteDB.Messaging.HL7
 			string messageId = msgTerser.Get("/MSH-10");
 
 			// Find a handler
-			HandlerDefinition handler = m_serviceDefinition.Handlers.Find(o => o.Types.Exists(a => a.Name == messageType)),
-				defaultHandler = m_serviceDefinition.Handlers.Find(o => o.Types.Exists(a => a.Name == "*"));
+			HandlerDefinition handler = m_serviceDefinition.MessageHandlers.Find(o => o.Types.Exists(a => a.Name == messageType)),
+				defaultHandler = m_serviceDefinition.MessageHandlers.Find(o => o.Types.Exists(a => a.Name == "*"));
 
 			if (handler != null && handler.Types.Find(o => o.Name == messageType).IsQuery ||
 				defaultHandler != null && defaultHandler.Types.Find(o => o.Name == "*").IsQuery)

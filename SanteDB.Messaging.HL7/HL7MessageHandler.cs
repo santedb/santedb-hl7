@@ -25,7 +25,6 @@ using SanteDB.Core.Interop;
 using SanteDB.Core.Model.Entities;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
-using SanteDB.Messaging.HL7.Interceptors;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.Collections.Generic;
@@ -64,9 +63,6 @@ namespace SanteDB.Messaging.HL7
 
         // Threads that are listening for messages
         private List<ServiceHandler> m_listenerThreads = new List<ServiceHandler>();
-
-        // Interceptors
-        private List<InterceptorBase> m_interceptors = new List<InterceptorBase>();
 
 
         /// <summary>
@@ -112,16 +108,6 @@ namespace SanteDB.Messaging.HL7
                 thdSh.Start();
             }
 
-            // Interceptors
-            foreach(var incptr in this.m_configuration.Interceptors
-                .Select(i=> Activator.CreateInstance(i.InterceptorClass, i))
-                .OfType<InterceptorBase>())
-            {
-                this.m_traceSource.TraceInfo("Starting Interceptor {0}...", incptr.GetType().FullName);
-                this.m_interceptors.Add(incptr);
-                incptr.Attach();
-            }
-
             this.Started?.Invoke(this, EventArgs.Empty);
 
             return true;
@@ -138,15 +124,6 @@ namespace SanteDB.Messaging.HL7
                 thd.Abort();
             }
 
-            // Interceptors
-            foreach (var incptr in this.m_interceptors)
-            {
-                this.m_traceSource.TraceInfo("Detaching {0}...", incptr.GetType().FullName);
-                incptr.Detach();
-                if (incptr is IDisposable disp)
-                    disp.Dispose();
-            }
-            
 
             this.m_traceSource.TraceInfo("All threads shutdown");
             this.Stopped?.Invoke(this, EventArgs.Empty);

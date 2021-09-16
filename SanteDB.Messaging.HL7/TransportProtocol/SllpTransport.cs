@@ -24,6 +24,7 @@ using SanteDB.Core.Configuration;
 using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Security;
 using SanteDB.Core.Security.Audit;
+using SanteDB.Core.Security.Configuration;
 using SanteDB.Core.Security.Services;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
@@ -55,39 +56,60 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         [XmlType(nameof(SllpConfigurationObject), Namespace = "http://santedb.org/configuration")]
 		public class SllpConfigurationObject
 		{
-          
+
+			// Require client certs
+			private bool m_requireClientCert;
+
             /// <summary>
             /// Check CRL
             /// </summary>
             public SllpConfigurationObject()
 			{
 				this.CheckCrl = true;
+				this.ServerCertificate = new X509ConfigurationElement();
 			}
 
             /// <summary>
             /// Gets the server certificate
             /// </summary>
             [XmlElement("serverCertificate")]
-            public Hl7X509ConfigurationElement ServerCertificate { get; set; }
+			[DisplayName("Server Certificate")]
+			[TypeConverter(typeof(ExpandableObjectConverter))]
+			public X509ConfigurationElement ServerCertificate { get; set; }
 
             /// <summary>
             /// Gets the server certificate
             /// </summary>
             [XmlElement("clientAuthorityCertificate")]
-            public Hl7X509ConfigurationElement ClientCaCertificate { get; set; }
+			[DisplayName("Client CA Certificate")]
+			[TypeConverter(typeof(ExpandableObjectConverter))]
+			public X509ConfigurationElement ClientCaCertificate { get; set; }
 
             /// <summary>
             /// Check revocation status
             /// </summary>
             [XmlAttribute("checkCrl")]
+			[DisplayName("Check CRL")]
 			public bool CheckCrl { get; set; }
 
 			/// <summary>
 			/// Enabling of the client cert negotiate
 			/// </summary>
-			[Description("When enabled, enforces client certificate negotiation")]
-            [XmlAttribute("requireClientCert")]
-			public bool EnableClientCertNegotiation { get; set; }
+			[Description("Client Authentication")]
+			[XmlAttribute("requireClientCert")]
+			public bool EnableClientCertNegotiation
+			{
+				get => this.m_requireClientCert;
+				set
+				{
+					this.m_requireClientCert = value;
+					if(value && this.ClientCaCertificate == null)
+                    {
+						this.ClientCaCertificate = new X509ConfigurationElement();
+						this.ClientCaCertificate.ValidationOnly = true;
+                    }
+				}
+			}
 		}
 
 		// SLLP configuration object
@@ -164,7 +186,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 				bool isValid = false;
 				foreach (var cer in chain.ChainElements)
 				{
-					if (cer.Certificate.Thumbprint == this.m_configuration.ClientCaCertificate.GetCertificate().Thumbprint)
+					if (cer.Certificate.Thumbprint == this.m_configuration.ClientCaCertificate.Certificate.Thumbprint)
 						isValid = true;
 				}
 				if (!isValid)
@@ -192,7 +214,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 				Uri remoteEndpoint = new Uri(String.Format("sllp://{0}:{1}", remoteEp.Address, remoteEp.Port));
 				this.m_traceSource.TraceInfo("Accepted TCP connection from {0} > {1}", remoteEndpoint, localEndpoint);
 
-				stream.AuthenticateAsServer(this.m_configuration.ServerCertificate.GetCertificate(), this.m_configuration.EnableClientCertNegotiation, System.Security.Authentication.SslProtocols.Tls, this.m_configuration.CheckCrl);
+				stream.AuthenticateAsServer(this.m_configuration.ServerCertificate.Certificate, this.m_configuration.EnableClientCertNegotiation, System.Security.Authentication.SslProtocols.Tls, this.m_configuration.CheckCrl);
 
 				// Now read to a string
 				NHapi.Base.Parser.PipeParser parser = new NHapi.Base.Parser.PipeParser();
@@ -257,7 +279,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 
 						this.m_traceSource.TraceInfo("Received message from sllp://{0} : {1}", tcpClient.Client.RemoteEndPoint, messageData.ToString());
 
-						messageArgs = new AuthenticatedHl7MessageReceivedEventArgs(message, localEndpoint, remoteEndpoint, DateTime.Now, stream.RemoteCertificate.GetPublicKey());
+						messageArgs = new AuthenticatedHl7MessageReceivedEventArgs(message, localEndpoint, remoteEndpoint, DateTime.Now, stream.RemoteCertificate?.GetPublicKey());
 
                         HL7OperationContext.Current = new HL7OperationContext(messageArgs);
 

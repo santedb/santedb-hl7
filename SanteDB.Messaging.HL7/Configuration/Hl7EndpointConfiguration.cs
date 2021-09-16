@@ -23,6 +23,7 @@ using SanteDB.Messaging.HL7.Client;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Xml.Serialization;
 
 namespace SanteDB.Messaging.HL7.Configuration
@@ -34,28 +35,46 @@ namespace SanteDB.Messaging.HL7.Configuration
     public class Hl7EndpointConfiguration
     {
 
+        // Address XML
+        private string m_addressXml = null;
+
         /// <summary>
         /// Gets or sets the address of the service
         /// </summary>
         [XmlAttribute("address"), JsonProperty("address")]
-        public String AddressXml { get; set; }
+        [DisplayName("Endpoint"), Description("The endpoint address in the format of a URL such as [s]llp://[host]:[port]")]
+        public String AddressXml 
+        {
+            get => this.m_addressXml;
+            set
+            {
+                this.m_addressXml = value;
+                if(value?.StartsWith("sllp") == true && this.Configuration == null)
+                {
+                    this.Configuration = new SllpTransport.SllpConfigurationObject();
+                }
+            }
+        }
 
         /// <summary>
         /// Gets the listening address
         /// </summary>
-        [XmlIgnore, JsonIgnore]
+        [XmlIgnore, JsonIgnore, Browsable(false)]
         public Uri Address => new Uri(this.AddressXml);
 
         /// <summary>
         /// Attributes
         /// </summary>
         [XmlElement("sllp", Type = typeof(SllpTransport.SllpConfigurationObject)), JsonProperty("sllpConfiguration")]
+        [DisplayName("Transport Options"), Description("When selecting a transport that requires additional configuration, these are the settings to use")]
+        [TypeConverter(typeof(ExpandableObjectConverter))]
         public object Configuration { get; set; }
 
         /// <summary>
         /// Gets or sets the timeout
         /// </summary>
         [XmlAttribute("receiveTimeout"), JsonProperty("receiveTimeout")]
+        [DisplayName("Receive Timeout (ms)"), Description("The maximum amount of time to wait on the socket to receive data")]
         public int ReceiveTimeout { get; set; }
 
         
@@ -96,7 +115,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         public MllpMessageSender GetSender()
         {
             if(this.m_sender == null)
-                this.m_sender = new MllpMessageSender(this.Address, (this.Configuration as SllpTransport.SllpConfigurationObject)?.ClientCaCertificate?.GetCertificate(), (this.Configuration as SllpTransport.SllpConfigurationObject)?.ServerCertificate?.GetCertificate());
+                this.m_sender = new MllpMessageSender(this.Address, (this.Configuration as SllpTransport.SllpConfigurationObject)?.ClientCaCertificate?.Certificate, (this.Configuration as SllpTransport.SllpConfigurationObject)?.ServerCertificate?.Certificate);
             return this.m_sender;
         }
 

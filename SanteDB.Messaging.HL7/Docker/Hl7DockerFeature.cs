@@ -19,6 +19,7 @@
  * Date: 2021-8-5
  */
 using SanteDB.Core.Configuration;
+using SanteDB.Core.Security.Configuration;
 using SanteDB.Docker.Core;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.TransportProtocol;
@@ -136,7 +137,7 @@ namespace SanteDB.Messaging.HL7.Docker
                 hl7Configuration.Services.ForEach(svc => svc.Configuration = new SllpTransport.SllpConfigurationObject()
                 {
                     CheckCrl = true,
-                    ServerCertificate = new Hl7X509ConfigurationElement()
+                    ServerCertificate = new X509ConfigurationElement()
                     {
                         FindType = System.Security.Cryptography.X509Certificates.X509FindType.FindByThumbprint,
                         FindValue = serverCertificate,
@@ -144,7 +145,7 @@ namespace SanteDB.Messaging.HL7.Docker
                         StoreName = System.Security.Cryptography.X509Certificates.StoreName.My
                     },
                     EnableClientCertNegotiation = settings.TryGetValue(ClientCertificateSetting, out string clientCert),
-                    ClientCaCertificate = new Hl7X509ConfigurationElement()
+                    ClientCaCertificate = new X509ConfigurationElement()
                     {
                         FindType = System.Security.Cryptography.X509Certificates.X509FindType.FindByThumbprint,
                         FindValue = clientCert,
