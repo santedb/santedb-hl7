@@ -23,6 +23,8 @@ using NHapi.Base.Model;
 using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
+using SanteDB.Core.Auditing;
+using SanteDB.Core.Model;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Security.Audit;
@@ -74,84 +76,41 @@ namespace SanteDB.Messaging.HL7.Messages
         }
 
         /// <summary>
-        /// Perform admit operation
-        /// </summary>
-        protected virtual Bundle DoPerformAdmit(Bundle insertBundle, out Patient patient)
-        {
-            patient = insertBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
-            if (patient == null)
-                throw new ArgumentNullException(nameof(insertBundle), "Message did not contain a patient");
-
-            var repoService = ApplicationServiceContext.Current.GetService<IRepositoryService<Bundle>>();
-            if (repoService == null)
-                throw new InvalidOperationException("Cannot find repository for Patient");
-
-            return repoService.Insert(insertBundle);
-        }
-
-        /// <summary>
-        /// Perform a merge
-        /// </summary>
-        protected virtual IEnumerable<RecordMergeResult> DoPerformMerge(Bundle bundleOfMergePairs)
-        {
-            var mergePairs = bundleOfMergePairs.Item.OfType<Bundle>();
-            if (!mergePairs.Any())
-            {
-                throw new InvalidOperationException("Merge requires at least one pair of PID and MRG");
-            }
-
-            var mergeService = ApplicationServiceContext.Current.GetService<IRecordMergingService<Patient>>();
-            var patientService = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>();
-            foreach (var mrgPair in mergePairs)
-            {
-                var survivor = mrgPair.Item.OfType<Patient>().FirstOrDefault(o => o.GetTag("$v2.segment") == "PID");
-                var victims = mrgPair.Item.OfType<Patient>().Where(o => o.GetTag("$v2.segment") == "MRG");
-                if (survivor == null || !victims.Any())
-                {
-                    throw new InvalidOperationException("Merge requires at least one PID and one or more MRG");
-                }
-
-                // Perform the merge
-                yield return mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value));
-            }
-        }
-
-        /// <summary>
-        /// Perform an update operation
-        /// </summary>
-        protected virtual Bundle DoPerformUpdate(Bundle updateBundle, out Patient patient)
-        {
-            patient = updateBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
-            if (patient == null)
-                throw new ArgumentNullException(nameof(updateBundle), "Message did not contain a patient");
-            else if (!patient.Key.HasValue)
-                throw new InvalidOperationException("Update can only be performed on existing patients. Ensure that a unique identifier exists on the update record");
-
-            var repoService = ApplicationServiceContext.Current.GetService<IRepositoryService<Bundle>>();
-            if (repoService == null)
-                throw new InvalidOperationException("Cannot find repository for Patient");
-
-            return repoService.Save(updateBundle);
-        }
-
-        /// <summary>
         /// Perform an admission operation
         /// </summary>
         protected virtual IMessage PerformAdmit(Hl7MessageReceivedEventArgs e, Bundle insertBundle)
         {
             try
             {
-                insertBundle = this.DoPerformAdmit(insertBundle, out Patient patient);
+                var patient = insertBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
+                if (patient == null)
+                    throw new ArgumentNullException(nameof(insertBundle), "Message did not contain a patient");
 
-                AuditUtil.AuditCreate(Core.Auditing.OutcomeIndicator.Success, null, insertBundle.Item.ToArray());
+                var repoService = ApplicationServiceContext.Current.GetService<IRepositoryService<Bundle>>();
+                if (repoService == null)
+                    throw new InvalidOperationException("Cannot find repository for Patient");
+
+                insertBundle = repoService.Insert(insertBundle);
+
+                this.SendAuditAdmit(OutcomeIndicator.Success, e.Message, insertBundle.Item.OfType<IdentifiedData>());
+
                 // Create response message
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"{patient.Key} created");
             }
             catch (Exception ex)
             {
-                AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, null, insertBundle.Item.ToArray());
+                this.SendAuditAdmit(OutcomeIndicator.EpicFail, e.Message, null);
+
                 throw new HL7ProcessingException("Error performing admit", null, null, 0, 0, ex);
             }
+        }
+
+        /// <summary>
+        /// Send an audit of admit
+        /// </summary>
+        protected virtual void SendAuditAdmit(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> enumerable)
+        {
+            AuditUtil.AuditCreate(Core.Auditing.OutcomeIndicator.Success, null, enumerable.ToArray());
         }
 
         /// <summary>
@@ -161,17 +120,36 @@ namespace SanteDB.Messaging.HL7.Messages
         {
             try
             {
-                updateBundle = this.DoPerformUpdate(updateBundle, out Patient patient);
-                AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.Success, null, updateBundle.Item.ToArray());
+                var patient = updateBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
+                if (patient == null)
+                    throw new ArgumentNullException(nameof(updateBundle), "Message did not contain a patient");
+                else if (!patient.Key.HasValue)
+                    throw new InvalidOperationException("Update can only be performed on existing patients. Ensure that a unique identifier exists on the update record");
+
+                var repoService = ApplicationServiceContext.Current.GetService<IRepositoryService<Bundle>>();
+                if (repoService == null)
+                    throw new InvalidOperationException("Cannot find repository for Patient");
+
+                updateBundle = repoService.Save(updateBundle);
+
+                this.SendAuditUpdate(Core.Auditing.OutcomeIndicator.Success, e.Message, updateBundle.Item.ToArray());
 
                 // Create response message
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"{patient.Key} updated");
             }
             catch (Exception ex)
             {
-                AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, null, updateBundle.Item.ToArray());
+                this.SendAuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, e.Message, updateBundle.Item.ToArray());
                 throw new HL7ProcessingException("Error performing admit", null, null, 0, 0, ex);
             }
+        }
+
+        /// <summary>
+        /// Send audit update
+        /// </summary>
+        protected virtual void SendAuditUpdate(OutcomeIndicator outcome, IMessage message, IEnumerable<IdentifiedData> results)
+        {
+            AuditUtil.AuditUpdate(outcome, null, results.ToArray());
         }
 
         /// <summary>
@@ -182,20 +160,51 @@ namespace SanteDB.Messaging.HL7.Messages
             // A merge should be parsed as a series of bundles within bundles representing the merge pairs...
             try
             {
-                var results = this.DoPerformMerge(bundle);
-                foreach (var itm in results)
+                var mergePairs = bundle.Item.OfType<Bundle>();
+                if (!mergePairs.Any())
                 {
-                    AuditUtil.AuditDelete(Core.Auditing.OutcomeIndicator.Success, null, new Patient() { Key = itm.Replaced.First() });
-                    AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.Success, null, new Patient() { Key = itm.Survivors.First() });
+                    throw new InvalidOperationException("Merge requires at least one pair of PID and MRG");
                 }
+
+                var mergeService = ApplicationServiceContext.Current.GetService<IRecordMergingService<Patient>>();
+                var patientService = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>();
+                foreach (var mrgPair in mergePairs)
+                {
+                    var survivor = mrgPair.Item.OfType<Patient>().FirstOrDefault(o => o.GetTag("$v2.segment") == "PID");
+                    var victims = mrgPair.Item.OfType<Patient>().Where(o => o.GetTag("$v2.segment") == "MRG");
+                    if (survivor == null || !victims.Any())
+                    {
+                        throw new InvalidOperationException("Merge requires at least one PID and one or more MRG");
+                    }
+
+                    // Perform the merge
+                    this.SendAuditMerge(Core.Auditing.OutcomeIndicator.Success, e.Message, mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value)));
+                }
+
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"Merge accepted");
             }
             catch (Exception ex)
             {
-                AuditUtil.AuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, null, bundle.Item.OfType<Bundle>());
+                this.SendAuditMerge(Core.Auditing.OutcomeIndicator.MinorFail, e.Message, null);
                 throw new HL7ProcessingException("Error performing merge", null, null, 0, 0, ex);
             }
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Send audit merge
+        /// </summary>
+        protected virtual void SendAuditMerge(OutcomeIndicator outcome, IMessage message, RecordMergeResult recordMergeResult)
+        {
+            if (recordMergeResult != null)
+            {
+                AuditUtil.AuditDelete(outcome, "ADT^A40", new Patient() { Key = recordMergeResult.Replaced.First() });
+                AuditUtil.AuditUpdate(outcome, "ADT^A40", new Patient() { Key = recordMergeResult.Survivors.First() });
+            }
+            else
+            {
+                AuditUtil.AuditUpdate<IdentifiedData>(outcome, "ADT^A40");
+            }
         }
 
         /// <summary>
