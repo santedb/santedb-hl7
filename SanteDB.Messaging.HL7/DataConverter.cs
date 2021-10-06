@@ -2,26 +2,28 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using NHapi.Base.Model;
 using NHapi.Base.Parser;
 using NHapi.Model.V25.Datatype;
 using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.DataTypes;
@@ -49,16 +51,17 @@ namespace SanteDB.Messaging.HL7
     /// </summary>
     public static class DataConverter
     {
-
         private const string AddressUseCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.190";
         private const string NameUseCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.200";
         private const string TelecomUseCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.201";
         private const string TelecomTypeCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.202";
         private const string IdentifierTypeCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.203";
 
-
-        // configuration 
+        // configuration
         private static Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current?.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
+
+        // Tracer
+        private static Tracer m_tracer = Tracer.GetTracer(typeof(DataConverter));
 
         /// <summary>
         /// Convert the message to v2.5
@@ -152,28 +155,39 @@ namespace SanteDB.Messaging.HL7
             return entityAddresses.AsEnumerable();
         }
 
-
         /// <summary>
         /// Convert a telecom address to an XTN v2 structure
         /// </summary>
         public static XTN FromModel(this XTN me, EntityTelecomAddress tel)
         {
-
             if (tel.AddressUseKey != NullReasonKeys.NoInformation)
             {
                 var useTerm = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptReferenceTerm(tel.AddressUseKey.GetValueOrDefault(), TelecomUseCodeSystem);
-                me.TelecommunicationUseCode.Value = useTerm.Mnemonic;
+                if (useTerm != null)
+                {
+                    me.TelecommunicationUseCode.Value = useTerm.Mnemonic;
+                }
+                else
+                {
+                    m_tracer.TraceWarning("Could not find {0} in {1}", tel.LoadProperty(o => o.AddressUse), TelecomUseCodeSystem);
+                }
             }
 
-            if(tel.TypeConceptKey.HasValue)
+            if (tel.TypeConceptKey.HasValue)
             {
                 var typeTerm = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptReferenceTerm(tel.TypeConceptKey.GetValueOrDefault(), TelecomTypeCodeSystem);
-                me.TelecommunicationEquipmentType.Value = typeTerm.Mnemonic;
+                if (typeTerm != null)
+                {
+                    me.TelecommunicationEquipmentType.Value = typeTerm.Mnemonic;
+                }
+                else
+                {
+                    m_tracer.TraceWarning("Could not find {0} in {1}", tel.LoadProperty(o => o.TypeConcept), TelecomTypeCodeSystem);
+                }
             }
 
             me.AnyText.Value = tel.Value;
             return me;
-
         }
 
         /// <summary>
@@ -194,6 +208,7 @@ namespace SanteDB.Messaging.HL7
                     {  AddressComponentKeys.AdditionalLocator, nameof(XAD.OtherDesignation)  },
                     {  AddressComponentKeys.State , nameof(XAD.StateOrProvince) },
                     {  AddressComponentKeys.StreetAddressLine , nameof(XAD.StreetAddress) },
+                    {  AddressComponentKeys.AddressLine , nameof(XAD.StreetAddress) },
                     {  AddressComponentKeys.Precinct, nameof(XAD.OtherGeographicDesignation) },
                     {  AddressComponentKeys.StreetName, nameof(XAD.StreetAddress) },
                     {  AddressComponentKeys.PostalCode, nameof(XAD.ZipOrPostalCode) },
@@ -224,7 +239,6 @@ namespace SanteDB.Messaging.HL7
             return me;
         }
 
-
         /// <summary>
         /// Converts the specified XPN instance to an entity name
         /// </summary>
@@ -240,7 +254,7 @@ namespace SanteDB.Messaging.HL7
         /// </summary>
         /// <param name="names">The names to be converted</param>
         /// <returns>The converted list of names</returns>
-		public static IEnumerable<EntityName> ToModel(this XPN[] names, Guid? nameUseKey = null )
+		public static IEnumerable<EntityName> ToModel(this XPN[] names, Guid? nameUseKey = null)
         {
             var entityNames = new List<EntityName>();
             var conceptService = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>();
@@ -379,7 +393,7 @@ namespace SanteDB.Messaging.HL7
                 if (assigningAuthority == null)
                     throw new HL7DatatypeProcessingException("Error processing HD", 1, new KeyNotFoundException($"Authority {id.NamespaceID.Value} not found"));
             }
-            
+
             if (!string.IsNullOrEmpty(id.UniversalID.Value))
             {
                 var tAssigningAuthority = assigningAuthorityRepositoryService.Get(new Uri($"urn:oid:{id.UniversalID.Value}"));
@@ -392,21 +406,21 @@ namespace SanteDB.Messaging.HL7
                     assigningAuthority = tAssigningAuthority;
             }
 
-            // Fuzzy lookup based on principal 
-            if(!m_configuration.StrictAssigningAuthorities && id.NamespaceID.IsEmpty() && id.UniversalID.IsEmpty())
+            // Fuzzy lookup based on principal
+            if (!m_configuration.StrictAssigningAuthorities && id.NamespaceID.IsEmpty() && id.UniversalID.IsEmpty())
             {
                 var claimsPrincipal = AuthenticationContext.Current.Principal as IClaimsPrincipal;
-                if(claimsPrincipal == null)
+                if (claimsPrincipal == null)
                 {
                     throw new HL7DatatypeProcessingException($"Cannot perform application<>identity domain XREF - authentication provider must be claims principal", 4);
                 }
                 var appPrincipal = claimsPrincipal.Identities.OfType<IApplicationIdentity>().FirstOrDefault();
-                if(appPrincipal == null)
+                if (appPrincipal == null)
                 {
                     throw new SecurityException($"Cannot perform application<>identity domain XREF - no application principal present");
                 }
                 assigningAuthority = assigningAuthorityRepositoryService.Find(o => o.AssigningApplication.Name == appPrincipal.Name, 0, 2, out int tr).FirstOrDefault();
-                if(tr > 1)
+                if (tr > 1)
                 {
                     throw new HL7DatatypeProcessingException($"Ambiguous authority - {appPrincipal.Name} auto mapping of sender to authority can only be done if there are 1 authorities - this device has {tr}", 4);
                 }
@@ -452,15 +466,15 @@ namespace SanteDB.Messaging.HL7
                             id.IdentifierTypeKey = idType?.Key;
                         }
 
-                        if (!String.IsNullOrEmpty(cx.ExpirationDate.Value)) {
-
+                        if (!String.IsNullOrEmpty(cx.ExpirationDate.Value))
+                        {
                             id.ExpiryDate = new DateTime(cx.ExpirationDate.Year, cx.ExpirationDate.Month, cx.ExpirationDate.Day);
-                            // Is the value already expired? If so we can obsolete the identifier 
+                            // Is the value already expired? If so we can obsolete the identifier
                             if (id.ExpiryDate <= DateTime.Now.Date) // Value is expired - indicate this
                                 id.ObsoleteVersionSequenceId = Int32.MaxValue;
                         }
-                        if (!String.IsNullOrEmpty(cx.EffectiveDate.Value)) {
-
+                        if (!String.IsNullOrEmpty(cx.EffectiveDate.Value))
+                        {
                             id.IssueDate = new DateTime(cx.EffectiveDate.Year, cx.EffectiveDate.Month, cx.EffectiveDate.Day);
 
                             if (id.IssueDate <= DateTime.Now.Date) // Value is being actively changed - indicate this
@@ -470,7 +484,7 @@ namespace SanteDB.Messaging.HL7
                         entityIdentifiers.Add(id);
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw new HL7DatatypeProcessingException(e.Message, 3, e);
                 }
@@ -517,7 +531,6 @@ namespace SanteDB.Messaging.HL7
                             id.IdentifierTypeKey = idType?.Key;
                         }
 
-
                         entityIdentifiers.Add(id);
                     }
                 }
@@ -558,14 +571,12 @@ namespace SanteDB.Messaging.HL7
                 return result;
             else
             {
-
                 string value = timestamp.Time.Value;
                 int datePrecision = value.Length;
 
-                // Parse a correct precision 
+                // Parse a correct precision
                 try
                 {
-
                     // HACK: Correct timezone as some CDA instances instances have only 3
                     if (value.Contains("+") || value.Contains("-"))
                     {
@@ -580,7 +591,6 @@ namespace SanteDB.Messaging.HL7
                             value = value.Substring(0, sTz + 1) + iTzValue.ToString("0000");
                     }
 
-
                     // HACK: Correct the milliseonds to be three digits if four are passed into the parse function
                     if (datePrecision == 24 || datePrecision == 19 && value.Contains("."))
                     {
@@ -594,14 +604,12 @@ namespace SanteDB.Messaging.HL7
                         value = value.Insert(eMs + 1, new string('0', 3 - (eMs - sMs)));
                     }
                     datePrecision = value.Length;
-
                 }
                 catch (Exception) { datePrecision = 23; }
 
                 string flavorFormat = null;
                 if (!m_precisionFormats.TryGetValue(datePrecision, out flavorFormat))
                     flavorFormat = "yyyyMMddHHmmss.fffzzzz";
-
 
                 // Now parse the date string
                 try
@@ -611,7 +619,7 @@ namespace SanteDB.Messaging.HL7
                     else
                         return DateTime.ParseExact(value, flavorFormat.Substring(0, value.Length), CultureInfo.InvariantCulture);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw new HL7DatatypeProcessingException("Error processing TS", 1, new FormatException($"Date {value} was not valid according to format {flavorFormat}", e));
                 }
@@ -645,7 +653,7 @@ namespace SanteDB.Messaging.HL7
                 try
                 {
                     if (xtn.CountryCode.Value != null)
-                        sb.AppendFormat("{0}{1}-", xtn.CountryCode.Value.Contains("+") ? "" : "+",  xtn.CountryCode);
+                        sb.AppendFormat("{0}{1}-", xtn.CountryCode.Value.Contains("+") ? "" : "+", xtn.CountryCode);
 
                     if (!String.IsNullOrEmpty(xtn.TelephoneNumber?.Value))
                     {
@@ -654,7 +662,7 @@ namespace SanteDB.Messaging.HL7
                         sb.AppendFormat("{0}-{1}", xtn.AreaCityCode, xtn.TelephoneNumber.Value);
                     }
                     else
-                        sb.AppendFormat("{0}-{1}", xtn.AreaCityCode, xtn.LocalNumber.Value.Contains("-") ? xtn.LocalNumber.Value : xtn.LocalNumber.Value.Replace(" ","-").Insert(3, "-"));
+                        sb.AppendFormat("{0}-{1}", xtn.AreaCityCode, xtn.LocalNumber.Value.Contains("-") ? xtn.LocalNumber.Value : xtn.LocalNumber.Value.Replace(" ", "-").Insert(3, "-"));
 
                     if (xtn.Extension.Value != null)
                         sb.AppendFormat(";ext={0}", xtn.Extension);
@@ -705,7 +713,7 @@ namespace SanteDB.Messaging.HL7
 
             // Type code conversion
             Guid? type = null;
-            if(!string.IsNullOrEmpty(xtn.TelecommunicationEquipmentType.Value))
+            if (!string.IsNullOrEmpty(xtn.TelecommunicationEquipmentType.Value))
             {
                 var concept = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptByReferenceTerm(xtn.TelecommunicationEquipmentType.Value, TelecomTypeCodeSystem);
                 if (concept == null)
@@ -734,16 +742,22 @@ namespace SanteDB.Messaging.HL7
                 {
                     case 4:
                         return DatePrecision.Year;
+
                     case 6:
                         return DatePrecision.Month;
+
                     case 8:
                         return DatePrecision.Day;
+
                     case 10:
                         return DatePrecision.Hour;
+
                     case 12:
                         return DatePrecision.Minute;
+
                     case 14:
                         return DatePrecision.Second;
+
                     default:
                         throw new InvalidOperationException($"Cannot determine degree of precision of date {me.Time.Value}");
                 }
@@ -811,7 +825,7 @@ namespace SanteDB.Messaging.HL7
 
             if (id.ExpiryDate.HasValue)
                 me.ExpirationDate.setYearMonthDayPrecision(id.ExpiryDate.Value.Year, id.ExpiryDate.Value.Month, id.ExpiryDate.Value.Day);
-            if(id.IssueDate.HasValue)
+            if (id.IssueDate.HasValue)
                 me.EffectiveDate.setYearMonthDayPrecision(id.IssueDate.Value.Year, id.IssueDate.Value.Month, id.IssueDate.Value.Day);
 
             me.CheckDigit.Value = id.CheckDigit;
@@ -843,15 +857,17 @@ namespace SanteDB.Messaging.HL7
         /// <summary>
         /// Convert entity identifier to a CX
         /// </summary>
-        public static CE FromModel(this CE me, Concept concept, String domain)
+        /// <param name="concept">The concept to fetch the reference term for</param>
+        /// <param name="domain">The domain in the code</param>
+        /// <param name="exact">True if only SAME_AS should be returned</param>
+        /// <param name="me">The CE to populate</param>
+        public static CE FromModel(this CE me, Concept concept, String domain, bool exact = true)
         {
             if (concept == null) return me;
-            var refTerm = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptReferenceTerm(concept.Key.Value, domain);
+            var refTerm = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptReferenceTerm(concept.Key.Value, domain, exact);
             me.Identifier.Value = refTerm?.Mnemonic;
-            me.NameOfCodingSystem.Value = refTerm.LoadProperty<CodeSystem>(nameof(ReferenceTerm.CodeSystem))?.Name;
+            me.NameOfCodingSystem.Value = refTerm.LoadProperty<CodeSystem>(nameof(ReferenceTerm.CodeSystem))?.Authority;
             return me;
         }
-
-
     }
 }

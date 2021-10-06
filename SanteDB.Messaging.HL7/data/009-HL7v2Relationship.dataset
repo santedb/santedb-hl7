@@ -143,6 +143,14 @@
   </update>
   <update skipIfError="false" insertIfNotExists="true">
     <ConceptReferenceTerm xmlns="http://santedb.org/model">
+      <id>fde543f4-b178-4dc9-ae18-23cf8fc459bc</id>
+      <source>a3ff423e-81d5-4571-8edf-03c295189a23</source>
+      <term>e96b6230-98c0-4a27-a853-4aa99bd49f67</term>
+      <relationshipType>ae8b4f2f-009f-4e0d-b35e-5a89555c5990</relationshipType>
+    </ConceptReferenceTerm>
+  </update>
+  <update skipIfError="false" insertIfNotExists="true">
+    <ConceptReferenceTerm xmlns="http://santedb.org/model">
       <id>8e5543f4-b178-4dc9-ae18-23cf8fc459bc</id>
       <source>89bdc57b-d85c-4e85-94e8-c17049540a0d</source>
       <term>e96b6230-98c0-4a27-a853-4aa99bd49f67</term>

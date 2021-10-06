@@ -2,22 +2,23 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using SanteDB.Core.Extensions;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Constants;
@@ -48,9 +49,9 @@ namespace SanteDB.Messaging.HL7.Segments
     /// </summary>
     public class NK1SegmentHandler : ISegmentHandler
     {
-
         // Next of kin relationship code system
         private const string RelationshipCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.63";
+
         private const string AdministrativeGenderCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.1";
         private const string ContactRoleRelationship = "1.3.6.1.4.1.33349.3.1.5.9.3.200.131";
 
@@ -72,6 +73,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 return this.m_nextOfKinRelationshipTypes;
             }
         }
+
         /// <summary>
         /// NK1 segment handler ctor
         /// </summary>
@@ -100,7 +102,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 // HACK: This needs to be fixed on sync
                 if (person == null) continue;
 
-                nk1.Relationship.FromModel(rel.LoadProperty(o => o.RelationshipType), RelationshipCodeSystem);
+                nk1.Relationship.FromModel(rel.LoadProperty(o => o.RelationshipType), RelationshipCodeSystem, false);
 
                 // Map person to NK1
                 if (exportDomains == null || exportDomains?.Length == 0 || exportDomains?.Any(d => d.Key == this.m_configuration.LocalAuthority.Key) == true)
@@ -130,9 +132,11 @@ namespace SanteDB.Messaging.HL7.Segments
                         case DatePrecision.Year:
                             nk1.DateTimeOfBirth.Time.Set(person.DateOfBirth.Value, "yyyy");
                             break;
+
                         case DatePrecision.Month:
                             nk1.DateTimeOfBirth.Time.Set(person.DateOfBirth.Value, "yyyyMM");
                             break;
+
                         case DatePrecision.Day:
                             nk1.DateTimeOfBirth.Time.Set(person.DateOfBirth.Value, "yyyyMMdd");
                             break;
@@ -140,7 +144,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 }
 
                 // Gender
-                nk1.AdministrativeSex.FromModel(patient.LoadProperty<Concept>("GenderConcept"), AdministrativeGenderCodeSystem);
+                nk1.AdministrativeSex.FromModel(person.LoadProperty(o => o.GenderConcept), AdministrativeGenderCodeSystem);
 
                 // Telecoms
                 foreach (var tel in person.LoadCollection<EntityTelecomAddress>(nameof(Entity.Telecoms)))
@@ -192,7 +196,6 @@ namespace SanteDB.Messaging.HL7.Segments
         /// </summary>
         public virtual IEnumerable<IdentifiedData> Parse(ISegment segment, IEnumerable<IdentifiedData> context)
         {
-
             // Cast segment
             var nk1Segment = segment as NK1;
             var fieldNo = 0;
@@ -248,7 +251,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (!nk1Segment.Relationship.IsEmpty())
                     retValRelation.RelationshipTypeKey = nk1Segment.Relationship.ToModel(RelationshipCodeSystem)?.Key;
 
-                // Some relationships only allow one person, we should update them 
+                // Some relationships only allow one person, we should update them
                 var existingNokRel = patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).FirstOrDefault(o => o.RelationshipTypeKey == retValRelation.RelationshipTypeKey);
                 if (existingNokRel != null)
                 {
@@ -281,7 +284,6 @@ namespace SanteDB.Messaging.HL7.Segments
                             existing.CopyObjectData(model);
                     }
 
-
                 // Address
                 fieldNo = 4;
                 if (nk1Segment.AddressRepetitionsUsed > 0)
@@ -295,7 +297,7 @@ namespace SanteDB.Messaging.HL7.Segments
                             existing.CopyObjectData(model);
                     }
 
-                // Phone numbers 
+                // Phone numbers
                 fieldNo = 5;
                 var telecoms = nk1Segment.GetBusinessPhoneNumber().Union(nk1Segment.GetPhoneNumber());
                 foreach (var itm in telecoms)
@@ -345,7 +347,6 @@ namespace SanteDB.Messaging.HL7.Segments
                         {
                             throw new HL7DatatypeProcessingException("XON requires identifier", 10, new ArgumentNullException());
                         }
-
                     }
                 }
                 // Context role, when the person should be contact
@@ -412,7 +413,6 @@ namespace SanteDB.Messaging.HL7.Segments
                         throw new ArgumentOutOfRangeException($"Protection indicator {nk1Segment.ProtectionIndicator.Value} is invalid");
                 }
 
-
                 // Associated person identifiers
                 fieldNo = 33;
                 if (nk1Segment.NextOfKinAssociatedPartySIdentifiersRepetitionsUsed > 0)
@@ -421,7 +421,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 }
 
                 // Find the existing relationship on the patient
-                if(!patient.Relationships.Any(o => o.RelationshipTypeKey == retValRelation.RelationshipTypeKey && o.TargetEntityKey == retValRelation.TargetEntityKey))
+                if (!patient.Relationships.Any(o => o.RelationshipTypeKey == retValRelation.RelationshipTypeKey && o.TargetEntityKey == retValRelation.TargetEntityKey))
                 {
                     patient.Relationships.Add(retValRelation);
                 }
@@ -430,7 +430,6 @@ namespace SanteDB.Messaging.HL7.Segments
                     return new IdentifiedData[] { retVal };
                 else
                     return new IdentifiedData[0];
-
             }
             catch (HL7ProcessingException) // Just re-throw
             {
@@ -445,6 +444,5 @@ namespace SanteDB.Messaging.HL7.Segments
                 throw new HL7ProcessingException("Error processing NK1 segment", "NK1", nk1Segment.SetIDNK1.Value, fieldNo, 1, e);
             }
         }
-
     }
 }
