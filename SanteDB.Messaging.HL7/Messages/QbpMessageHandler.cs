@@ -2,28 +2,30 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using NHapi.Base.Model;
 using NHapi.Base.Parser;
 using NHapi.Base.Util;
 using NHapi.Model.V25.Datatype;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
+using SanteDB.Core.Auditing;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.DataTypes;
@@ -54,7 +56,6 @@ namespace SanteDB.Messaging.HL7.Messages
     [DisplayName("SanteDB QBP Message Handler")]
     public class QbpMessageHandler : MessageHandlerBase
     {
-
         // Loaded query parameter map
         private static Hl7QueryParameterMap s_map;
 
@@ -95,7 +96,6 @@ namespace SanteDB.Messaging.HL7.Messages
                 var map = xsz.Deserialize(stream) as Hl7QueryParameterMap;
                 s_map.Merge(map);
             }
-
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace SanteDB.Messaging.HL7.Messages
             var msh = e.Message.GetStructure("MSH") as MSH;
             var trigger = msh.MessageType.TriggerEvent.Value;
             var map = this.GetMapping(trigger);
-                var qpd = e.Message.GetStructure("QPD") as QPD;
+            var qpd = e.Message.GetStructure("QPD") as QPD;
             try
             {
                 if (map.ResponseType == null)
@@ -191,19 +191,27 @@ namespace SanteDB.Messaging.HL7.Messages
                     offset.Value + count.GetValueOrDefault() < totalResults)
                     ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>()?.SetQueryTag(queryId, count);
 
-                AuditUtil.AuditQuery(Core.Model.Audit.OutcomeIndicator.Success, PipeParser.Encode(qpd, new EncodingCharacters('|', "^~\\&")), results.OfType<IdentifiedData>().ToArray());
+                this.SendAuditQuery(Core.Auditing.OutcomeIndicator.Success, e.Message, results.OfType<IdentifiedData>().ToArray());
 
                 // Query basics
                 return this.CreateQueryResponse(e, filterQuery, map, results, queryId, offset.GetValueOrDefault(), count ?? 100, totalResults);
             }
             catch (Exception ex)
             {
-                this.m_traceSource.TraceEvent(EventLevel.Error,  "Error executing query: {0}", ex);
-                AuditUtil.AuditQuery<IdentifiedData>(Core.Model.Audit.OutcomeIndicator.MinorFail, PipeParser.Encode(qpd, new EncodingCharacters('|', "^~\\&")));
+                this.m_traceSource.TraceEvent(EventLevel.Error, "Error executing query: {0}", ex);
+                this.SendAuditQuery(Core.Auditing.OutcomeIndicator.MinorFail, e.Message, null);
 
                 // Now we construct the response
                 return this.CreateNACK(map.ResponseType, e.Message, ex, e);
             }
+        }
+
+        /// <summary>
+        /// Send audit for querying
+        /// </summary>
+        protected virtual void SendAuditQuery(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> results)
+        {
+            AuditUtil.AuditQuery(Core.Auditing.OutcomeIndicator.Success, PipeParser.Encode(message.GetStructure("QPD") as ISegment, new EncodingCharacters('|', "^~\\&")), results.OfType<IdentifiedData>().ToArray());
         }
 
         /// <summary>
@@ -223,7 +231,7 @@ namespace SanteDB.Messaging.HL7.Messages
             var qak = retVal.GetStructure("QAK") as QAK;
             var odsc = retVal.GetStructure("DSC") as DSC;
             var oqpd = retVal.GetStructure("QPD") as QPD;
-            
+
             DeepCopy.copy(request.Message.GetStructure("QPD") as ISegment, oqpd);
             omsh.MessageType.MessageCode.Value = "RSP";
             omsh.MessageType.MessageStructure.Value = retVal.GetType().Name;
@@ -247,13 +255,12 @@ namespace SanteDB.Messaging.HL7.Messages
             return retVal;
         }
 
-
         /// <summary>
         /// Validate that this message can be processed
         /// </summary>
         protected override bool Validate(IMessage message)
         {
-            // Get the 
+            // Get the
             var msh = message.GetStructure("MSH") as MSH;
             var trigger = msh.MessageType.TriggerEvent.Value;
 

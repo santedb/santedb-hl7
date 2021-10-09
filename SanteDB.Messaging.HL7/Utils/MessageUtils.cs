@@ -75,7 +75,7 @@ namespace SanteDB.Messaging.HL7.Utils
                 }
 
                 if (s_installDate == null)
-                    s_installDate = new FileInfo(Assembly.GetEntryAssembly().Location).CreationTime;
+                    s_installDate = new FileInfo(Assembly.GetEntryAssembly().Location).LastWriteTime;
 
                 sftSegment.SoftwareBinaryID.Value = s_entryAsmHash;
                 sftSegment.SoftwareInstallDate.Time.SetLongDate(s_installDate);

@@ -2,26 +2,29 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using NHapi.Base.Model;
 using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
+using SanteDB.Core.Auditing;
+using SanteDB.Core.Model;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Security.Audit;
@@ -29,6 +32,8 @@ using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
@@ -36,11 +41,10 @@ namespace SanteDB.Messaging.HL7.Messages
 {
     /// <summary>
     /// Represents a message handler that handles ADT messages
-    /// </summary> 
+    /// </summary>
     [DisplayName("SanteDB ADT Message Handler")]
     public class AdtMessageHandler : MessageHandlerBase
     {
-
         /// <summary>
         /// Supported triggers
         /// </summary>
@@ -54,7 +58,6 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <returns>The response to the ADT message</returns>
         protected override IMessage HandleMessageInternal(Hl7MessageReceivedEventArgs e, Bundle parsed)
         {
-
             var msh = e.Message.GetStructure("MSH") as MSH;
             switch (msh.MessageType.TriggerEvent.Value)
             {
@@ -63,8 +66,10 @@ namespace SanteDB.Messaging.HL7.Messages
                     return this.PerformAdmit(e, parsed); // parsed.Item.OfType<Patient>().SingleOrDefault(o=>o.Tags.Any(t=>t.TagKey == ".v2.segment" && t.Value == "PID")));
                 case "A08": // Update
                     return this.PerformUpdate(e, parsed);
+
                 case "A40": // Merge
                     return this.PerformMerge(e, parsed);
+
                 default:
                     throw new InvalidOperationException($"Do not understand event {msh.MessageType.TriggerEvent.Value}");
             }
@@ -87,15 +92,25 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 insertBundle = repoService.Insert(insertBundle);
 
-                AuditUtil.AuditCreate(Core.Model.Audit.OutcomeIndicator.Success, null, insertBundle.Item.ToArray());
+                this.SendAuditAdmit(OutcomeIndicator.Success, e.Message, insertBundle.Item.OfType<IdentifiedData>());
+
                 // Create response message
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"{patient.Key} created");
             }
             catch (Exception ex)
             {
-                AuditUtil.AuditUpdate(Core.Model.Audit.OutcomeIndicator.MinorFail, null, insertBundle.Item.ToArray());
+                this.SendAuditAdmit(OutcomeIndicator.EpicFail, e.Message, null);
+
                 throw new HL7ProcessingException("Error performing admit", null, null, 0, 0, ex);
             }
+        }
+
+        /// <summary>
+        /// Send an audit of admit
+        /// </summary>
+        protected virtual void SendAuditAdmit(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> enumerable)
+        {
+            AuditUtil.AuditCreate(Core.Auditing.OutcomeIndicator.Success, null, enumerable.ToArray());
         }
 
         /// <summary>
@@ -110,22 +125,31 @@ namespace SanteDB.Messaging.HL7.Messages
                     throw new ArgumentNullException(nameof(updateBundle), "Message did not contain a patient");
                 else if (!patient.Key.HasValue)
                     throw new InvalidOperationException("Update can only be performed on existing patients. Ensure that a unique identifier exists on the update record");
+
                 var repoService = ApplicationServiceContext.Current.GetService<IRepositoryService<Bundle>>();
                 if (repoService == null)
                     throw new InvalidOperationException("Cannot find repository for Patient");
 
                 updateBundle = repoService.Save(updateBundle);
-                AuditUtil.AuditUpdate(Core.Model.Audit.OutcomeIndicator.Success, null, updateBundle.Item.ToArray());
+
+                this.SendAuditUpdate(Core.Auditing.OutcomeIndicator.Success, e.Message, updateBundle.Item.ToArray());
 
                 // Create response message
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"{patient.Key} updated");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                AuditUtil.AuditUpdate(Core.Model.Audit.OutcomeIndicator.MinorFail, null, updateBundle.Item.ToArray());
+                this.SendAuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, e.Message, updateBundle.Item.ToArray());
                 throw new HL7ProcessingException("Error performing admit", null, null, 0, 0, ex);
             }
+        }
 
+        /// <summary>
+        /// Send audit update
+        /// </summary>
+        protected virtual void SendAuditUpdate(OutcomeIndicator outcome, IMessage message, IEnumerable<IdentifiedData> results)
+        {
+            AuditUtil.AuditUpdate(outcome, null, results.ToArray());
         }
 
         /// <summary>
@@ -137,34 +161,50 @@ namespace SanteDB.Messaging.HL7.Messages
             try
             {
                 var mergePairs = bundle.Item.OfType<Bundle>();
-                if(!mergePairs.Any())
+                if (!mergePairs.Any())
                 {
                     throw new InvalidOperationException("Merge requires at least one pair of PID and MRG");
                 }
 
                 var mergeService = ApplicationServiceContext.Current.GetService<IRecordMergingService<Patient>>();
                 var patientService = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>();
-                foreach(var mrgPair in mergePairs)
+                foreach (var mrgPair in mergePairs)
                 {
                     var survivor = mrgPair.Item.OfType<Patient>().FirstOrDefault(o => o.GetTag("$v2.segment") == "PID");
                     var victims = mrgPair.Item.OfType<Patient>().Where(o => o.GetTag("$v2.segment") == "MRG");
-                    if(survivor ==null || !victims.Any())
+                    if (survivor == null || !victims.Any())
                     {
                         throw new InvalidOperationException("Merge requires at least one PID and one or more MRG");
                     }
 
                     // Perform the merge
-                    mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value));
+                    this.SendAuditMerge(Core.Auditing.OutcomeIndicator.Success, e.Message, mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value)));
                 }
 
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"Merge accepted");
             }
             catch (Exception ex)
             {
-                AuditUtil.AuditUpdate(Core.Model.Audit.OutcomeIndicator.MinorFail, null, bundle.Item.OfType<Bundle>());
+                this.SendAuditMerge(Core.Auditing.OutcomeIndicator.MinorFail, e.Message, null);
                 throw new HL7ProcessingException("Error performing merge", null, null, 0, 0, ex);
             }
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Send audit merge
+        /// </summary>
+        protected virtual void SendAuditMerge(OutcomeIndicator outcome, IMessage message, RecordMergeResult recordMergeResult)
+        {
+            if (recordMergeResult != null)
+            {
+                AuditUtil.AuditDelete(outcome, "ADT^A40", new Patient() { Key = recordMergeResult.Replaced.First() });
+                AuditUtil.AuditUpdate(outcome, "ADT^A40", new Patient() { Key = recordMergeResult.Survivors.First() });
+            }
+            else
+            {
+                AuditUtil.AuditUpdate<IdentifiedData>(outcome, "ADT^A40");
+            }
         }
 
         /// <summary>
