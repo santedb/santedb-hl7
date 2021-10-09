@@ -228,7 +228,7 @@ namespace SanteDB.Messaging.HL7
                             sadItem.DwellingNumber.Value = itm.Value;
                         else if (itm.ComponentTypeKey == AddressComponentKeys.StreetName)
                             sadItem.StreetName.Value = itm.Value;
-                        else if (itm.ComponentTypeKey == AddressComponentKeys.StreetAddressLine)
+                        else if (itm.ComponentTypeKey == AddressComponentKeys.StreetAddressLine || itm.ComponentTypeKey == AddressComponentKeys.AddressLine)
                             sadItem.StreetOrMailingAddress.Value = itm.Value;
                     }
                     else if (valueItem is AbstractPrimitive)

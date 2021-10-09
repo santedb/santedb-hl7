@@ -2,22 +2,23 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.Entities;
@@ -44,7 +45,6 @@ namespace SanteDB.Messaging.HL7.Segments
     /// </summary>
     public class PD1SegmentHandler : ISegmentHandler
     {
-
         private const string LivingArrangementCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.220";
         private const string DisabilityCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.295";
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
@@ -61,7 +61,7 @@ namespace SanteDB.Messaging.HL7.Segments
         {
             var retVal = context.GetStructure("PD1") as PD1;
             var patient = data as Patient;
-            
+
             // Load the PD1 data
             var relationships = patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships));
 
@@ -70,9 +70,9 @@ namespace SanteDB.Messaging.HL7.Segments
                 retVal.LivingArrangement.FromModel(patient.LoadProperty<Concept>(nameof(Patient.LivingArrangement)), LivingArrangementCodeSystem);
 
             // Assigned facilities
-            foreach(var itm in relationships.Where(o=>o.RelationshipTypeKey == EntityRelationshipTypeKeys.DedicatedServiceDeliveryLocation))
+            foreach (var itm in relationships.Where(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.DedicatedServiceDeliveryLocation))
             {
-                var place = itm.LoadProperty<Place>(nameof(EntityRelationship.TargetEntity));
+                var place = itm.LoadProperty(o => o.TargetEntity);
                 var xon = retVal.GetPatientPrimaryFacility(retVal.PatientPrimaryFacilityRepetitionsUsed);
 
                 xon.AssigningAuthority.FromModel(this.m_configuration.LocalAuthority);
@@ -95,7 +95,6 @@ namespace SanteDB.Messaging.HL7.Segments
         /// </summary>
         public virtual IEnumerable<IdentifiedData> Parse(ISegment segment, IEnumerable<IdentifiedData> context)
         {
-
             var fieldNo = 0;
             var pd1Segment = segment as PD1;
 
@@ -133,7 +132,7 @@ namespace SanteDB.Messaging.HL7.Segments
                             place = sdlRepo.Get(Guid.Parse(idnumber), null, true, AuthenticationContext.SystemPrincipal);
                         else
                             place = sdlRepo.Query(o => o.ClassConceptKey == EntityClassKeys.ServiceDeliveryLocation && o.Identifiers.Any(i => i.Value == idnumber && i.Authority.Key == authority.Key), AuthenticationContext.SystemPrincipal).SingleOrDefault();
-                        
+
                         if (place != null)
                         {
                             if (!retVal.Relationships.Any(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.DedicatedServiceDeliveryLocation && o.TargetEntityKey == place.Key))
@@ -145,7 +144,6 @@ namespace SanteDB.Messaging.HL7.Segments
                             throw new KeyNotFoundException($"Facility {idnumber} could not be found");
                     }
                 }
-
 
                 // Disabilities - Create functional limitation template
                 fieldNo = 6;

@@ -2,22 +2,23 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Acts;
 using SanteDB.Core.Model.Constants;
@@ -35,6 +36,7 @@ using SanteDB.Core;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
+using SanteDB.Core.Extensions;
 
 namespace SanteDB.Messaging.HL7.Segments
 {
@@ -43,7 +45,6 @@ namespace SanteDB.Messaging.HL7.Segments
     /// </summary>
     public class PIDSegmentHandler : ISegmentHandler
     {
-
         private const string AdministrativeGenderCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.1";
         private const string RaceCodeSystem = "2.16.840.1.113883.5.5";
         private const string MaritalStatusCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.2";
@@ -114,9 +115,11 @@ namespace SanteDB.Messaging.HL7.Segments
                     case DatePrecision.Year:
                         retVal.DateTimeOfBirth.Time.Set(patient.DateOfBirth.Value, "yyyy");
                         break;
+
                     case DatePrecision.Month:
                         retVal.DateTimeOfBirth.Time.Set(patient.DateOfBirth.Value, "yyyyMM");
                         break;
+
                     case DatePrecision.Day:
                         retVal.DateTimeOfBirth.Time.Set(patient.DateOfBirth.Value, "yyyyMMdd");
                         break;
@@ -137,9 +140,11 @@ namespace SanteDB.Messaging.HL7.Segments
                         case DatePrecision.Year:
                             retVal.PatientDeathDateAndTime.Time.Set(patient.DeceasedDate.Value, "yyyy");
                             break;
+
                         case DatePrecision.Month:
                             retVal.PatientDeathDateAndTime.Time.Set(patient.DeceasedDate.Value, "yyyyMM");
                             break;
+
                         case DatePrecision.Day:
                             retVal.PatientDeathDateAndTime.Time.Set(patient.DeceasedDate.Value, "yyyyMMdd");
                             break;
@@ -223,7 +228,6 @@ namespace SanteDB.Messaging.HL7.Segments
 
             try
             {
-
                 Patient retVal = new Patient() { Key = Guid.NewGuid(), StatusConceptKey = StatusKeys.Active };
                 Person motherEntity = null;
                 List<IdentifiedData> retCollection = new List<IdentifiedData>();
@@ -283,14 +287,14 @@ namespace SanteDB.Messaging.HL7.Segments
                     if (this.m_configuration.IdentifierReplacementBehavior == IdentifierReplacementMode.AnyInDomain)
                         retVal.Identifiers.RemoveAll(o => messageIdentifiers.Any(i => i.EffectiveVersionSequenceId.HasValue && i.AuthorityKey == o.AuthorityKey));
 
-                    // Remove any identifiers matching the value explicitly 
+                    // Remove any identifiers matching the value explicitly
                     retVal.Identifiers.RemoveAll(o => messageIdentifiers.Any(i => i.ObsoleteVersionSequenceId.HasValue && i.AuthorityKey == o.AuthorityKey && i.Value == o.Value));
 
                     // Add any identifiers which we don't have any other identifier domain for
                     retVal.Identifiers.AddRange(messageIdentifiers.Where(o => !o.ObsoleteVersionSequenceId.HasValue && !retVal.Identifiers.Any(i => i.Authority.Key == o.AuthorityKey && i.Value == o.Value)));
                 }
 
-                // Find the key for the patient 
+                // Find the key for the patient
                 var keyId = pidSegment.GetPatientIdentifierList().FirstOrDefault(o => o.AssigningAuthority.NamespaceID.Value == this.m_configuration.LocalAuthority.DomainName);
                 if (keyId != null)
                     retVal.Key = Guid.Parse(keyId.IDNumber.Value);
@@ -312,14 +316,14 @@ namespace SanteDB.Messaging.HL7.Segments
 
                 fieldNo = 21;
                 // Mother's maiden name, create a relationship for mother
-                if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.GetMotherSIdentifier().Any(o=>!o.IsEmpty()))
+                if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.GetMotherSIdentifier().Any(o => !o.IsEmpty()))
                 {
                     var personService = ApplicationServiceContext.Current.GetService<IRepositoryService<Person>>();
-                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o=>o.TargetEntity) as Person;
+                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity) as Person;
                     Person foundMother = null;
 
-                    // Attempt to find the existing mother in the database based on ID 
-                    foreach (var id in pidSegment.GetMotherSIdentifier().Where(o=>!o.IsEmpty()))
+                    // Attempt to find the existing mother in the database based on ID
+                    foreach (var id in pidSegment.GetMotherSIdentifier().Where(o => !o.IsEmpty()))
                     {
                         AssigningAuthority authority = null;
                         try
@@ -337,7 +341,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         else if (authority?.IsUnique == true)
                         {
-                            foundMother = personService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault() ?? 
+                            foundMother = personService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault() ??
                                 patientService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault();
                         }
 
@@ -360,20 +364,18 @@ namespace SanteDB.Messaging.HL7.Segments
                         };
                         retCollection.Add(motherEntity);
                     }
-                    else if(existingMother != null) // existing mother - update
+                    else if (existingMother != null) // existing mother - update
                     {
-                        if (!existingMother.LoadCollection(o => o.Identifiers).Any()) // update identifiers 
+                        if (!existingMother.LoadCollection(o => o.Identifiers).Any()) // update identifiers
                         {
                             existingMother.Identifiers = pidSegment.GetMotherSIdentifier().ToModel().ToList();
                         }
                         existingMother.Names = pidSegment.GetMotherSMaidenName().ToModel(NameUseKeys.MaidenName).ToList();
                         motherEntity = existingMother;
                         retCollection.Add(motherEntity);
-
                     }
                     else
                         motherEntity = foundMother;
-
 
                     var existingRelationship = retVal.Relationships.FirstOrDefault(r => r.SourceEntityKey == retVal.Key && r.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother);
                     if (existingRelationship == null)
@@ -382,14 +384,20 @@ namespace SanteDB.Messaging.HL7.Segments
                     }
                     else if (existingRelationship.TargetEntityKey != motherEntity.Key)
                     {
-                        // Was the mother found? 
+                        // Was the mother found?
 
                         existingRelationship.BatchOperation = BatchOperationType.Obsolete;
                         retCollection.Add(existingRelationship);
                         retVal.Relationships.Remove(existingRelationship);
                         retCollection.Add(new EntityRelationship(EntityRelationshipTypeKeys.Mother, motherEntity.Key) { SourceEntityKey = retVal.Key });
                     }
+                }
 
+                // Nationality
+                fieldNo = 28;
+                if (!pidSegment.Nationality.IsEmpty())
+                {
+                    retVal.Nationality = pidSegment.Nationality.ToModel();
                 }
 
                 // Date/time of birth
@@ -413,7 +421,9 @@ namespace SanteDB.Messaging.HL7.Segments
                 // Race codes
                 fieldNo = 10;
                 if (pidSegment.RaceRepetitionsUsed > 0)
-                    ; // TODO: Implement as an extension if needed 
+                {
+                    retVal.Extensions.AddRange(pidSegment.GetRace().Select(o => new EntityExtension(ExtensionTypeKeys.PatientRaceExtension, typeof(ReferenceExtensionHandler), o.ToModel(RaceCodeSystem))));
+                }
 
                 // Addresses
                 fieldNo = 11;
@@ -467,7 +477,6 @@ namespace SanteDB.Messaging.HL7.Segments
                 // Patient account, locate the specified account
                 if (!pidSegment.PatientAccountNumber.IsEmpty())
                 {
-
                     var account = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Account>>()?.Query(o => o.Identifiers.Any(i => i.Value == pidSegment.PatientAccountNumber.IDNumber.Value), AuthenticationContext.SystemPrincipal).FirstOrDefault();
                     if (account != null)
                         retVal.Participations.Add(new ActParticipation(ActParticipationKey.Holder, retVal) { SourceEntityKey = account.Key });
@@ -573,7 +582,6 @@ namespace SanteDB.Messaging.HL7.Segments
                         {
                             throw new KeyNotFoundException($"Cannot find country with code {cit.Identifier.Value}");
                         }
-
                     }
                 }
 
@@ -598,7 +606,6 @@ namespace SanteDB.Messaging.HL7.Segments
                 //    if (user != null)
                 //        retVal.CreatedBy = user;
                 //}
-
 
                 retVal.AddTag(Hl7Constants.FocalObjectTag, "true");
                 retCollection.Add(retVal);

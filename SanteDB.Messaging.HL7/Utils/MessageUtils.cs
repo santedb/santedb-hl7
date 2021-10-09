@@ -74,7 +74,7 @@ namespace SanteDB.Messaging.HL7.Utils
                         s_entryAsmHash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "");
                 }
 
-                if (s_installDate == null)
+                if (s_installDate == DateTime.MinValue)
                     s_installDate = new FileInfo(Assembly.GetEntryAssembly().Location).LastWriteTime;
 
                 sftSegment.SoftwareBinaryID.Value = s_entryAsmHash;
