@@ -23,8 +23,8 @@ using NHapi.Base.Model;
 using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
-using SanteDB.Core.Auditing;
 using SanteDB.Core.Model;
+using SanteDB.Core.Model.Audit;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Security.Audit;
@@ -108,9 +108,9 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// Send an audit of admit
         /// </summary>
-        protected virtual void SendAuditAdmit(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> enumerable)
+        protected virtual void SendAuditAdmit(OutcomeIndicator outcome, IMessage message, IEnumerable<IdentifiedData> enumerable)
         {
-            AuditUtil.AuditCreate(Core.Auditing.OutcomeIndicator.Success, null, enumerable.ToArray());
+            AuditUtil.AuditCreate(OutcomeIndicator.Success, null, enumerable.ToArray());
         }
 
         /// <summary>
@@ -132,14 +132,14 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 updateBundle = repoService.Save(updateBundle);
 
-                this.SendAuditUpdate(Core.Auditing.OutcomeIndicator.Success, e.Message, updateBundle.Item.ToArray());
+                this.SendAuditUpdate(OutcomeIndicator.Success, e.Message, updateBundle.Item.ToArray());
 
                 // Create response message
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"{patient.Key} updated");
             }
             catch (Exception ex)
             {
-                this.SendAuditUpdate(Core.Auditing.OutcomeIndicator.MinorFail, e.Message, updateBundle.Item.ToArray());
+                this.SendAuditUpdate(OutcomeIndicator.MinorFail, e.Message, updateBundle.Item.ToArray());
                 throw new HL7ProcessingException("Error performing admit", null, null, 0, 0, ex);
             }
         }
@@ -178,14 +178,14 @@ namespace SanteDB.Messaging.HL7.Messages
                     }
 
                     // Perform the merge
-                    this.SendAuditMerge(Core.Auditing.OutcomeIndicator.Success, e.Message, mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value)));
+                    this.SendAuditMerge(OutcomeIndicator.Success, e.Message, mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value)));
                 }
 
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"Merge accepted");
             }
             catch (Exception ex)
             {
-                this.SendAuditMerge(Core.Auditing.OutcomeIndicator.MinorFail, e.Message, null);
+                this.SendAuditMerge(OutcomeIndicator.MinorFail, e.Message, null);
                 throw new HL7ProcessingException("Error performing merge", null, null, 0, 0, ex);
             }
             throw new NotImplementedException();

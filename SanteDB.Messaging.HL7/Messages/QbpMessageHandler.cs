@@ -25,8 +25,8 @@ using NHapi.Base.Util;
 using NHapi.Model.V25.Datatype;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
-using SanteDB.Core.Auditing;
 using SanteDB.Core.Model;
+using SanteDB.Core.Model.Audit;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.DataTypes;
 using SanteDB.Core.Model.Query;
@@ -191,7 +191,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     offset.Value + count.GetValueOrDefault() < totalResults)
                     ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>()?.SetQueryTag(queryId, count);
 
-                this.SendAuditQuery(Core.Auditing.OutcomeIndicator.Success, e.Message, results.OfType<IdentifiedData>().ToArray());
+                this.SendAuditQuery(OutcomeIndicator.Success, e.Message, results.OfType<IdentifiedData>().ToArray());
 
                 // Query basics
                 return this.CreateQueryResponse(e, filterQuery, map, results, queryId, offset.GetValueOrDefault(), count ?? 100, totalResults);
@@ -199,7 +199,7 @@ namespace SanteDB.Messaging.HL7.Messages
             catch (Exception ex)
             {
                 this.m_traceSource.TraceEvent(EventLevel.Error, "Error executing query: {0}", ex);
-                this.SendAuditQuery(Core.Auditing.OutcomeIndicator.MinorFail, e.Message, null);
+                this.SendAuditQuery(OutcomeIndicator.MinorFail, e.Message, null);
 
                 // Now we construct the response
                 return this.CreateNACK(map.ResponseType, e.Message, ex, e);
@@ -209,9 +209,9 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// Send audit for querying
         /// </summary>
-        protected virtual void SendAuditQuery(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> results)
+        protected virtual void SendAuditQuery(OutcomeIndicator outcome, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditQuery(Core.Auditing.OutcomeIndicator.Success, PipeParser.Encode(message.GetStructure("QPD") as ISegment, new EncodingCharacters('|', "^~\\&")), results.OfType<IdentifiedData>().ToArray());
+            AuditUtil.AuditQuery(outcome, PipeParser.Encode(message.GetStructure("QPD") as ISegment, new EncodingCharacters('|', "^~\\&")), results.OfType<IdentifiedData>().ToArray());
         }
 
         /// <summary>
