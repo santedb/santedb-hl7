@@ -41,6 +41,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using SanteDB.Core.Diagnostics;
 
 namespace SanteDB.Messaging.HL7.Query
 {
@@ -52,7 +53,9 @@ namespace SanteDB.Messaging.HL7.Query
 
         // Configuration
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current?.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
+        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
 
+        private readonly Tracer m_tracer = Tracer.GetTracer(typeof(FindCandidatesQueryHandler));
         /// <summary>
         /// Append query results to the message
         /// </summary>
@@ -130,8 +133,12 @@ namespace SanteDB.Messaging.HL7.Query
                     retVal.Add(itm.Key, itm.Value);
                 }
                 catch(Exception e)
-                {
-                    throw new HL7ProcessingException("Error processing query parameter", "QPD", "1", 3, 0, e);
+                { 
+                    this.m_tracer.TraceError("Error processing query parameter", "QPD", "1", 3, 0, e);
+                    throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                    {
+                        param = "query parameter"
+                    }), "QPD", "1", 3, 0, e);
                 }
 
             // Return domains
@@ -150,7 +157,11 @@ namespace SanteDB.Messaging.HL7.Query
                 }
                 catch(Exception e)
                 {
-                    throw new HL7ProcessingException("Error processing return domains", "QPD", "1", 8, 0, e);
+                    this.m_tracer.TraceError("Error processing return domains", "QPD", "1", 8, 0, e);
+                    throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                    {
+                        param = "return domains"
+                    }), "QPD", "1", 8, 0, e);
                 }
             }
 
