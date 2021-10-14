@@ -18,8 +18,11 @@
  * User: fyfej
  * Date: 2021-8-5
  */
+using SanteDB.Core;
 using SanteDB.Core.Configuration;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Security.Configuration;
+using SanteDB.Core.Services;
 using SanteDB.Docker.Core;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.TransportProtocol;
@@ -66,6 +69,9 @@ namespace SanteDB.Messaging.HL7.Docker
         /// </summary>
         public const string ClientCertificateSetting = "CLIENT_AUTH";
 
+        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+
+        private readonly Tracer m_tracer = Tracer.GetTracer(typeof(Hl7DockerFeature));
         /// <summary>
         /// Get the ID of this feature
         /// </summary>
@@ -93,7 +99,11 @@ namespace SanteDB.Messaging.HL7.Docker
             if(settings.TryGetValue(AuthenticationSetting, out string auth))
             {
                 if(!Enum.TryParse<AuthenticationMethod>(auth, true, out AuthenticationMethod authResult)) {
-                    throw new ArgumentOutOfRangeException($"Couldn't understand {auth}, valid values are NONE, MSH8, or SFT4");
+                    this.m_tracer.TraceError($"Couldn't understand {auth}, valid values are NONE, MSH8, or SFT4");
+                    throw new ArgumentOutOfRangeException(this.m_localizationService.FormatString("error.messaging.hl7.invalidValue", new
+                    {
+                        param = auth
+                    }));
                 }
                 hl7Configuration.Security = authResult;
             }
@@ -115,7 +125,12 @@ namespace SanteDB.Messaging.HL7.Docker
             {
                 if(!Uri.TryCreate(listenStr, UriKind.Absolute, out Uri listenUri) )
                 {
-                    throw new ArgumentOutOfRangeException($"{listenStr} is not a valid URL");
+                    this.m_tracer.TraceError($"{listenStr} is not a valid URL");
+                    throw new ArgumentOutOfRangeException(this.m_localizationService.FormatString("error.messaging.hl7.invalidUrl", new
+                    {
+
+                        param = listenStr
+                    }));
                 }
 
                 hl7Configuration.Services.ForEach(o => o.AddressXml = listenStr);
@@ -126,7 +141,9 @@ namespace SanteDB.Messaging.HL7.Docker
             {
                 if(!Int32.TryParse(timeoutStr, out int timeout))
                 {
-                    throw new ArgumentOutOfRangeException("Invalid timeout");
+                    this.m_tracer.TraceError("Invalid timeout");
+                    throw new ArgumentOutOfRangeException(this.m_localizationService.GetString("error.messaging.hl7.invalidTimeout"));
+    
                 }
                 hl7Configuration.Services.ForEach(o => o.ReceiveTimeout = timeout);
             }
