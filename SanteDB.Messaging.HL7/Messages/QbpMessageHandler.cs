@@ -26,6 +26,7 @@ using NHapi.Model.V25.Datatype;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
 using SanteDB.Core.Auditing;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.DataTypes;
@@ -58,6 +59,10 @@ namespace SanteDB.Messaging.HL7.Messages
     {
         // Loaded query parameter map
         private static Hl7QueryParameterMap s_map;
+        // localization service
+        private static readonly ILocalizationService m_localizationService;
+        // Tracer
+        public static readonly Tracer m_tracer = Tracer.GetTracer(typeof(QbpMessageHandler));
 
         /// <summary>
         /// Gets the supported triggers
@@ -69,6 +74,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// </summary>
         static QbpMessageHandler()
         {
+            m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
             OpenMapping(typeof(QbpMessageHandler).Assembly.GetManifestResourceStream("SanteDB.Messaging.HL7.ParameterMap.xml"));
 
             if (!String.IsNullOrEmpty(Assembly.GetEntryAssembly()?.Location))
@@ -121,13 +127,17 @@ namespace SanteDB.Messaging.HL7.Messages
             try
             {
                 if (map.ResponseType == null)
-                    throw new NotSupportedException($"Response type not found");
-
+                {
+                    m_tracer.TraceError($"Response type not found");
+                    throw new NotSupportedException(m_localizationService.GetString("error.messaging.hl7.responseType"));
+                }
                 // First, process the query parameters
                 var query = map.QueryHandler.ParseQuery(qpd, map);
                 if (query.Count == 0)
-                    throw new InvalidOperationException("Query must provide at least one understood filter");
-
+                {
+                    m_tracer.TraceError("Query must provide at least one understood filter");
+                    throw new InvalidOperationException(m_localizationService.GetString("error.messaging.hl7.query"));
+                }
                 // Control?
                 var rcp = e.Message.GetStructure("RCP") as RCP;
                 int? count = null, offset = 0;
@@ -140,7 +150,10 @@ namespace SanteDB.Messaging.HL7.Messages
                 if (!String.IsNullOrEmpty(dsc.ContinuationPointer.Value))
                 {
                     if (!Guid.TryParse(dsc.ContinuationPointer.Value, out queryId))
-                        throw new InvalidOperationException($"DSC^1 must be UUID provided by this service.");
+                    {
+                        m_tracer.TraceError($"DSC^1 must be UUID provided by this service.");
+                        throw new InvalidOperationException(m_localizationService.GetString("error.messaging.hl7.dsc"));
+                    }
                 }
 
                 // Get the query tag which is the current offset
@@ -154,8 +167,13 @@ namespace SanteDB.Messaging.HL7.Messages
                 // Next, we want to get the repository for the bound type
                 var repoService = ApplicationServiceContext.Current.GetService(typeof(IRepositoryService<>).MakeGenericType(map.QueryTarget));
                 if (repoService == null)
-                    throw new InvalidOperationException($"Cannot find repository service for {map.QueryTargetXml}");
-
+                {
+                    m_tracer.TraceError($"Cannot find repository service for {map.QueryTargetXml}");
+                    throw new InvalidOperationException(m_localizationService.FormatString("error.messaging.hl7.repositoryService", new
+                    {
+                        param = map.QueryTargetXml
+                    })); 
+                }
                 // Build query
                 int totalResults = 0;
                 IEnumerable results = null;
@@ -265,7 +283,15 @@ namespace SanteDB.Messaging.HL7.Messages
             var trigger = msh.MessageType.TriggerEvent.Value;
 
             if (!s_map.Map.Any(m => m.Trigger == trigger))
-                throw new NotSupportedException($"{trigger} not understood or mapped");
+            {
+                m_tracer.TraceError($"{trigger} not understood or mapped");
+                throw new NotSupportedException(m_localizationService.FormatString("error.messaging.hl7.notUnderstood", new
+                {
+                    param = trigger
+                }));
+               
+            }
+                
             return true;
         }
     }

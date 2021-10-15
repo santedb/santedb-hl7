@@ -42,6 +42,7 @@ using SanteDB.Core.Model;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Core.Matching;
+using SanteDB.Core.Diagnostics;
 
 namespace SanteDB.Messaging.HL7.Query
 {
@@ -52,7 +53,9 @@ namespace SanteDB.Messaging.HL7.Query
     {
         // Get configuration
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current?.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
+        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
 
+        private readonly Tracer m_tracer = Tracer.GetTracer(typeof(CrossReferenceQueryHandler));
         /// <summary>
         /// Append query results to the message
         /// </summary>
@@ -147,7 +150,12 @@ namespace SanteDB.Messaging.HL7.Query
                 }
                 catch (Exception e)
                 {
-                    throw new HL7ProcessingException("Error processing patient identity", "QPD", "1", 3, 4, e);
+                    this.m_tracer.TraceError("Error processing patient identity", "QPD", "1", 3, 4, e);
+                    throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new 
+                    { 
+                      param = "patient identity"
+                    }), "QPD", "1", 3, 4, e);
+                    
                 }
             }
 
@@ -164,7 +172,12 @@ namespace SanteDB.Messaging.HL7.Query
                 }
                 catch (Exception e)
                 {
-                    throw new HL7ProcessingException("Error processing what domains returned", "QPD", "1", 4, 4, e);
+                    this.m_tracer.TraceError("Error processing what domains returned", "QPD", "1", 4, 4, e);
+                    throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                    {
+                        param = "what domains returned"
+                    }), "QPD", "1", 4, 4, e);
+                    
                 }
             }
 
