@@ -33,6 +33,7 @@ using NHapi.Model.V25.Datatype;
 using NHapi.Base.Model;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
@@ -60,6 +61,15 @@ namespace SanteDB.Messaging.HL7.Segments
             EntityClassKeys.Place
         };
 
+        
+        // Localization Service
+        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+
+        
+        // Tracer
+        private readonly Tracer m_tracer = Tracer.GetTracer(typeof(PIDSegmentHandler));
+
+
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
 
         /// <summary>
@@ -78,7 +88,14 @@ namespace SanteDB.Messaging.HL7.Segments
             var retVal = context.GetStructure("PID") as PID;
             var patient = data as Patient;
             if (patient == null)
-                throw new InvalidOperationException($"Cannot convert {data.GetType().Name} to PID");
+            {
+                this.m_tracer.TraceError($"Cannot convert {data.GetType().Name} to PID");
+                throw new InvalidOperationException(this.m_localizationService.FormatString("error.messaging.hl7.conversionPID", new
+                {
+                    param = data.GetType().Name
+                }));
+            }
+                
 
             // Map patient to PID
             if (exportDomains == null || exportDomains?.Length == 0 || exportDomains?.Any(d => d.Key == this.m_configuration.LocalAuthority.Key) == true)
@@ -247,13 +264,20 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         catch (Exception e)
                         {
-                            throw new HL7ProcessingException("Error processig assigning authority", "PID", pidSegment.SetIDPID.Value, 3, 4, e);
+                            throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                            {
+                                param = "assigning authority"
+                            }), "PID", pidSegment.SetIDPID.Value, 3, 4, e);
                         }
 
                         // Authority not found?
                         if (authority == null)
                         {
-                            throw new HL7ProcessingException($"No authority configured for {id.AssigningAuthority.NamespaceID.Value}", "PID", pidSegment.SetIDPID.Value, 3, 4);
+                            this.m_tracer.TraceError($"No authority configured for {id.AssigningAuthority.NamespaceID.Value}");
+                            throw new HL7ProcessingException(this.m_localizationService.FormatString("error.messaging.hl7.authorityNone", new
+                            {
+                                param = id.AssigningAuthority.NamespaceID.Value
+                            }),"PID", pidSegment.SetIDPID.Value, 3, 4);
                         }
 
                         Guid idguid = Guid.Empty;
@@ -299,8 +323,8 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (keyId != null)
                     retVal.Key = Guid.Parse(keyId.IDNumber.Value);
 
-                if (retVal.Identifiers.Count == 0)
-                    throw new HL7ProcessingException("Couldn't understand any patient identity", "PID", pidSegment.SetIDPID.Value, 3, 1);
+                if (!retVal.Identifiers.Any())
+                    throw new HL7ProcessingException(this.m_localizationService.GetString("error.messaging.hl7.identityPatient"), "PID", pidSegment.SetIDPID.Value, 3, 1);
 
                 fieldNo = 5;
                 if (pidSegment.PatientNameRepetitionsUsed > 0)
@@ -332,7 +356,10 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         catch (Exception e)
                         {
-                            throw new HL7ProcessingException("Error processing mother's identifiers", "PID", pidSegment.SetIDPID.Value, 21, 3);
+                            throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                            {
+                                param = "mother's identifiers"
+                            }), "PID", pidSegment.SetIDPID.Value, 21, 3);
                         }
 
                         if ((authority.Key == this.m_configuration.LocalAuthority.Key || authority.DomainName == this.m_configuration.LocalAuthority.DomainName) && Guid.TryParse(id.IDNumber.Value, out Guid idNumberUuid))
@@ -554,7 +581,14 @@ namespace SanteDB.Messaging.HL7.Segments
                                 existing.TargetEntityKey = places.First().Key;
                         }
                         else
-                            throw new KeyNotFoundException($"Cannot find unique birth place registration with name {pidSegment.BirthPlace.Value} ({places.Count()} results found). Try using UUID.");
+                        {
+                            throw new KeyNotFoundException(this.m_localizationService.FormatString("error.messaging.hl7.birthPlace", new
+                            {
+                                param = pidSegment.BirthPlace.Value,
+                                param2 = places.Count()
+                            }));
+                        }
+                            
                     }
                 }
 
@@ -580,7 +614,11 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         else
                         {
-                            throw new KeyNotFoundException($"Cannot find country with code {cit.Identifier.Value}");
+                            m_tracer.TraceError($"Cannot find country with code {cit.Identifier.Value}");
+                            throw new KeyNotFoundException(this.m_localizationService.FormatString("error.messaging.hl7.countryCode", new
+                            {
+                                param = cit.Identifier.Value
+                            }));
                         }
                     }
                 }
@@ -618,11 +656,19 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (HL7DatatypeProcessingException e)
             {
-                throw new HL7ProcessingException("Error processing PID segment", "PID", pidSegment.SetIDPID.Value, fieldNo, e.Component, e);
+                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException",
+                    new
+                    {
+                        param = "PID"
+                    }), "PID", pidSegment.SetIDPID.Value, fieldNo, e.Component, e);
             }
             catch (Exception e)
             {
-                throw new HL7ProcessingException("Error processing PID segment", "PID", pidSegment.SetIDPID.Value, fieldNo, 1, e);
+                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException",
+                    new
+                    {
+                        param = "PID"
+                    }), "PID", pidSegment.SetIDPID.Value, fieldNo, 1, e);
             }
         }
     }
