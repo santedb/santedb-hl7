@@ -31,6 +31,7 @@ using NHapi.Model.V25.Segment;
 using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Messaging.HL7.Configuration;
 using System.Linq;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Model.Constants;
 
 namespace SanteDB.Messaging.HL7.Segments
@@ -43,6 +44,12 @@ namespace SanteDB.Messaging.HL7.Segments
 
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
 
+        // Tracer
+        private readonly Tracer m_tracer = Tracer.GetTracer(typeof(MRGSegmentHandler));
+
+        // Localization Service
+        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+
         /// <summary>
         /// Get the name of the segment
         /// </summary>
@@ -54,7 +61,7 @@ namespace SanteDB.Messaging.HL7.Segments
         public IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, AssigningAuthority[] exportDomains)
         {
             // TODO: When broadcasting a MRG event this will need to be constructed only
-            throw new NotImplementedException();
+            throw new NotImplementedException(this.m_localizationService.GetString("error.type.NotImplementedException.userMessage"));
         }
 
         /// <summary>
@@ -68,7 +75,15 @@ namespace SanteDB.Messaging.HL7.Segments
             {
                 var patient = context.OfType<Patient>().FirstOrDefault();
                 if (patient == null)
-                    throw new InvalidOperationException("MRG Requires PID segment to be processed");
+                {
+                    m_tracer.TraceError("MRG Requires PID segment to be processed");
+                    throw new InvalidOperationException(this.m_localizationService.FormatString("error.messaging.hl7.segmentRequirement", new
+                    {
+                        param = "MRG",
+                        param2 = "PID"
+                    }));
+                }
+                    
 
                 var patientService = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>();
 
@@ -85,11 +100,21 @@ namespace SanteDB.Messaging.HL7.Segments
                     }
                     catch (Exception e)
                     {
-                        throw new HL7ProcessingException("Error processig assigning authority", "MRG", "1", 1, 4, e);
+                        throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                        {
+                            param = "assigning authority"
+                        }), "MRG", "1", 1, 4, e);
                     }
 
                     if (authority == null)
-                        throw new HL7ProcessingException($"No authority configured for {id.AssigningAuthority.NamespaceID.Value}", "MRG", "1", 3, 4);
+                    {
+                        m_tracer.TraceError($"No authority configured for {id.AssigningAuthority.NamespaceID.Value}");
+                        throw new HL7ProcessingException(this.m_localizationService.FormatString("error.messaging.hl7.authorityNone", new
+                        {
+                            param = id.AssigningAuthority.NamespaceID.Value
+                        }), "MRG", "1", 3, 4);
+                    }
+                        
                     
                     // Find by local authority or by UUID
                     Guid idguid = Guid.Empty;
@@ -108,7 +133,8 @@ namespace SanteDB.Messaging.HL7.Segments
 
                 if(found == null)
                 {
-                    throw new KeyNotFoundException($"MRG Patient Not Found");
+                    m_tracer.TraceError($"MRG Patient Not Found");
+                    throw new KeyNotFoundException(this.m_localizationService.GetString("error.messaging.hl7.patientMRG"));
                 }
 
                 // The old is obsolete
@@ -123,11 +149,17 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (HL7DatatypeProcessingException e)
             {
-                throw new HL7ProcessingException("Error processing MRG segment", "PID", "1", 1, e.Component, e);
+                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                {
+                    param = "MRG segment"
+                }), "PID", "1", 1, e.Component, e);
             }
             catch (Exception e)
             {
-                throw new HL7ProcessingException("Error processing MRG segment", "PID", "1", 1, 1, e);
+                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                {
+                    param = "MRG segment"
+                }), "PID", "1", 1, 1, e);
             }
         }
     }
