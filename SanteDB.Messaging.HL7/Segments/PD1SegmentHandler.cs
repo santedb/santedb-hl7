@@ -32,6 +32,7 @@ using NHapi.Model.V25.Datatype;
 using NHapi.Base.Model;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Core.Model.DataTypes;
@@ -48,6 +49,12 @@ namespace SanteDB.Messaging.HL7.Segments
         private const string LivingArrangementCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.220";
         private const string DisabilityCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.295";
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
+       
+        // Localization Service
+        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+        
+        // Tracer
+        private readonly Tracer m_tracer = Tracer.GetTracer(typeof(PD1SegmentHandler));
 
         /// <summary>
         /// Patient demographics 1
@@ -102,7 +109,11 @@ namespace SanteDB.Messaging.HL7.Segments
             {
                 var retVal = context.OfType<Patient>().LastOrDefault();
                 if (retVal == null)
-                    throw new MissingFieldException($"PD1 segment requires a PID segment to precede it");
+                {
+                    this.m_tracer.TraceError($"PD1 segment requires a PID segment to precede it");
+                    throw new MissingFieldException(this.m_localizationService.GetString("error.messaging.hl7.requirementPD1"));
+                }
+                    
 
                 // Living arrangement
                 fieldNo = 2;
@@ -123,7 +134,11 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         catch (Exception e)
                         {
-                            throw new HL7ProcessingException("Error processing patient primary facility", "PD1", "1", 3, 5, e);
+                            throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException",
+                                new
+                                {
+                                    param = "patient primary facility"
+                                }), "PD1", "1", 3, 5, e);
                         }
                         var idnumber = xon.OrganizationIdentifier.Value ?? xon.IDNumber.Value;
                         // Find the org or SDL
@@ -141,7 +156,14 @@ namespace SanteDB.Messaging.HL7.Segments
                             }
                         }
                         else
-                            throw new KeyNotFoundException($"Facility {idnumber} could not be found");
+                        {
+                            this.m_tracer.TraceError($"Facility {idnumber} could not be found");
+                            throw new KeyNotFoundException(this.m_localizationService.FormatString("error.messaging.hl7.facilityId", new
+                            {
+                                param = idnumber
+                            }));
+                        }
+                            
                     }
                 }
 
@@ -151,7 +173,8 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     var handicap = pd1Segment.Handicap.ToConcept(DisabilityCodeSystem).Key.Value;
                     // TODO: Create functional limitation observations about the patient
-                    throw new NotImplementedException("Handicap / Functional Limitation handler for PD1 is not completed yet");
+                    this.m_tracer.TraceError("Handicap / Functional Limitation handler for PD1 is not completed yet");
+                    throw new NotImplementedException(this.m_localizationService.GetString("error.messaging.hl7.limitationFunctional"));
                 }
 
                 // Privacy code
@@ -164,7 +187,14 @@ namespace SanteDB.Messaging.HL7.Segments
                     else if (pd1Segment.ProtectionIndicator.Value == "N")
                         retVal.Policies.Clear();
                     else
-                        throw new ArgumentOutOfRangeException($"Value {pd1Segment.ProtectionIndicator.Value} is not valid");
+                    {
+                        this.m_tracer.TraceError($"Protection indicator {pd1Segment.ProtectionIndicator.Value} is not valid");
+                        throw new ArgumentOutOfRangeException(this.m_localizationService.FormatString("error.messaging.hl7.protectionInvalid", new
+                        {
+                            param = pd1Segment.ProtectionIndicator.Value
+                        }));
+                    }
+                        
                 }
 
                 return new IdentifiedData[0];
@@ -175,11 +205,19 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (HL7DatatypeProcessingException e)
             {
-                throw new HL7ProcessingException("Error processing PD1 segment", "PD1", null, fieldNo, e.Component, e);
+                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException",
+                    new
+                    {
+                        param = "PD1"
+                    }), "PD1", null, fieldNo, e.Component, e);
             }
             catch (Exception e)
             {
-                throw new HL7ProcessingException("Error processing PD1 segment", "PD1", null, fieldNo, 1, e);
+                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException.",
+                    new
+                    {
+                        param = "PD1"
+                    }), "PD1", null, fieldNo, 1, e);
             }
         }
     }
