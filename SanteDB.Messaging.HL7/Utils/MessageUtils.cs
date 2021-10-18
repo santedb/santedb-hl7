@@ -48,6 +48,15 @@ namespace SanteDB.Messaging.HL7.Utils
     public static class MessageUtils
     {
 
+        private static readonly Dictionary<String, String> m_eventMessageMaps = new Dictionary<string, string>()
+        {
+            { "ADT\\^A40", "ADT_A39" },
+            { "ADT\\^A01", "ADT_A01" },
+            { "ADT\\^A04", "ADT_A01" },
+            { "ADT\\^A05", "ADT_A01" },
+            { "ADT\\^A08", "ADT_A01" }
+        };
+
         // Entry ASM HASH
         private static string s_entryAsmHash;
         // Install date
@@ -198,6 +207,9 @@ namespace SanteDB.Messaging.HL7.Utils
             else
             {
                 originalVersion = match.Groups[2].Value;
+
+                // Because NHAPI is really finicky with message types we want to replace the appropriate message type
+                m_eventMessageMaps.ToList().ForEach(o => messageData = Regex.Replace(messageData, $"\\|{o.Key}\\^*?\\|", $"|{o.Key.Replace("\\","")}^{o.Value}|"));
                 PipeParser parser = new PipeParser();
                 return parser.Parse(messageData, "2.5");
             }

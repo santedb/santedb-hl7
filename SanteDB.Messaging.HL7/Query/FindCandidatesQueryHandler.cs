@@ -50,12 +50,22 @@ namespace SanteDB.Messaging.HL7.Query
     /// </summary>
     public class FindCandidatesQueryHandler : IQueryHandler
     {
-
         // Configuration
-        private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current?.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
-        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
-
+        private Hl7ConfigurationSection m_configuration;
+        private readonly ILocalizationService m_localizationService;
+        private readonly IQueryScoringService m_scoringService;
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(FindCandidatesQueryHandler));
+
+        /// <summary>
+        /// Find candidates handler
+        /// </summary>
+        public FindCandidatesQueryHandler(IConfigurationManager configurationManager, ILocalizationService localizationService, IQueryScoringService queryScoringService = null)
+        {
+            this.m_localizationService = localizationService;
+            this.m_configuration = configurationManager.GetSection<Hl7ConfigurationSection>();
+            this.m_scoringService = queryScoringService;
+        }
+       
         /// <summary>
         /// Append query results to the message
         /// </summary>
@@ -68,6 +78,7 @@ namespace SanteDB.Messaging.HL7.Query
             var pidHandler = SegmentHandlers.GetSegmentHandler("PID");
             var pd1Handler = SegmentHandlers.GetSegmentHandler("PD1");
             var nokHandler = SegmentHandlers.GetSegmentHandler("NK1");
+            
             var matchService = ApplicationServiceContext.Current.GetService<IRecordMatchingService>();
             var matchConfigService = ApplicationServiceContext.Current.GetService<IRecordMatchingConfigurationService>();
 
@@ -86,29 +97,50 @@ namespace SanteDB.Messaging.HL7.Query
             
             // Process results
             int i = offset + 1;
-            foreach (var itm in patients)
+            IEnumerable<dynamic> resultScores = patients.Select(o => new { Patient = o });
+            if(this.m_scoringService != null)
+            {
+                resultScores = this.m_scoringService.Score<Patient>(queryDefinition as Expression<Func<Patient, bool>>, patients).Select(o => new
+                {
+                    Patient = o.Result,
+                    Score = o.Score,
+                    Method = o.Method
+                });
+            }
+
+            foreach (var itm in resultScores)
             {
                 var queryInstance = retVal.GetQUERY_RESPONSE(retVal.QUERY_RESPONSERepetitionsUsed);
-                pidHandler.Create(itm, queryInstance, returnDomains?.ToArray());
-                pd1Handler.Create(itm, queryInstance, null);
-                nokHandler.Create(itm, queryInstance, null);
+                
+                pidHandler.Create(itm.Patient, queryInstance, returnDomains?.ToArray());
+                pd1Handler.Create(itm.Patient, queryInstance, null);
+                nokHandler.Create(itm.Patient, queryInstance, null);
                 queryInstance.PID.SetIDPID.Value = (i++).ToString();
-                // QRI?
-                if(matchService != null)
+                
+                if(itm.Score != null)
                 {
-                    var ttag = itm.Tags.FirstOrDefault(o => o.TagKey == "$match.confidence");
-                    if(ttag != null)
-                        queryInstance.QRI.CandidateConfidence.Value = ttag?.Value;
-                    
-                    ttag = itm.Tags.FirstOrDefault(o => o.TagKey == "$match.reason");
-                    if (ttag != null)
-                        foreach(var t in ttag.Value.Split(';'))
-                            queryInstance.QRI.GetMatchReasonCode(queryInstance.QRI.MatchReasonCodeRepetitionsUsed).Value = t;
+                    queryInstance.QRI.CandidateConfidence.Value = itm.Score.ToString();
+                    switch((RecordMatchMethod)itm.Method)
+                    {
+                        case RecordMatchMethod.Identifier:
+                            queryInstance.QRI.GetMatchReasonCode(0).Value = "SS";
+                            break;
+                        case RecordMatchMethod.Simple:
+                            queryInstance.QRI.GetMatchReasonCode(0).Value = "NA";
+                            break;
+                        case RecordMatchMethod.Weighted:
+                            queryInstance.QRI.GetMatchReasonCode(0).Value = "NP";
+                            break;
+                    }
+                    queryInstance.QRI.AlgorithmDescriptor.Identifier.Value = this.m_scoringService.ServiceName;
+                }
+                else
+                {
+                    queryInstance.QRI.CandidateConfidence.Value = "1.0";
+                    queryInstance.QRI.AlgorithmDescriptor.Identifier.Value = "PTNM";
+                 }
+               
 
-                    ttag = itm.Tags.FirstOrDefault(o => o.TagKey == "$match.method");
-                    if(ttag != null)
-                        queryInstance.QRI.AlgorithmDescriptor.Identifier.Value = ttag?.Value;
-                }   
             }
 
             return retVal;

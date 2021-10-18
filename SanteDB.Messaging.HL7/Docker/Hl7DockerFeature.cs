@@ -69,7 +69,6 @@ namespace SanteDB.Messaging.HL7.Docker
         /// </summary>
         public const string ClientCertificateSetting = "CLIENT_AUTH";
 
-        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
 
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(Hl7DockerFeature));
         /// <summary>
@@ -100,10 +99,7 @@ namespace SanteDB.Messaging.HL7.Docker
             {
                 if(!Enum.TryParse<AuthenticationMethod>(auth, true, out AuthenticationMethod authResult)) {
                     this.m_tracer.TraceError($"Couldn't understand {auth}, valid values are NONE, MSH8, or SFT4");
-                    throw new ArgumentOutOfRangeException(this.m_localizationService.FormatString("error.messaging.hl7.invalidValue", new
-                    {
-                        param = auth
-                    }));
+                    throw new ArgumentOutOfRangeException($"{auth} not valid setting - valid values are NONE, MSH8, or SFT4");
                 }
                 hl7Configuration.Security = authResult;
             }
@@ -126,11 +122,7 @@ namespace SanteDB.Messaging.HL7.Docker
                 if(!Uri.TryCreate(listenStr, UriKind.Absolute, out Uri listenUri) )
                 {
                     this.m_tracer.TraceError($"{listenStr} is not a valid URL");
-                    throw new ArgumentOutOfRangeException(this.m_localizationService.FormatString("error.messaging.hl7.invalidUrl", new
-                    {
-
-                        param = listenStr
-                    }));
+                    throw new ArgumentOutOfRangeException($"{listenStr} is not a valid URL");
                 }
 
                 hl7Configuration.Services.ForEach(o => o.AddressXml = listenStr);
@@ -142,7 +134,7 @@ namespace SanteDB.Messaging.HL7.Docker
                 if(!Int32.TryParse(timeoutStr, out int timeout))
                 {
                     this.m_tracer.TraceError("Invalid timeout");
-                    throw new ArgumentOutOfRangeException(this.m_localizationService.GetString("error.messaging.hl7.invalidTimeout"));
+                    throw new ArgumentOutOfRangeException($"{timeoutStr} is not a valid timeout");
     
                 }
                 hl7Configuration.Services.ForEach(o => o.ReceiveTimeout = timeout);
