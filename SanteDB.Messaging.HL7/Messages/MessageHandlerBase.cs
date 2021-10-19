@@ -314,6 +314,10 @@ namespace SanteDB.Messaging.HL7.Messages
             {
                 if (e is ConstraintException)
                     errCode = "101";
+                else if (e is HL7DatatypeProcessingException)
+                    errCode = "102";
+                else if (e is HL7ProcessingException)
+                    errCode = "199";
                 else if (e is DuplicateNameException)
                     errCode = "205";
                 else if (e is DataException || e is DetectedIssueException)
@@ -423,9 +427,8 @@ namespace SanteDB.Messaging.HL7.Messages
                     err.HL7ErrorCode.Identifier.Value = this.MapErrCode(ex);
                     err.Severity.Value = "E";
                     err.GetErrorCodeAndLocation(err.ErrorCodeAndLocationRepetitionsUsed).CodeIdentifyingError.Text.Value = ex.Message; 
-                    if (ex is HL7ProcessingException)
+                    if (ex is HL7ProcessingException hle)
                     {
-                        var hle = ex as HL7ProcessingException;
                         var erl = err.GetErrorLocation(err.ErrorLocationRepetitionsUsed);
                         erl.SegmentID.Value = hle.Segment;
                         erl.SegmentSequence.Value = hle.Repetition ?? "1";
