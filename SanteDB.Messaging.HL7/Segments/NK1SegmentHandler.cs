@@ -40,6 +40,7 @@ using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Core.Security.Services;
 using System.Collections;
 using Newtonsoft.Json.Linq;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Model.Interfaces;
 
 namespace SanteDB.Messaging.HL7.Segments
@@ -61,6 +62,12 @@ namespace SanteDB.Messaging.HL7.Segments
         // Configuration
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
 
+        // Localization Service
+        private readonly ILocalizationService m_localizationService;
+
+        // Tracer
+        private readonly Tracer m_tracer = Tracer.GetTracer(typeof(NK1SegmentHandler));
+
         /// <summary>
         /// NOK relationship types
         /// </summary>
@@ -79,6 +86,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// </summary>
         public NK1SegmentHandler()
         {
+            this.m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
         }
 
         /// <summary>
@@ -207,7 +215,15 @@ namespace SanteDB.Messaging.HL7.Segments
                 // Patient to which the parsing belongs
                 var patient = context.OfType<Patient>().FirstOrDefault();
                 if (patient == null)
-                    throw new InvalidOperationException("NK1 Requires PID segment to be processed");
+                {
+                    this.m_tracer.TraceError("NK1 Requires PID segment to be processed");
+
+                    throw new InvalidOperationException(this.m_localizationService.FormatString("error.messaging.hl7.segmentRequirement", new
+                    {
+                        param = "NK1",
+                        param2 = "PID"
+                    }));
+                }
 
                 // Next of kin is a person
                 Person retVal = new Person() { Key = Guid.NewGuid() };
@@ -267,8 +283,9 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         if (retVal == null)
                         {
-                            throw new InvalidOperationException("Cannot locate described NOK entity on patient record");
+                            throw new InvalidOperationException(this.m_localizationService.GetString("error.messaging.hl7.entityNOK"));
                         }
+
                         // IF the person is a PATIENT and not a PERSON we will not update them - too dangerous - ignore the NOK entry
                         if (retVal is Patient && !foundByKey)
                             return new IdentifiedData[0];
@@ -349,7 +366,8 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         else
                         {
-                            throw new HL7DatatypeProcessingException("XON requires identifier", 10, new ArgumentNullException());
+                            this.m_tracer.TraceError("XON requires identifier");
+                            throw new HL7DatatypeProcessingException(this.m_localizationService.GetString("error.messaging.hl7.requirementXON"), 10, new ArgumentNullException());
                         }
                     }
                 }
@@ -392,7 +410,11 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         else
                         {
-                            throw new KeyNotFoundException($"Cannot find country with code {cit.Identifier.Value}");
+                            this.m_tracer.TraceError($"Cannot find country with code {cit.Identifier.Value}");
+                            throw new KeyNotFoundException(this.m_localizationService.FormatString("error.messaging.hl7.countryCode", new
+                            {
+                                param = cit.Identifier.Value
+                            }));
                         }
                     }
                 }
@@ -414,7 +436,14 @@ namespace SanteDB.Messaging.HL7.Segments
                     else if (nk1Segment.ProtectionIndicator.Value == "N")
                         retVal.Policies.Clear();
                     else
-                        throw new ArgumentOutOfRangeException($"Protection indicator {nk1Segment.ProtectionIndicator.Value} is invalid");
+                    {
+                        this.m_tracer.TraceError($"Protection indicator {nk1Segment.ProtectionIndicator.Value} is invalid");
+                        throw new ArgumentOutOfRangeException(this.m_localizationService.FormatString("error.messaging.hl7.protectionInvalid",
+                            new
+                            {
+                                param = nk1Segment.ProtectionIndicator.Value
+                            }));
+                    }
                 }
 
                 // Associated person identifiers
@@ -441,11 +470,19 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (HL7DatatypeProcessingException e)
             {
-                throw new HL7ProcessingException("Error processing NK1 segment", "NK1", nk1Segment.SetIDNK1.Value, fieldNo, e.Component, e);
+                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException",
+                    new
+                    {
+                        param = "NK1"
+                    }), "NK1", nk1Segment.SetIDNK1.Value, fieldNo, e.Component, e);
             }
             catch (Exception e)
             {
-                throw new HL7ProcessingException("Error processing NK1 segment", "NK1", nk1Segment.SetIDNK1.Value, fieldNo, 1, e);
+                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException",
+                    new
+                    {
+                        param = "NK1"
+                    }), "NK1", nk1Segment.SetIDNK1.Value, fieldNo, 1, e);
             }
         }
     }

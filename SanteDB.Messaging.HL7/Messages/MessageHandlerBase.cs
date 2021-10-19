@@ -67,6 +67,10 @@ namespace SanteDB.Messaging.HL7.Messages
 
         protected Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
 
+        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+
+
+
         /// <summary>
         /// Get the supported triggers
         /// </summary>
@@ -98,7 +102,10 @@ namespace SanteDB.Messaging.HL7.Messages
                 using (this.Authenticate(e))
                 {
                     if (!this.Validate(e.Message))
-                        throw new ArgumentException("Invalid message");
+                    {
+                       this.m_traceSource.TraceError("Invalid message");
+                        throw new ArgumentException(this.m_localizationService.GetString("error.messaging.hl7.invalidMessage"));
+                    }
 
                     return this.HandleMessageInternal(e, MessageUtils.Parse(e.Message));
                 }
@@ -120,8 +127,11 @@ namespace SanteDB.Messaging.HL7.Messages
             var sft = e.Message.GetStructure("SFT") as SFT;
             var sessionService = ApplicationServiceContext.Current.GetService<ISessionProviderService>();
 
-            if (string.IsNullOrEmpty(msh.Security.Value) && this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8)
-                throw new SecurityException("Must carry MSH-8 authorization token information");
+            if (string.IsNullOrEmpty(msh.Security.Value) && this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8) 
+            {    
+                this.m_traceSource.TraceError("Must carry MSH-8 authorization token information");
+                throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authorizationToken"));
+            }
             if (msh.Security.Value?.StartsWith("sid://") == true) // Session identifier
             {
                 var session = sessionService.Get(Enumerable.Range(5, msh.Security.Value.Length - 5)
@@ -135,13 +145,49 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 // Ensure proper authentication exists
                 if (String.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value))
-                    throw new SecurityException("MSH-4 must be provided for authenticating device");
+                {
+                    this.m_traceSource.TraceError("MSH-4 must be provided for authenticating device");
+                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    {
+                        param = "MSH-4",
+                        param2 = " device"
+
+                    }));
+                    
+                }
                 else if (String.IsNullOrEmpty(msh.SendingApplication.NamespaceID.Value))
-                    throw new SecurityException("MSH-3 must be provided for authenticating device/application");
+                {
+                    
+                    this.m_traceSource.TraceError("MSH-3 must be provided for authenticating device/application");
+                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    {
+                        param = "MSH-3",
+                        param2 = " device/application"
+
+                    }));
+                }
                 else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
-                    throw new SecurityException("SFT-4 must be provided for authenticating application");
+                {
+                    this.m_traceSource.TraceError("SFT-4 must be provided for authenticating application");
+                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    {
+                        param = "SFT-4",
+                        param2 = " application"
+
+                    }));
+                    
+                }
                 else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
-                    throw new SecurityException("MSH-8 must be provided for authenticating application");
+                {
+                    this.m_traceSource.TraceError("MSH-8 must be provided for authenticating application");
+                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    {
+                        param = "MSH-8",
+                        param2 = " application"
+
+                    }));
+                    
+                }
 
                 String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
                     deviceSecret = BitConverter.ToString(auth.AuthorizationToken).Replace("-", ""),
@@ -166,7 +212,9 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 if (applicationPrincipal == null && this.m_configuration.RequireAuthenticatedApplication)
                 {
-                    throw new UnauthorizedAccessException("Server requires authenticated application");
+                    this.m_traceSource.TraceError("Server requires authenticated application");
+                    throw new UnauthorizedAccessException(this.m_localizationService.GetString("error.type.UnauthorizedAccessException"));
+                    
                 }
 
 
@@ -176,14 +224,42 @@ namespace SanteDB.Messaging.HL7.Messages
             {
                 // Ensure proper authentication exists
                 if (string.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value) || string.IsNullOrEmpty(msh.Security.Value))
-                    throw new SecurityException("MSH-4 and MSH-8 must always be provided for authenticating device when SLLP is not used");
+                {
+                    this.m_traceSource.TraceError("MSH-4 and MSH-8 must always be provided for authenticating device when SLLP is not used");
+                    throw new SecurityException(this.m_localizationService.GetString("error.messaging.hl7.sllpNotUsed"));
+                }
                 else if (string.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value))
-                    throw new SecurityException("MSH-3 must be provided for authenticating application");
-                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
-                    throw new SecurityException("SFT-4 must be provided for authenticating application");
-                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
-                    throw new SecurityException("MSH-8 must be provided for authenticating application");
+                {
+                    this.m_traceSource.TraceError("MSH-3 must be provided for authenticating application");
+                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    {
+                        param = "MSH-3",
+                        param2 = "application"
 
+                    }));
+
+                }
+                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
+                {
+                    this.m_traceSource.TraceError("SFT-4 must be provided for authenticating application");
+                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    {
+                        param = "SFT-4",
+                        param2 = "application"
+
+                    }));
+                } 
+                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
+                {
+                    this.m_traceSource.TraceError("MSH-8 must be provided for authenticating application");
+  
+                      throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    {
+                        param = "MSH-8",
+                        param2 = "application"
+
+                    }));
+                }
                 String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
                    deviceSecret = msh.Security.Value,
                    applicationId = msh.SendingApplication.NamespaceID.Value,
@@ -204,7 +280,12 @@ namespace SanteDB.Messaging.HL7.Messages
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
 
                 if (applicationPrincipal == null && this.m_configuration.RequireAuthenticatedApplication)
-                    throw new UnauthorizedAccessException("Server requires authenticated application");
+                {
+                    this.m_traceSource.TraceError("Server requires authenticated application");
+                    throw new UnauthorizedAccessException(this.m_localizationService.GetString("error.type.UnauthorizedAccessException"));
+                    
+                }
+                    
                 principal = new SanteDBClaimsPrincipal((new IIdentity[] { devicePrincipal.Identity, applicationPrincipal?.Identity }).OfType<IClaimsIdentity>());
             }
             else
@@ -233,6 +314,10 @@ namespace SanteDB.Messaging.HL7.Messages
             {
                 if (e is ConstraintException)
                     errCode = "101";
+                else if (e is HL7DatatypeProcessingException)
+                    errCode = "102";
+                else if (e is HL7ProcessingException)
+                    errCode = "199";
                 else if (e is DuplicateNameException)
                     errCode = "205";
                 else if (e is DataException || e is DetectedIssueException)
@@ -342,9 +427,8 @@ namespace SanteDB.Messaging.HL7.Messages
                     err.HL7ErrorCode.Identifier.Value = this.MapErrCode(ex);
                     err.Severity.Value = "E";
                     err.GetErrorCodeAndLocation(err.ErrorCodeAndLocationRepetitionsUsed).CodeIdentifyingError.Text.Value = ex.Message; 
-                    if (ex is HL7ProcessingException)
+                    if (ex is HL7ProcessingException hle)
                     {
-                        var hle = ex as HL7ProcessingException;
                         var erl = err.GetErrorLocation(err.ErrorLocationRepetitionsUsed);
                         erl.SegmentID.Value = hle.Segment;
                         erl.SegmentSequence.Value = hle.Repetition ?? "1";

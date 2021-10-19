@@ -18,8 +18,11 @@
  * User: fyfej
  * Date: 2021-8-5
  */
+using SanteDB.Core;
 using SanteDB.Core.Configuration;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Security.Configuration;
+using SanteDB.Core.Services;
 using SanteDB.Docker.Core;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.TransportProtocol;
@@ -93,6 +96,7 @@ namespace SanteDB.Messaging.HL7.Docker
             if(settings.TryGetValue(AuthenticationSetting, out string auth))
             {
                 if(!Enum.TryParse<AuthenticationMethod>(auth, true, out AuthenticationMethod authResult)) {
+                    
                     throw new ArgumentOutOfRangeException($"Couldn't understand {auth}, valid values are NONE, MSH8, or SFT4");
                 }
                 hl7Configuration.Security = authResult;
@@ -115,7 +119,9 @@ namespace SanteDB.Messaging.HL7.Docker
             {
                 if(!Uri.TryCreate(listenStr, UriKind.Absolute, out Uri listenUri) )
                 {
+
                     throw new ArgumentOutOfRangeException($"{listenStr} is not a valid URL");
+                    
                 }
 
                 hl7Configuration.Services.ForEach(o => o.AddressXml = listenStr);
@@ -126,6 +132,7 @@ namespace SanteDB.Messaging.HL7.Docker
             {
                 if(!Int32.TryParse(timeoutStr, out int timeout))
                 {
+
                     throw new ArgumentOutOfRangeException("Invalid timeout");
                 }
                 hl7Configuration.Services.ForEach(o => o.ReceiveTimeout = timeout);

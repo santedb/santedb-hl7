@@ -2,22 +2,23 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using SanteDB.Core;
 using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Services;
@@ -78,7 +79,6 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
             get { return "llp"; }
         }
 
-
         /// <summary>
         /// Start the transport
         /// </summary>
@@ -89,13 +89,20 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 
             this.m_listener.Start();
             this.m_traceSource.TraceInfo("LLP Transport bound to {0}", bind);
+            var threadPool = ApplicationServiceContext.Current.GetService<IThreadPoolService>();
 
             while (m_run) // run the service
             {
                 try
                 {
-                    var client = this.m_listener.AcceptTcpClient();
-                    ApplicationServiceContext.Current.GetService<IThreadPoolService>().QueueUserWorkItem(OnReceiveMessage, client);
+                    var socketAccept = this.m_listener.BeginAcceptTcpClient((o) =>
+                    {
+                        if (this.m_listener.Server?.IsBound == true)
+                        {
+                            threadPool.QueueUserWorkItem(OnReceiveMessage, this.m_listener.EndAcceptTcpClient(o));
+                        }
+                    }, null);
+                    socketAccept.AsyncWaitHandle.WaitOne(handler.Definition.ReceiveTimeout);
                 }
                 catch (Exception e)
                 {
@@ -110,7 +117,6 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         /// </summary>
         protected virtual void OnReceiveMessage(object client)
         {
-
             using (TcpClient tcpClient = client as TcpClient)
             {
                 this.m_traceSource.TraceEvent(EventLevel.Verbose, "Accepted connection on {0} from {1}", this.m_listener.LocalEndpoint, tcpClient.Client.RemoteEndPoint);
@@ -180,7 +186,6 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                         Uri localEndpoint = new Uri(String.Format("llp://{0}:{1}", localEp.Address, localEp.Port));
                         Uri remoteEndpoint = new Uri(String.Format("llp://{0}:{1}", remoteEp.Address, remoteEp.Port));
 
-
                         foreach (var messagePart in messageData.ToString().Split((char)END_TX))
                             try
                             {
@@ -234,7 +239,6 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                     stream.Close();
                     tcpClient.Close();
                     HL7OperationContext.Current = null;
-
                 }
             }
         }
@@ -256,6 +260,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         {
             this.m_run = false;
             this.m_listener.Stop();
+
             this.m_traceSource.TraceInfo("LLP Transport stopped");
         }
 
@@ -265,7 +270,5 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         public event EventHandler<Hl7MessageReceivedEventArgs> MessageReceived;
 
         #endregion ITransportProtocol Members
-
-
     }
 }
