@@ -2,22 +2,23 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using SanteDB.Core;
 using SanteDB.Core.Configuration;
 using SanteDB.Core.Diagnostics;
@@ -39,38 +40,43 @@ namespace SanteDB.Messaging.HL7.Docker
     /// </summary>
     public class Hl7DockerFeature : IDockerFeature
     {
-
         /// <summary>
         /// Authentication settings
         /// </summary>
         public const string AuthenticationSetting = "AUTHENTICATION";
+
         /// <summary>
         /// Setting for local IDs
         /// </summary>
         public const string LocalAuthoritySetting = "LOCAL_DOMAIN";
+
         /// <summary>
         /// Setting for SSN IDs
         /// </summary>
         public const string SsnAuthoritySetting = "SSN_DOMAIN";
+
         /// <summary>
         /// Setting for LISTEN URI
         /// </summary>
         public const string ListenUriSetting = "LISTEN";
+
         /// <summary>
         /// Setting for timeouts
         /// </summary>
         public const string TimeoutSetting = "TIMEOUT";
+
         /// <summary>
         /// Setting for server SSL
         /// </summary>
         public const string ServerCertificateSetting = "SERVER_CERT";
+
         /// <summary>
         /// Setting for client AUTH
         /// </summary>
         public const string ClientCertificateSetting = "CLIENT_AUTH";
 
-
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(Hl7DockerFeature));
+
         /// <summary>
         /// Get the ID of this feature
         /// </summary>
@@ -86,18 +92,18 @@ namespace SanteDB.Messaging.HL7.Docker
         /// </summary>
         public void Configure(SanteDBConfiguration configuration, IDictionary<string, string> settings)
         {
-
             var hl7Configuration = configuration.GetSection<Hl7ConfigurationSection>();
-            if(hl7Configuration == null)
+            if (hl7Configuration == null)
             {
                 hl7Configuration = DockerFeatureUtils.LoadConfigurationResource<Hl7ConfigurationSection>("SanteDB.Messaging.HL7.Docker.Hl7Feature.xml");
                 configuration.AddSection(hl7Configuration);
             }
 
-            // first the security 
-            if(settings.TryGetValue(AuthenticationSetting, out string auth))
+            // first the security
+            if (settings.TryGetValue(AuthenticationSetting, out string auth))
             {
-                if(!Enum.TryParse<AuthenticationMethod>(auth, true, out AuthenticationMethod authResult)) {
+                if (!Enum.TryParse<AuthenticationMethod>(auth, true, out AuthenticationMethod authResult))
+                {
                     this.m_tracer.TraceError($"Couldn't understand {auth}, valid values are NONE, MSH8, or SFT4");
                     throw new ArgumentOutOfRangeException($"{auth} not valid setting - valid values are NONE, MSH8, or SFT4");
                 }
@@ -105,21 +111,21 @@ namespace SanteDB.Messaging.HL7.Docker
             }
 
             // Next, local domain
-            if(settings.TryGetValue(LocalAuthoritySetting, out string localAuth))
+            if (settings.TryGetValue(LocalAuthoritySetting, out string localAuth))
             {
                 hl7Configuration.LocalAuthority = new Core.Model.DataTypes.AssigningAuthority(localAuth, localAuth, null);
             }
 
             // Next the SSN domain
-            if(settings.TryGetValue(SsnAuthoritySetting, out string ssnAuth))
+            if (settings.TryGetValue(SsnAuthoritySetting, out string ssnAuth))
             {
                 hl7Configuration.SsnAuthority = new Core.Model.DataTypes.AssigningAuthority(ssnAuth, ssnAuth, null);
             }
 
             // Next listen address
-            if(settings.TryGetValue(ListenUriSetting, out string listenStr))
+            if (settings.TryGetValue(ListenUriSetting, out string listenStr))
             {
-                if(!Uri.TryCreate(listenStr, UriKind.Absolute, out Uri listenUri) )
+                if (!Uri.TryCreate(listenStr, UriKind.Absolute, out Uri listenUri))
                 {
                     this.m_tracer.TraceError($"{listenStr} is not a valid URL");
                     throw new ArgumentOutOfRangeException($"{listenStr} is not a valid URL");
@@ -129,19 +135,18 @@ namespace SanteDB.Messaging.HL7.Docker
             }
 
             // Timeouts
-            if(settings.TryGetValue(TimeoutSetting, out string timeoutStr))
+            if (settings.TryGetValue(TimeoutSetting, out string timeoutStr))
             {
-                if(!Int32.TryParse(timeoutStr, out int timeout))
+                if (!Int32.TryParse(timeoutStr, out int timeout))
                 {
                     this.m_tracer.TraceError("Invalid timeout");
                     throw new ArgumentOutOfRangeException($"{timeoutStr} is not a valid timeout");
-    
                 }
                 hl7Configuration.Services.ForEach(o => o.ReceiveTimeout = timeout);
             }
 
             // Service certificates
-            if(settings.TryGetValue(ServerCertificateSetting, out String serverCertificate))
+            if (settings.TryGetValue(ServerCertificateSetting, out String serverCertificate))
             {
                 hl7Configuration.Services.ForEach(svc => svc.Configuration = new SllpTransport.SllpConfigurationObject()
                 {
@@ -170,7 +175,6 @@ namespace SanteDB.Messaging.HL7.Docker
             {
                 serviceConfiguration.Add(new TypeReferenceConfiguration(typeof(HL7MessageHandler)));
             }
-
         }
     }
 }
