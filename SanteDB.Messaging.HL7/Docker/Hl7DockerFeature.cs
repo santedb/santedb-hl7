@@ -75,6 +75,7 @@ namespace SanteDB.Messaging.HL7.Docker
         /// </summary>
         public const string ClientCertificateSetting = "CLIENT_AUTH";
 
+        // Tracer
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(Hl7DockerFeature));
 
         /// <summary>
@@ -127,7 +128,6 @@ namespace SanteDB.Messaging.HL7.Docker
             {
                 if (!Uri.TryCreate(listenStr, UriKind.Absolute, out Uri listenUri))
                 {
-                    this.m_tracer.TraceError($"{listenStr} is not a valid URL");
                     throw new ArgumentOutOfRangeException($"{listenStr} is not a valid URL");
                 }
 
