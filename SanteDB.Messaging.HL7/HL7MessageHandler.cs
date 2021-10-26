@@ -2,22 +2,23 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using SanteDB.Core;
 using SanteDB.Core.Security;
 using SanteDB.Core.Diagnostics;
@@ -40,7 +41,6 @@ namespace SanteDB.Messaging.HL7
     [ServiceProvider("HL7v2 API Endpoint")]
     public class HL7MessageHandler : IDaemonService, IApiEndpointProvider
     {
-
         /// <summary>
         /// Gets the service name
         /// </summary>
@@ -58,12 +58,12 @@ namespace SanteDB.Messaging.HL7
 
         // HL7 Trace source name
         private Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
+
         // Configuration
         private Hl7ConfigurationSection m_configuration;
 
         // Threads that are listening for messages
         private List<ServiceHandler> m_listenerThreads = new List<ServiceHandler>();
-
 
         /// <summary>
         /// Retrieve the remote endpoint information
@@ -88,7 +88,6 @@ namespace SanteDB.Messaging.HL7
         /// </summary>
         public bool Start()
         {
-
             this.m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
             this.Starting?.Invoke(this, EventArgs.Empty);
 
@@ -96,6 +95,8 @@ namespace SanteDB.Messaging.HL7
             {
                 this.m_localFacility = ApplicationServiceContext.Current.GetService<IRepositoryService<Place>>()?.Get(this.m_configuration.LocalFacility);
             };
+
+            RemoteEndpointUtil.Current.AddEndpointProvider(this.GetRemoteEndpointInfo);
 
             foreach (var sd in this.m_configuration.Services)
             {
@@ -123,7 +124,6 @@ namespace SanteDB.Messaging.HL7
             {
                 thd.Abort();
             }
-
 
             this.m_traceSource.TraceInfo("All threads shutdown");
             this.Stopped?.Invoke(this, EventArgs.Empty);
@@ -179,7 +179,8 @@ namespace SanteDB.Messaging.HL7
         /// <summary>
         /// Capabilities
         /// </summary>
-        public ServiceEndpointCapabilities Capabilities {
+        public ServiceEndpointCapabilities Capabilities
+        {
             get
             {
                 var retVal = ServiceEndpointCapabilities.None;
