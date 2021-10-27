@@ -48,13 +48,18 @@ namespace SanteDB.Messaging.HL7.Query
     /// <summary>
     /// Query result handler
     /// </summary>
-    public class FindCandidatesQueryHandler : IQueryHandler
+    public class FindCandidatesQueryHandler : IQueryHandler, IServiceImplementation
     {
         // Configuration
         private Hl7ConfigurationSection m_configuration;
         private readonly ILocalizationService m_localizationService;
         private readonly IQueryScoringService m_scoringService;
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(FindCandidatesQueryHandler));
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+        public string ServiceName => "Find Candidates Query Handler";
 
         /// <summary>
         /// Find candidates handler
