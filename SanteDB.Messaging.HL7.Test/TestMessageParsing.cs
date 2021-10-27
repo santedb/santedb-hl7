@@ -1,28 +1,32 @@
 ﻿using NHapi.Base.Model;
+using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
+using NUnit.Framework;
 using SanteDB.Core;
+using SanteDB.Core.Model;
 using SanteDB.Core.Model.Constants;
+using SanteDB.Core.Model.Entities;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Model.Security;
 using SanteDB.Core.Security;
 using SanteDB.Core.Services;
+using SanteDB.Core.TestFramework;
 using SanteDB.Messaging.HL7.Messages;
 using SanteDB.Messaging.HL7.TransportProtocol;
-using SanteDB.Core.TestFramework;
 using System;
 using System.Linq;
-using NHapi.Model.V25.Message;
-using SanteDB.Core.Model;
-using SanteDB.Core.Model.Entities;
-using NUnit.Framework;
 
 namespace SanteDB.Messaging.HL7.Test
 {
-    [TestFixture(Category = "Integration")]
+	[TestFixture(Category = "Integration")]
     public class TestMessageParsing : DataTest
     {
-
         /// <summary>
+        /// The localization service.
+        /// </summary>
+	    private ILocalizationService localizationService;
+
+	    /// <summary>
         /// Test context
         /// </summary>
         /// <param name="context"></param>
@@ -39,6 +43,8 @@ namespace SanteDB.Messaging.HL7.Test
             var securityDevService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityDevice>>();
             var securityAppService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityApplication>>();
             var metadataService = ApplicationServiceContext.Current.GetService<IAssigningAuthorityRepositoryService>();
+            localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+
             AuthenticationContext.EnterSystemContext();
             // Create device
             var dev = new SecurityDevice()
@@ -103,7 +109,7 @@ namespace SanteDB.Messaging.HL7.Test
             using (AuthenticationContext.EnterSystemContext())
             {
                 var msg = TestUtil.GetMessage("ADT_SIMPLE");
-                var message = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var message = new AdtMessageHandler(localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
 
@@ -126,14 +132,14 @@ namespace SanteDB.Messaging.HL7.Test
             using (AuthenticationContext.EnterSystemContext())
             {
                 var msg = TestUtil.GetMessage("ADT_SIMPLE");
-                var message = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var message = new AdtMessageHandler(localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
 
                 var patientOriginal = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-1")).SingleOrDefault();
 
                 msg = TestUtil.GetMessage("ADT_UPDATE");
-                message = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                message = new AdtMessageHandler(localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
 
@@ -156,7 +162,7 @@ namespace SanteDB.Messaging.HL7.Test
             using (AuthenticationContext.EnterSystemContext())
             {
                 var msg = TestUtil.GetMessage("ADT_PD1");
-                var message = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var message = new AdtMessageHandler(localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
 
@@ -184,11 +190,11 @@ namespace SanteDB.Messaging.HL7.Test
             using (AuthenticationContext.EnterSystemContext())
             {
                 var msg = TestUtil.GetMessage("QBP_SIMPLE_PRE");
-                new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                new AdtMessageHandler(localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-3"), AuthenticationContext.Current.Principal).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 msg = TestUtil.GetMessage("QBP_SIMPLE");
-                var message = new QbpMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var message = new QbpMessageHandler(this.localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("SMITH", ((message.GetStructure("QUERY_RESPONSE") as AbstractGroup).GetStructure("PID") as PID).GetMotherSMaidenName(0).FamilyName.Surname.Value);
                 Assert.AreEqual("AA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
@@ -206,16 +212,16 @@ namespace SanteDB.Messaging.HL7.Test
             using (AuthenticationContext.EnterSystemContext())
             {
                 var msg = TestUtil.GetMessage("QBP_COMPLEX_PRE");
-                new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                new AdtMessageHandler(localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-9"), AuthenticationContext.Current.Principal).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 // Just diagnosing an update bug
-                new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                new AdtMessageHandler(localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-9"), AuthenticationContext.Current.Principal).SingleOrDefault();
                 Assert.AreEqual(9, patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).Count());
                 Assert.IsNotNull(patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother));
                 msg = TestUtil.GetMessage("QBP_COMPLEX");
-                var message = new QbpMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var message = new QbpMessageHandler(this.localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("SMITH", ((message.GetStructure("QUERY_RESPONSE") as AbstractGroup).GetStructure("PID") as PID).GetMotherSMaidenName(0).FamilyName.Surname.Value, $"Mothers name doesn't match {messageStr}");
                 Assert.AreEqual("AA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
@@ -234,16 +240,16 @@ namespace SanteDB.Messaging.HL7.Test
             using (AuthenticationContext.EnterSystemContext())
             {
                 var msg = TestUtil.GetMessage("QBP_COMPLEX_PRE");
-                var response = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var response = new AdtMessageHandler(localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-9"), AuthenticationContext.Current.Principal).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 msg = TestUtil.GetMessage("QBP_AND_PRE");
-                new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                new AdtMessageHandler(localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-10"), AuthenticationContext.Current.Principal).SingleOrDefault();
                 Assert.IsNotNull(patient);
 
                 msg = TestUtil.GetMessage("QBP_COMPLEX");
-                var message = new QbpMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var message = new QbpMessageHandler(this.localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("1", (message.GetStructure("QAK") as QAK).HitCount.Value);
                 Assert.AreEqual("SMITH", ((message.GetStructure("QUERY_RESPONSE") as AbstractGroup).GetStructure("PID") as PID).GetMotherSMaidenName(0).FamilyName.Surname.Value);
@@ -254,7 +260,7 @@ namespace SanteDB.Messaging.HL7.Test
 
                 // OR MESSAGE SHOULD CATCH TWO PATIENTS
                 msg = TestUtil.GetMessage("QBP_OR");
-                message = new QbpMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                message = new QbpMessageHandler(this.localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("2", (message.GetStructure("QAK") as QAK).HitCount.Value);
                 Assert.AreEqual("AA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
@@ -271,7 +277,7 @@ namespace SanteDB.Messaging.HL7.Test
             using (AuthenticationContext.EnterSystemContext())
             {
                 var msg = TestUtil.GetMessage("ADT_INV_GC");
-                var errmsg = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var errmsg = new AdtMessageHandler(this.localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(errmsg);
 
                 var ack = errmsg as ACK;
@@ -293,12 +299,12 @@ namespace SanteDB.Messaging.HL7.Test
             using (AuthenticationContext.EnterSystemContext())
             {
                 var msg = TestUtil.GetMessage("QBP_XREF_PRE");
-                var result = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var result = new AdtMessageHandler(localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 Assert.AreEqual("CA", (result.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
                 var patient = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-4")).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 msg = TestUtil.GetMessage("QBP_XREF");
-                var message = new QbpMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var message = new QbpMessageHandler(this.localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
                 // TODO : Assert that id is present
                 Assert.IsTrue(((message.GetStructure("QUERY_RESPONSE") as AbstractGroup).GetStructure("PID") as PID).GetPatientIdentifierList().Any(i => i.IDNumber.Value == patient.Key.ToString() && i.AssigningAuthority.NamespaceID.Value == "KEY"));
@@ -327,7 +333,7 @@ namespace SanteDB.Messaging.HL7.Test
             using (AuthenticationContext.EnterSystemContext())
             {
                 var msg = TestUtil.GetMessage("ADT_MRG_PRE1");
-                var result = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var result = new AdtMessageHandler(this.localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var resultStr = TestUtil.ToString(result);
                 Assert.IsTrue(resultStr.Contains("|CA"));
                 Assert.AreEqual(1, patientRepository.Find(o => o.Identifiers.Any(id => id.Value == "RJ-439")).Count());
@@ -335,7 +341,7 @@ namespace SanteDB.Messaging.HL7.Test
 
                 // Register second patient
                 msg = TestUtil.GetMessage("ADT_MRG_PRE2");
-                result = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                result = new AdtMessageHandler(this.localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 resultStr = TestUtil.ToString(result);
                 Assert.IsTrue(resultStr.Contains("|CA"));
                 Assert.AreEqual(1, patientRepository.Find(o => o.Identifiers.Any(id => id.Value == "RJ-999")).Count());
@@ -346,13 +352,13 @@ namespace SanteDB.Messaging.HL7.Test
                 Assert.AreEqual(2, patients.Count());
 
                 msg = TestUtil.GetMessage("ADT_MRG");
-                result = new AdtMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                result = new AdtMessageHandler(this.localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 resultStr = TestUtil.ToString(result);
                 Assert.IsTrue(resultStr.Contains("|CA"));
 
                 // Validate QBP appropriately redirects as described in 3.6.2.1.2
                 msg = TestUtil.GetMessage("ADT_MRG_POST");
-                result = new QbpMessageHandler().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                result = new QbpMessageHandler(this.localizationService).HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 resultStr = TestUtil.ToString(result);
                 Assert.IsTrue(resultStr.Contains("|AA"));
                 Assert.IsTrue(resultStr.Contains("RJ-439"), "Missing Patient A identifier");
