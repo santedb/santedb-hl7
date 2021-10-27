@@ -44,7 +44,7 @@ namespace SanteDB.Messaging.HL7.Segments
     /// <summary>
     /// Represents a segment handler which handles PID segments
     /// </summary>
-    public class PIDSegmentHandler : ISegmentHandler
+    public class PIDSegmentHandler : ISegmentHandler, IServiceImplementation
     {
         private const string AdministrativeGenderCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.1";
         private const string RaceCodeSystem = "2.16.840.1.113883.5.5";
@@ -61,9 +61,9 @@ namespace SanteDB.Messaging.HL7.Segments
             EntityClassKeys.Place
         };
 
-        
+
         // Localization Service
-        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+        private readonly ILocalizationService m_localizationService;
 
         
         // Tracer
@@ -73,9 +73,23 @@ namespace SanteDB.Messaging.HL7.Segments
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
 
         /// <summary>
+        /// DI constructor
+        /// </summary>
+        /// <param name="localizationService"></param>
+        public PIDSegmentHandler(ILocalizationService localizationService)
+        {
+            this.m_localizationService = localizationService;
+        }
+
+        /// <summary>
         /// Gets the name of the segment
         /// </summary>
         public string Name => "PID";
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+        public string ServiceName => "PID Segment Handler";
 
         /// <summary>
         /// Create the PID segment from data elements

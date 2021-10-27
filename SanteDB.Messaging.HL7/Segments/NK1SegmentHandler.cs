@@ -48,7 +48,7 @@ namespace SanteDB.Messaging.HL7.Segments
     /// <summary>
     /// Represents a NK1 segment
     /// </summary>
-    public class NK1SegmentHandler : ISegmentHandler
+    public class NK1SegmentHandler : ISegmentHandler, IServiceImplementation
     {
         // Next of kin relationship code system
         private const string RelationshipCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.63";
@@ -87,15 +87,20 @@ namespace SanteDB.Messaging.HL7.Segments
         /// <summary>
         /// NK1 segment handler ctor
         /// </summary>
-        public NK1SegmentHandler()
+        public NK1SegmentHandler(ILocalizationService localizationService)
         {
-            this.m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+            this.m_localizationService = localizationService;
         }
 
         /// <summary>
         /// Gets or sets the name of the segment
         /// </summary>
         public string Name => "NK1";
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+        public string ServiceName => "NK1 Segment Handler";
 
         /// <summary>
         /// Create next of kin relationship

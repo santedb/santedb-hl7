@@ -39,7 +39,7 @@ namespace SanteDB.Messaging.HL7.Segments
     /// <summary>
     /// Segment handler that handles the MRG segment
     /// </summary>
-    public class MRGSegmentHandler : ISegmentHandler
+    public class MRGSegmentHandler : ISegmentHandler, IServiceImplementation
     {
 
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
@@ -48,12 +48,26 @@ namespace SanteDB.Messaging.HL7.Segments
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(MRGSegmentHandler));
 
         // Localization Service
-        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+        private readonly ILocalizationService m_localizationService;
+
+        /// <summary>
+        /// DI constructor
+        /// </summary>
+        /// <param name="localizationService"></param>
+        public MRGSegmentHandler(ILocalizationService localizationService)
+        {
+            this.m_localizationService = localizationService;
+        }
 
         /// <summary>
         /// Get the name of the segment
         /// </summary>
         public string Name => "MRG";
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+        public string ServiceName => "MRG Segment Handler";
 
         /// <summary>
         /// Create the MRG segment

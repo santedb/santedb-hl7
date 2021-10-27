@@ -44,22 +44,37 @@ namespace SanteDB.Messaging.HL7.Segments
     /// <summary>
     /// Represents a segment handler for PDQ
     /// </summary>
-    public class PD1SegmentHandler : ISegmentHandler
+    public class PD1SegmentHandler : ISegmentHandler, IServiceImplementation
     {
         private const string LivingArrangementCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.220";
         private const string DisabilityCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.295";
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
        
         // Localization Service
-        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+        private readonly ILocalizationService m_localizationService;
         
         // Tracer
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(PD1SegmentHandler));
 
         /// <summary>
+        /// DI constructor
+        /// </summary>
+        /// <param name="localizationService"></param>
+        public PD1SegmentHandler(ILocalizationService localizationService)
+        {
+            this.m_localizationService = localizationService;
+        }
+
+        /// <summary>
         /// Patient demographics 1
         /// </summary>
         public string Name => "PD1";
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+
+        public string ServiceName => "PD1 Segment Handler";
 
         /// <summary>
         /// Create PD1
