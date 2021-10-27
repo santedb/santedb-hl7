@@ -59,22 +59,36 @@ namespace SanteDB.Messaging.HL7.Messages
     /// <summary>
     /// Represents a message handler
     /// </summary>
-    public abstract class MessageHandlerBase : IHL7MessageHandler
+    public abstract class MessageHandlerBase : IHL7MessageHandler, IServiceImplementation
     {
 
         // Configuration
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current?.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
-
+        
+        // Tracer
         protected Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
 
-        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+        // Localization service
+        protected readonly ILocalizationService m_localizationService;
 
-
+        /// <summary>
+        /// DI constructor
+        /// </summary>
+        /// <param name="localizationService"></param>
+        public MessageHandlerBase(ILocalizationService localizationService)
+        {
+            this.m_localizationService = localizationService;
+        }
 
         /// <summary>
         /// Get the supported triggers
         /// </summary>
         public abstract string[] SupportedTriggers { get; }
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+        public string ServiceName => "Message Handler Base";
 
         /// <summary>
         /// Allows overridden classes to implement the message handling logic

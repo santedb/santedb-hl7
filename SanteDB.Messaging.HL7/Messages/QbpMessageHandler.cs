@@ -59,10 +59,15 @@ namespace SanteDB.Messaging.HL7.Messages
     {
         // Loaded query parameter map
         private static Hl7QueryParameterMap s_map;
-        // localization service
-        private static readonly ILocalizationService m_localizationService;
-        // Tracer
-        public static readonly Tracer m_tracer = Tracer.GetTracer(typeof(QbpMessageHandler));
+        
+        /// <summary>
+        /// DI constructor
+        /// </summary>
+        /// <param name="localizationService"></param>
+        public QbpMessageHandler(ILocalizationService localizationService): base(localizationService)
+        {
+
+        }
 
         /// <summary>
         /// Gets the supported triggers
@@ -74,7 +79,6 @@ namespace SanteDB.Messaging.HL7.Messages
         /// </summary>
         static QbpMessageHandler()
         {
-            m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
             OpenMapping(typeof(QbpMessageHandler).Assembly.GetManifestResourceStream("SanteDB.Messaging.HL7.ParameterMap.xml"));
 
             if (!String.IsNullOrEmpty(Assembly.GetEntryAssembly()?.Location))
@@ -128,14 +132,14 @@ namespace SanteDB.Messaging.HL7.Messages
             {
                 if (map.ResponseType == null)
                 {
-                    m_tracer.TraceError($"Response type not found");
+                    m_traceSource.TraceError($"Response type not found");
                     throw new NotSupportedException(m_localizationService.GetString("error.messaging.hl7.responseType"));
                 }
                 // First, process the query parameters
                 var query = map.QueryHandler.ParseQuery(qpd, map);
                 if (query.Count == 0)
                 {
-                    m_tracer.TraceError("Query must provide at least one understood filter");
+                    m_traceSource.TraceError("Query must provide at least one understood filter");
                     throw new InvalidOperationException(m_localizationService.GetString("error.messaging.hl7.query"));
                 }
                 // Control?
@@ -151,7 +155,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 {
                     if (!Guid.TryParse(dsc.ContinuationPointer.Value, out queryId))
                     {
-                        m_tracer.TraceError($"DSC^1 must be UUID provided by this service.");
+                        m_traceSource.TraceError($"DSC^1 must be UUID provided by this service.");
                         throw new InvalidOperationException(m_localizationService.GetString("error.messaging.hl7.dsc"));
                     }
                 }
@@ -168,7 +172,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 var repoService = ApplicationServiceContext.Current.GetService(typeof(IRepositoryService<>).MakeGenericType(map.QueryTarget));
                 if (repoService == null)
                 {
-                    m_tracer.TraceError($"Cannot find repository service for {map.QueryTargetXml}");
+                    m_traceSource.TraceError($"Cannot find repository service for {map.QueryTargetXml}");
                     throw new InvalidOperationException(m_localizationService.FormatString("error.messaging.hl7.repositoryService", new
                     {
                         param = map.QueryTargetXml
@@ -284,7 +288,7 @@ namespace SanteDB.Messaging.HL7.Messages
 
             if (!s_map.Map.Any(m => m.Trigger == trigger))
             {
-                m_tracer.TraceError($"{trigger} not understood or mapped");
+                m_traceSource.TraceError($"{trigger} not understood or mapped");
                 throw new NotSupportedException(m_localizationService.FormatString("error.messaging.hl7.notUnderstood", new
                 {
                     param = trigger
