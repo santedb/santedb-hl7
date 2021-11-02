@@ -19,7 +19,10 @@
  * Date: 2021-8-5
  */
 
-using SanteDB.Core.Extensions;
+using NHapi.Base.Model;
+using NHapi.Model.V25.Segment;
+using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.DataTypes;
@@ -27,21 +30,13 @@ using SanteDB.Core.Model.Entities;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Model.Security;
 using SanteDB.Core.Security;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using NHapi.Model.V25.Datatype;
-using NHapi.Base.Model;
-using NHapi.Model.V25.Segment;
-using SanteDB.Core;
+using SanteDB.Core.Security.Services;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
-using SanteDB.Core.Security.Services;
-using System.Collections;
-using Newtonsoft.Json.Linq;
-using SanteDB.Core.Diagnostics;
-using SanteDB.Core.Model.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SanteDB.Messaging.HL7.Segments
 {
@@ -64,7 +59,7 @@ namespace SanteDB.Messaging.HL7.Segments
 
 
         // Localization Service
-        private readonly ILocalizationService m_localizationService;
+        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
 
 
         // Tracer
@@ -87,9 +82,8 @@ namespace SanteDB.Messaging.HL7.Segments
         /// <summary>
         /// NK1 segment handler ctor
         /// </summary>
-        public NK1SegmentHandler(ILocalizationService localizationService)
+        public NK1SegmentHandler()
         {
-            this.m_localizationService = localizationService;
         }
 
         /// <summary>
