@@ -125,7 +125,7 @@ namespace SanteDB.Messaging.HL7.Query
                 nokHandler.Create(itm.Patient, queryInstance, null);
                 queryInstance.PID.SetIDPID.Value = (i++).ToString();
 
-                if (itm.WasScored != null)
+                if (itm.WasScored)
                 {
                     queryInstance.QRI.CandidateConfidence.Value = itm.Score.ToString();
                     switch ((RecordMatchMethod)itm.Method)
