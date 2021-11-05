@@ -59,14 +59,13 @@ namespace SanteDB.Messaging.HL7.Messages
     {
         // Loaded query parameter map
         private static Hl7QueryParameterMap s_map;
-        
+
         /// <summary>
         /// DI constructor
         /// </summary>
         /// <param name="localizationService"></param>
-        public QbpMessageHandler(ILocalizationService localizationService): base(localizationService)
+        public QbpMessageHandler(ILocalizationService localizationService) : base(localizationService)
         {
-
         }
 
         /// <summary>
@@ -176,7 +175,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     throw new InvalidOperationException(m_localizationService.FormatString("error.messaging.hl7.repositoryService", new
                     {
                         param = map.QueryTargetXml
-                    })); 
+                    }));
                 }
                 // Build query
                 int totalResults = 0;
@@ -226,6 +225,23 @@ namespace SanteDB.Messaging.HL7.Messages
                 // Now we construct the response
                 return this.CreateNACK(map.ResponseType, e.Message, ex, e);
             }
+        }
+
+        /// <summary>
+        /// Create a NACK which
+        /// </summary>
+        /// <param name="nackType"></param>
+        /// <param name="request"></param>
+        /// <param name="error"></param>
+        /// <param name="receiveData"></param>
+        /// <returns></returns>
+        protected override IMessage CreateNACK(Type nackType, IMessage request, Exception error, Hl7MessageReceivedEventArgs receiveData)
+        {
+            // Get appropriate NACK type
+            var msh = request.GetStructure("MSH") as MSH;
+            var trigger = msh.MessageType.TriggerEvent.Value;
+            var map = this.GetMapping(trigger);
+            return base.CreateNACK(map.ResponseType ?? nackType, request, error, receiveData);
         }
 
         /// <summary>
@@ -293,9 +309,8 @@ namespace SanteDB.Messaging.HL7.Messages
                 {
                     param = trigger
                 }));
-               
             }
-                
+
             return true;
         }
     }
