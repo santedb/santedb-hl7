@@ -50,11 +50,11 @@ namespace SanteDB.Messaging.HL7.Utils
     {
         private static readonly Dictionary<String, String> m_eventMessageMaps = new Dictionary<string, string>()
         {
-            { "ADT\\^A40", "ADT_A39" },
-            { "ADT\\^A01", "ADT_A01" },
-            { "ADT\\^A04", "ADT_A01" },
-            { "ADT\\^A05", "ADT_A01" },
-            { "ADT\\^A08", "ADT_A01" }
+            { "ADT^A40", "ADT_A39" },
+            { "ADT^A01", "ADT_A01" },
+            { "ADT^A04", "ADT_A01" },
+            { "ADT^A05", "ADT_A01" },
+            { "ADT^A08", "ADT_A01" }
         };
 
         // Entry ASM HASH
@@ -197,7 +197,7 @@ namespace SanteDB.Messaging.HL7.Utils
         /// </summary>
         public static IMessage ParseMessage(String messageData, out string originalVersion)
         {
-            Regex versionRegex = new Regex(@"^(MSH\|.*?)(2\.[0-9\.]+?)(.*)$", RegexOptions.Multiline);
+            Regex versionRegex = new Regex(@"^MSH\|\^\~\\\&\|(?:.*?\|){9}(.*?)[\|\r\n].*$", RegexOptions.Multiline);
             var match = versionRegex.Match(messageData);
             if (!match.Success)
                 throw new InvalidOperationException("Message appears to be invalid");
@@ -206,7 +206,16 @@ namespace SanteDB.Messaging.HL7.Utils
                 originalVersion = match.Groups[2].Value;
 
                 // Because NHAPI is really finicky with message types we want to replace the appropriate message type
-                m_eventMessageMaps.ToList().ForEach(o => messageData = Regex.Replace(messageData, $"\\|{o.Key}\\^*?\\|", $"|{o.Key.Replace("\\", "")}^{o.Value}|"));
+                messageData = Regex.Replace(messageData, @"^MSH\|\^\~\\\&\|(?:.*?\|){6}(.*?)[\|\r\n].*$", (o) =>
+                {
+                    var eventRegex = Regex.Match(o.Value, @"^(\w{3}\^\w{3}).*$");
+                    if (eventRegex.Success && m_eventMessageMaps.TryGetValue(eventRegex.Groups[0].Value, out string msgType))
+                    {
+                        return $"{eventRegex.Groups[0].Value}^{msgType}";
+                    }
+                    return o.Value;
+                });
+
                 PipeParser parser = new PipeParser();
                 return parser.Parse(messageData, "2.5");
             }
