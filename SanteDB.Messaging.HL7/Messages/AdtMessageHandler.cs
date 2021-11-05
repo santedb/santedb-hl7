@@ -52,8 +52,8 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <param name="localizationService"></param>
         public AdtMessageHandler(ILocalizationService localizationService) : base(localizationService)
         {
-
         }
+
         /// <summary>
         /// Supported triggers
         /// </summary>
@@ -127,9 +127,9 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// Send an audit of admit
         /// </summary>
-        protected virtual void SendAuditAdmit(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> enumerable)
+        protected virtual void SendAuditAdmit(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditCreate(Core.Auditing.OutcomeIndicator.Success, null, enumerable.ToArray());
+            AuditUtil.AuditCreate(Core.Auditing.OutcomeIndicator.Success, null, results?.ToArray());
         }
 
         /// <summary>
@@ -175,7 +175,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// </summary>
         protected virtual void SendAuditUpdate(OutcomeIndicator outcome, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditUpdate(outcome, null, results.ToArray());
+            AuditUtil.AuditUpdate(outcome, null, results?.ToArray());
         }
 
         /// <summary>
