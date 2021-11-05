@@ -48,15 +48,13 @@ namespace SanteDB.Messaging.HL7.Segments
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(MRGSegmentHandler));
 
         // Localization Service
-        private readonly ILocalizationService m_localizationService;
+        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
 
         /// <summary>
         /// DI constructor
         /// </summary>
-        /// <param name="localizationService"></param>
-        public MRGSegmentHandler(ILocalizationService localizationService)
+        public MRGSegmentHandler()
         {
-            this.m_localizationService = localizationService;
         }
 
         /// <summary>
@@ -90,7 +88,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 var patient = context.OfType<Patient>().FirstOrDefault();
                 if (patient == null)
                 {
-                    m_tracer.TraceError("MRG Requires PID segment to be processed");
+                    this.m_tracer.TraceError("MRG Requires PID segment to be processed");
                     throw new InvalidOperationException(this.m_localizationService.FormatString("error.messaging.hl7.segmentRequirement", new
                     {
                         param = "MRG",

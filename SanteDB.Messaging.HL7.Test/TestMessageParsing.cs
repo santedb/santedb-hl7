@@ -14,11 +14,13 @@ using SanteDB.Core.TestFramework;
 using SanteDB.Messaging.HL7.Messages;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace SanteDB.Messaging.HL7.Test
 {
-	[TestFixture(Category = "Integration")]
+    [ExcludeFromCodeCoverage]
+    [TestFixture(Category = "Integration")]
     public class TestMessageParsing : DataTest
     {
         /// <summary>
