@@ -2,22 +2,23 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using Newtonsoft.Json;
 using SanteDB.Core;
 using SanteDB.Core.Configuration;
@@ -42,13 +43,11 @@ namespace SanteDB.Messaging.HL7.Configuration
     [XmlType(nameof(Hl7ConfigurationSection), Namespace = "http://santedb.org/configuration")]
     public class Hl7ConfigurationSection : IConfigurationSection
     {
-
         /// <summary>
         /// Create a new HL7 Configuration section
         /// </summary>
         public Hl7ConfigurationSection()
         {
-
         }
 
         /// <summary>
@@ -72,7 +71,6 @@ namespace SanteDB.Messaging.HL7.Configuration
         [XmlAttribute("noAuthSecret"), JsonProperty("noAuthSecret")]
         [DisplayName("No Auth Secret"), Description("If you set the authentication mode to NONE then the secret for the (MSH-3) which all HL7 messages will run on")]
         public String NoAuthenticationSecret { get; set; }
-
 
         /// <summary>
         /// The address to which to bind
@@ -126,7 +124,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         public bool RequireAuthenticatedApplication { get; set; }
 
         /// <summary>
-        /// Strict assigning authority 
+        /// Strict assigning authority
         /// </summary>
         [XmlAttribute("strictCx4"), JsonProperty("strictCx4")]
         [DisplayName("Strict CX4"), Description("When true, allows senders to submit PID-3 data with no CX.4. SanteDB will resolve the CX.4 based on the sending facility and device")]
@@ -146,6 +144,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// contains an identifier in that identity domain with an effective time on "today's date". Any identifiers with an expiration date must match value for value.</remarks>
         [XmlEnum("any-in-domain")]
         AnyInDomain = 0,
+
         /// <summary>
         /// When an identifier is marked as "expired" it will only replace an active identity with the same value
         /// </summary>
@@ -176,12 +175,13 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// Gets or sets the handler
         /// </summary>
         [XmlIgnore, JsonIgnore, Browsable(false)]
-        public IHL7MessageHandler Handler {
+        public IHL7MessageHandler Handler
+        {
             get
             {
                 if (this.m_handler == null)
                 {
-                    this.m_handler = ApplicationServiceContext.Current?.GetService<IServiceManager>().CreateInjected(this.HandlerType.Type) as IHL7MessageHandler;
+                    this.m_handler = this.HandlerType.Type.CreateInjected() as IHL7MessageHandler;
                 }
                 return this.m_handler;
             }
@@ -233,10 +233,12 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// No security
         /// </summary>
         None,
+
         /// <summary>
         /// Use MSH-8 for authentication
         /// </summary>
         Msh8,
+
         /// <summary>
         /// Use SFT-4 for authentication
         /// </summary>
@@ -283,7 +285,6 @@ namespace SanteDB.Messaging.HL7.Configuration
             this.MessageHandlers = new List<HandlerDefinition>();
         }
 
-
         /// <summary>
         /// Gets or sets the handlers
         /// </summary>
@@ -303,5 +304,4 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// </summary>
         public override string ToString() => this.Name;
     }
-
 }

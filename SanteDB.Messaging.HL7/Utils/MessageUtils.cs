@@ -2,22 +2,23 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using NHapi.Base.Model;
 using NHapi.Base.Parser;
 using NHapi.Base.Util;
@@ -47,7 +48,6 @@ namespace SanteDB.Messaging.HL7.Utils
     /// </summary>
     public static class MessageUtils
     {
-
         private static readonly Dictionary<String, String> m_eventMessageMaps = new Dictionary<string, string>()
         {
             { "ADT\\^A40", "ADT_A39" },
@@ -59,6 +59,7 @@ namespace SanteDB.Messaging.HL7.Utils
 
         // Entry ASM HASH
         private static string s_entryAsmHash;
+
         // Install date
         private static DateTime s_installDate;
 
@@ -89,7 +90,6 @@ namespace SanteDB.Messaging.HL7.Utils
                 sftSegment.SoftwareBinaryID.Value = s_entryAsmHash;
                 sftSegment.SoftwareInstallDate.Time.SetLongDate(s_installDate);
             }
-
         }
 
         /// <summary>
@@ -108,7 +108,6 @@ namespace SanteDB.Messaging.HL7.Utils
             msh.Security.Value = security;
             msh.ProcessingID.ProcessingID.Value = "P";
             msh.DateTimeOfMessage.Time.Value = DateTime.Now.ToString("yyyyMMddHHmmss");
-
         }
 
         /// <summary>
@@ -169,12 +168,11 @@ namespace SanteDB.Messaging.HL7.Utils
                         retVal.FocalObjects.AddRange(subObject.FocalObjects);
                     }
 
-                    // Tag the objects 
+                    // Tag the objects
                 }
             }
 
             return retVal;
-
         }
 
         /// <summary>
@@ -192,7 +190,6 @@ namespace SanteDB.Messaging.HL7.Utils
             msh.ReceivingApplication.NamespaceID.Value = inbound.SendingApplication.NamespaceID.Value;
             msh.ReceivingFacility.NamespaceID.Value = inbound.SendingFacility.NamespaceID.Value;
             msh.DateTimeOfMessage.Time.Value = DateTime.Now.ToString("yyyyMMddHHmmss");
-
         }
 
         /// <summary>
@@ -200,7 +197,7 @@ namespace SanteDB.Messaging.HL7.Utils
         /// </summary>
         public static IMessage ParseMessage(String messageData, out string originalVersion)
         {
-            Regex versionRegex = new Regex(@"^(MSH\|.*?)(2\.[0-9\.]+)(.*)$", RegexOptions.Multiline);
+            Regex versionRegex = new Regex(@"^(MSH\|.*?)(2\.[0-9\.]+?)(.*)$", RegexOptions.Multiline);
             var match = versionRegex.Match(messageData);
             if (!match.Success)
                 throw new InvalidOperationException("Message appears to be invalid");
@@ -209,7 +206,7 @@ namespace SanteDB.Messaging.HL7.Utils
                 originalVersion = match.Groups[2].Value;
 
                 // Because NHAPI is really finicky with message types we want to replace the appropriate message type
-                m_eventMessageMaps.ToList().ForEach(o => messageData = Regex.Replace(messageData, $"\\|{o.Key}\\^*?\\|", $"|{o.Key.Replace("\\","")}^{o.Value}|"));
+                m_eventMessageMaps.ToList().ForEach(o => messageData = Regex.Replace(messageData, $"\\|{o.Key}\\^*?\\|", $"|{o.Key.Replace("\\", "")}^{o.Value}|"));
                 PipeParser parser = new PipeParser();
                 return parser.Parse(messageData, "2.5");
             }
@@ -242,6 +239,7 @@ namespace SanteDB.Messaging.HL7.Utils
                     case "concept":
                         retVal.Add($"{parm.ModelName}.referenceTerm.term.mnemonic", qvalue);
                         break;
+
                     case "string": // Enables phonetic matching
                         String transform = null;
                         if (parm.AllowFuzzy)
@@ -251,33 +249,40 @@ namespace SanteDB.Messaging.HL7.Utils
                                 case "approx":
                                     transform = ":(approx|{0})";
                                     break;
+
                                 case "exact":
                                     transform = "{0}";
                                     break;
+
                                 case "pattern":
                                     transform = "~*{0}*";
                                     break;
+
                                 case "soundex":
                                     if (matchStrength.HasValue)
                                         transform = ":(soundex){0}";
                                     else
                                         transform = $":(phonetic_diff|{{0}},soundex)<={matchStrength * qvalue.Length}";
                                     break;
+
                                 case "metaphone":
                                     if (matchStrength.HasValue)
                                         transform = ":(metaphone){0}";
                                     else
                                         transform = $":(phonetic_diff|{{0}},metaphone)<={matchStrength * qvalue.Length}";
                                     break;
+
                                 case "dmetaphone":
                                     if (matchStrength.HasValue)
                                         transform = ":(dmetaphone){0}";
                                     else
                                         transform = $":(phonetic_diff|{{0}},dmetaphone)<={matchStrength * qvalue.Length}";
                                     break;
+
                                 case "alias":
                                     transform = $":(alias|{{0}})>={matchStrength ?? 3}";
                                     break;
+
                                 default:
                                     transform = "~{0}";
                                     break;
@@ -289,6 +294,7 @@ namespace SanteDB.Messaging.HL7.Utils
                         }
                         retVal.Add(parm.ModelName, transform.Split(',').Select(tx => String.Format(tx, qvalue)).ToList());
                         break;
+
                     case "date":
 
                         if (qvalue.Length == 4) // partial date
