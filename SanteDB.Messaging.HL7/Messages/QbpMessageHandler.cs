@@ -249,7 +249,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// </summary>
         protected virtual void SendAuditQuery(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditQuery(Core.Auditing.OutcomeIndicator.Success, PipeParser.Encode(message.GetStructure("QPD") as ISegment, new EncodingCharacters('|', "^~\\&")), results.OfType<IdentifiedData>().ToArray());
+            AuditUtil.AuditQuery(Core.Auditing.OutcomeIndicator.Success, PipeParser.Encode(message.GetStructure("QPD") as ISegment, new EncodingCharacters('|', "^~\\&")), results?.OfType<IdentifiedData>().ToArray());
         }
 
         /// <summary>
