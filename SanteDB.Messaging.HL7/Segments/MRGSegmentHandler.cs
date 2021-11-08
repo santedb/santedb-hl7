@@ -39,7 +39,7 @@ namespace SanteDB.Messaging.HL7.Segments
     /// <summary>
     /// Segment handler that handles the MRG segment
     /// </summary>
-    public class MRGSegmentHandler : ISegmentHandler
+    public class MRGSegmentHandler : ISegmentHandler, IServiceImplementation
     {
 
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
@@ -51,9 +51,21 @@ namespace SanteDB.Messaging.HL7.Segments
         private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
 
         /// <summary>
+        /// DI constructor
+        /// </summary>
+        public MRGSegmentHandler()
+        {
+        }
+
+        /// <summary>
         /// Get the name of the segment
         /// </summary>
         public string Name => "MRG";
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+        public string ServiceName => "MRG Segment Handler";
 
         /// <summary>
         /// Create the MRG segment
@@ -76,7 +88,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 var patient = context.OfType<Patient>().FirstOrDefault();
                 if (patient == null)
                 {
-                    m_tracer.TraceError("MRG Requires PID segment to be processed");
+                    this.m_tracer.TraceError("MRG Requires PID segment to be processed");
                     throw new InvalidOperationException(this.m_localizationService.FormatString("error.messaging.hl7.segmentRequirement", new
                     {
                         param = "MRG",

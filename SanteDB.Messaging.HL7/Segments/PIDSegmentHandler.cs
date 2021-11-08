@@ -19,6 +19,11 @@
  * Date: 2021-8-5
  */
 
+using NHapi.Base.Model;
+using NHapi.Model.V25.Segment;
+using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
+using SanteDB.Core.Extensions;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Acts;
 using SanteDB.Core.Model.Constants;
@@ -26,25 +31,19 @@ using SanteDB.Core.Model.DataTypes;
 using SanteDB.Core.Model.Entities;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Security;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using NHapi.Model.V25.Datatype;
-using NHapi.Base.Model;
-using NHapi.Model.V25.Segment;
-using SanteDB.Core;
-using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
-using SanteDB.Core.Extensions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SanteDB.Messaging.HL7.Segments
 {
     /// <summary>
     /// Represents a segment handler which handles PID segments
     /// </summary>
-    public class PIDSegmentHandler : ISegmentHandler
+    public class PIDSegmentHandler : ISegmentHandler, IServiceImplementation
     {
         private const string AdministrativeGenderCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.1";
         private const string RaceCodeSystem = "2.16.840.1.113883.5.5";
@@ -61,11 +60,11 @@ namespace SanteDB.Messaging.HL7.Segments
             EntityClassKeys.Place
         };
 
-        
+
         // Localization Service
         private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
 
-        
+
         // Tracer
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(PIDSegmentHandler));
 
@@ -73,9 +72,21 @@ namespace SanteDB.Messaging.HL7.Segments
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
 
         /// <summary>
+        /// DI constructor
+        /// </summary>
+        public PIDSegmentHandler()
+        {
+        }
+
+        /// <summary>
         /// Gets the name of the segment
         /// </summary>
         public string Name => "PID";
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+        public string ServiceName => "PID Segment Handler";
 
         /// <summary>
         /// Create the PID segment from data elements

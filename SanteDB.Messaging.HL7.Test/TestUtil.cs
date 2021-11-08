@@ -1,7 +1,7 @@
 ﻿using NHapi.Base.Model;
-using NHapi.Base.Parser;
 using SanteDB.Messaging.HL7.Utils;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace SanteDB.Messaging.HL7.Test
@@ -9,6 +9,7 @@ namespace SanteDB.Messaging.HL7.Test
     /// <summary>
     /// Test utility classes
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class TestUtil
     {
 

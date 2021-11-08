@@ -2,79 +2,85 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
+using NHapi.Base.Model;
+using NHapi.Base.Parser;
+using NHapi.Model.V25.Message;
+using NHapi.Model.V25.Segment;
+using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Exceptions;
-using SanteDB.Core.Model;
 using SanteDB.Core.Model.Collection;
-using SanteDB.Core.Model.Interfaces;
 using SanteDB.Core.Security;
 using SanteDB.Core.Security.Audit;
+using SanteDB.Core.Security.Claims;
+using SanteDB.Core.Security.Services;
 using SanteDB.Core.Services;
-using SanteDB.Messaging.HL7.Segments;
+using SanteDB.Messaging.HL7.Configuration;
+using SanteDB.Messaging.HL7.Exceptions;
+using SanteDB.Messaging.HL7.TransportProtocol;
+using SanteDB.Messaging.HL7.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security;
-using System.Security.Cryptography;
-using System.Security.Principal;
-using NHapi.Model.V25.Datatype;
-using NHapi.Base.Model;
-using NHapi.Model.V25.Segment;
-using SanteDB.Core;
-using SanteDB.Messaging.HL7.Configuration;
-using SanteDB.Messaging.HL7.TransportProtocol;
-using NHapi.Base.Util;
-using NHapi.Base.Parser;
-using NHapi.Model.V25.Message;
-using SanteDB.Core.Security.Services;
 using System.Security.Authentication;
-using SanteDB.Core.Model.Entities;
-using SanteDB.Core.Security.Claims;
-using SanteDB.Messaging.HL7.Utils;
-using SanteDB.Core.Diagnostics;
-using System.Diagnostics.Tracing;
-using SanteDB.Messaging.HL7.Exceptions;
+using System.Security.Principal;
 
 namespace SanteDB.Messaging.HL7.Messages
 {
     /// <summary>
     /// Represents a message handler
     /// </summary>
-    public abstract class MessageHandlerBase : IHL7MessageHandler
+    public abstract class MessageHandlerBase : IHL7MessageHandler, IServiceImplementation
     {
-
         // Configuration
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current?.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
 
+        // Tracer
         protected Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
 
-        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+        // Localization service
+        protected readonly ILocalizationService m_localizationService;
 
-
+        /// <summary>
+        /// DI constructor
+        /// </summary>
+        /// <param name="localizationService"></param>
+        public MessageHandlerBase(ILocalizationService localizationService)
+        {
+            this.m_localizationService = localizationService;
+        }
 
         /// <summary>
         /// Get the supported triggers
         /// </summary>
         public abstract string[] SupportedTriggers { get; }
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+        public string ServiceName => "Message Handler Base";
 
         /// <summary>
         /// Allows overridden classes to implement the message handling logic
@@ -103,7 +109,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 {
                     if (!this.Validate(e.Message))
                     {
-                       this.m_traceSource.TraceError("Invalid message");
+                        this.m_traceSource.TraceError("Invalid message");
                         throw new ArgumentException(this.m_localizationService.GetString("error.messaging.hl7.invalidMessage"));
                     }
 
@@ -112,7 +118,7 @@ namespace SanteDB.Messaging.HL7.Messages
             }
             catch (Exception ex)
             {
-                this.m_traceSource.TraceEvent(EventLevel.Error,  "Error processing message: {0}", ex);
+                this.m_traceSource.TraceEvent(EventLevel.Error, "Error processing message: {0}", ex);
                 return this.CreateNACK(typeof(ACK), e.Message, ex, e);
             }
         }
@@ -127,8 +133,8 @@ namespace SanteDB.Messaging.HL7.Messages
             var sft = e.Message.GetStructure("SFT") as SFT;
             var sessionService = ApplicationServiceContext.Current.GetService<ISessionProviderService>();
 
-            if (string.IsNullOrEmpty(msh.Security.Value) && this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8) 
-            {    
+            if (string.IsNullOrEmpty(msh.Security.Value) && this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8)
+            {
                 this.m_traceSource.TraceError("Must carry MSH-8 authorization token information");
                 throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authorizationToken"));
             }
@@ -142,7 +148,6 @@ namespace SanteDB.Messaging.HL7.Messages
             }
             else if (e is AuthenticatedHl7MessageReceivedEventArgs auth && auth.AuthorizationToken != null)
             {
-
                 // Ensure proper authentication exists
                 if (String.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value))
                 {
@@ -151,19 +156,15 @@ namespace SanteDB.Messaging.HL7.Messages
                     {
                         param = "MSH-4",
                         param2 = " device"
-
                     }));
-                    
                 }
                 else if (String.IsNullOrEmpty(msh.SendingApplication.NamespaceID.Value))
                 {
-                    
                     this.m_traceSource.TraceError("MSH-3 must be provided for authenticating device/application");
                     throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
                     {
                         param = "MSH-3",
                         param2 = " device/application"
-
                     }));
                 }
                 else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
@@ -173,9 +174,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     {
                         param = "SFT-4",
                         param2 = " application"
-
                     }));
-                    
                 }
                 else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
                 {
@@ -184,9 +183,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     {
                         param = "MSH-8",
                         param2 = " application"
-
                     }));
-                    
                 }
 
                 String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
@@ -198,14 +195,15 @@ namespace SanteDB.Messaging.HL7.Messages
                     case Configuration.AuthenticationMethod.None: // No special - authenticate the app using device creds
                         applicationSecret = this.m_configuration.NoAuthenticationSecret;
                         break;
+
                     case Configuration.AuthenticationMethod.Msh8:
                         applicationSecret = msh.Security.Value;
                         break;
+
                     case Configuration.AuthenticationMethod.Sft4:
                         applicationSecret = sft.SoftwareBinaryID.Value;
                         break;
                 }
-
 
                 IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.Services.AuthenticationMethod.Local),
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
@@ -214,9 +212,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 {
                     this.m_traceSource.TraceError("Server requires authenticated application");
                     throw new UnauthorizedAccessException(this.m_localizationService.GetString("error.type.UnauthorizedAccessException"));
-                    
                 }
-
 
                 principal = new SanteDBClaimsPrincipal(new IIdentity[] { devicePrincipal.Identity, applicationPrincipal?.Identity }.OfType<IClaimsIdentity>());
             }
@@ -235,9 +231,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     {
                         param = "MSH-3",
                         param2 = "application"
-
                     }));
-
                 }
                 else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
                 {
@@ -246,18 +240,16 @@ namespace SanteDB.Messaging.HL7.Messages
                     {
                         param = "SFT-4",
                         param2 = "application"
-
                     }));
-                } 
+                }
                 else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
                 {
                     this.m_traceSource.TraceError("MSH-8 must be provided for authenticating application");
-  
-                      throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+
+                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
                     {
                         param = "MSH-8",
                         param2 = "application"
-
                     }));
                 }
                 String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
@@ -283,9 +275,8 @@ namespace SanteDB.Messaging.HL7.Messages
                 {
                     this.m_traceSource.TraceError("Server requires authenticated application");
                     throw new UnauthorizedAccessException(this.m_localizationService.GetString("error.type.UnauthorizedAccessException"));
-                    
                 }
-                    
+
                 principal = new SanteDBClaimsPrincipal((new IIdentity[] { devicePrincipal.Identity, applicationPrincipal?.Identity }).OfType<IClaimsIdentity>());
             }
             else
@@ -330,11 +321,11 @@ namespace SanteDB.Messaging.HL7.Messages
                     errCode = "204";
                 else if (e is SecurityException)
                     errCode = "901";
-                
+
                 e = e.InnerException;
             }
 
-            if(String.IsNullOrEmpty(errCode))
+            if (String.IsNullOrEmpty(errCode))
                 errCode = "207";
             return errCode;
         }
@@ -374,28 +365,27 @@ namespace SanteDB.Messaging.HL7.Messages
             else if (rootCause is FileNotFoundException || rootCause is KeyNotFoundException)
                 retVal = this.CreateACK(nackType, request, "CE", "Data not found");
             else if (rootCause is DetectedIssueException)
-                retVal = this.CreateACK(nackType, request, "CR", "Business Rule Violation");
+                retVal = this.CreateACK(nackType, request, "CE", "Business Rule Violation");
             else if (rootCause is DataPersistenceException)
             {
                 // Data persistence failed because of D/I/E
                 if (error.InnerException is DetectedIssueException)
                 {
                     error = error.InnerException;
-                    retVal = this.CreateACK(nackType, request, "CR", "Business Rule Violation");
+                    retVal = this.CreateACK(nackType, request, "CE", "Business Rule Violation");
                 }
                 else
                     retVal = this.CreateACK(nackType, request, "CE", "Error committing data");
             }
             else if (rootCause is NotImplementedException)
-                retVal = this.CreateACK(nackType, request, "AE", "Not Implemented");
+                retVal = this.CreateACK(nackType, request, "AR", "Not Implemented");
             else if (rootCause is NotSupportedException)
                 retVal = this.CreateACK(nackType, request, "AR", "Not Supported");
             else if (rootCause is HL7ProcessingException || error is HL7DatatypeProcessingException)
-                retVal = this.CreateACK(nackType, request, "AR", "Invalid Message");
+                retVal = this.CreateACK(nackType, request, "AE", "Invalid Message");
             else
-                retVal = this.CreateACK(nackType, request, "AE", "General Error");
+                retVal = this.CreateACK(nackType, request, "AR", "General Error");
 
-           
             var msa = retVal.GetStructure("MSA") as MSA;
             msa.ErrorCondition.Identifier.Value = this.MapErrCode(error);
             msa.ErrorCondition.Text.Value = error.Message;
@@ -418,7 +408,7 @@ namespace SanteDB.Messaging.HL7.Messages
             else
             {
                 var ex = error;
-                while(ex != null)
+                while (ex != null)
                 {
                     var err = retVal.GetStructure("ERR", erc) as ERR;
                     if (retVal.IsRepeating("ERR"))
@@ -426,7 +416,7 @@ namespace SanteDB.Messaging.HL7.Messages
 
                     err.HL7ErrorCode.Identifier.Value = this.MapErrCode(ex);
                     err.Severity.Value = "E";
-                    err.GetErrorCodeAndLocation(err.ErrorCodeAndLocationRepetitionsUsed).CodeIdentifyingError.Text.Value = ex.Message; 
+                    err.GetErrorCodeAndLocation(err.ErrorCodeAndLocationRepetitionsUsed).CodeIdentifyingError.Text.Value = ex.Message;
                     if (ex is HL7ProcessingException hle)
                     {
                         var erl = err.GetErrorLocation(err.ErrorLocationRepetitionsUsed);
@@ -440,7 +430,7 @@ namespace SanteDB.Messaging.HL7.Messages
                         if (ihle != null)
                             erl.SubComponentNumber.Value = ihle.Component.ToString();
                     }
-                   
+
                     ex = ex.InnerException;
                 }
             }
@@ -466,7 +456,7 @@ namespace SanteDB.Messaging.HL7.Messages
         {
             var retVal = Activator.CreateInstance(ackType) as IMessage;
             (retVal.GetStructure("MSH") as MSH).SetDefault(request.GetStructure("MSH") as MSH);
-            if((request.GetStructure("MSH") as MSH).VersionID.VersionID.Value == "2.5")
+            if ((request.GetStructure("MSH") as MSH).VersionID.VersionID.Value == "2.5")
                 (retVal.GetStructure("SFT") as SFT).SetDefault();
             var msa = retVal.GetStructure("MSA") as MSA;
             msa.MessageControlID.Value = (request.GetStructure("MSH") as MSH).MessageControlID.Value;
@@ -474,18 +464,13 @@ namespace SanteDB.Messaging.HL7.Messages
             msa.TextMessage.Value = ackMessage;
 
             // FAST ACK carry same response message type as request
-            if (retVal is ACK)
+            if (retVal is ACK ack)
             {
-                (retVal as ACK).MSH.MessageType.MessageStructure.Value = (retVal as ACK).MSH.MessageType.MessageCode.Value = "ACK";
-                (retVal as ACK).MSH.MessageType.TriggerEvent.Value = (request.GetStructure("MSH") as MSH).MessageType.TriggerEvent.Value;
-                
-
+                ack.MSH.MessageType.MessageStructure.Value = ack.MSH.MessageType.MessageCode.Value = "ACK";
+                ack.MSH.MessageType.TriggerEvent.Value = ack.MSH.MessageType.TriggerEvent.Value;
             }
 
             return retVal;
         }
-
-        
-       
     }
 }

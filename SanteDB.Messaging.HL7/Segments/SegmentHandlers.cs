@@ -18,22 +18,20 @@
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NHapi.Model.V25.Datatype;
-using NHapi.Base.Model;
-using NHapi.Model.V25.Segment;
 
 namespace SanteDB.Messaging.HL7.Segments
 {
     /// <summary>
-    /// Represents a segment handler
+    /// Represents a segment handler.
     /// </summary>
     public static class SegmentHandlers
     {
         // Segment handlers
-        private static Dictionary<String, ISegmentHandler> s_segmentHandlers = new Dictionary<string, ISegmentHandler>();
+        private static readonly Dictionary<string, ISegmentHandler> s_segmentHandlers = new Dictionary<string, ISegmentHandler>();
 
         /// <summary>
         /// Scan types for message handler
@@ -62,10 +60,8 @@ namespace SanteDB.Messaging.HL7.Segments
         /// </summary>
         public static ISegmentHandler GetSegmentHandler(string name)
         {
-            ISegmentHandler handler = null;
-            s_segmentHandlers.TryGetValue(name, out handler);
+            s_segmentHandlers.TryGetValue(name, out var handler);
             return handler;
         }
-
     }
 }

@@ -19,7 +19,10 @@
  * Date: 2021-8-5
  */
 
-using SanteDB.Core.Extensions;
+using NHapi.Base.Model;
+using NHapi.Model.V25.Segment;
+using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.DataTypes;
@@ -27,28 +30,20 @@ using SanteDB.Core.Model.Entities;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Model.Security;
 using SanteDB.Core.Security;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using NHapi.Model.V25.Datatype;
-using NHapi.Base.Model;
-using NHapi.Model.V25.Segment;
-using SanteDB.Core;
+using SanteDB.Core.Security.Services;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
-using SanteDB.Core.Security.Services;
-using System.Collections;
-using Newtonsoft.Json.Linq;
-using SanteDB.Core.Diagnostics;
-using SanteDB.Core.Model.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SanteDB.Messaging.HL7.Segments
 {
     /// <summary>
     /// Represents a NK1 segment
     /// </summary>
-    public class NK1SegmentHandler : ISegmentHandler
+    public class NK1SegmentHandler : ISegmentHandler, IServiceImplementation
     {
         // Next of kin relationship code system
         private const string RelationshipCodeSystem = "1.3.6.1.4.1.33349.3.1.5.9.3.200.63";
@@ -63,7 +58,7 @@ namespace SanteDB.Messaging.HL7.Segments
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
 
         // Localization Service
-        private readonly ILocalizationService m_localizationService;
+        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
 
         // Tracer
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(NK1SegmentHandler));
@@ -86,13 +81,17 @@ namespace SanteDB.Messaging.HL7.Segments
         /// </summary>
         public NK1SegmentHandler()
         {
-            this.m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
         }
 
         /// <summary>
         /// Gets or sets the name of the segment
         /// </summary>
         public string Name => "NK1";
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+        public string ServiceName => "NK1 Segment Handler";
 
         /// <summary>
         /// Create next of kin relationship

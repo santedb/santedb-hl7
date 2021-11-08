@@ -2,23 +2,25 @@
  * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you 
- * may not use this file except in compliance with the License. You may 
- * obtain a copy of the License at 
- * 
- * http://www.apache.org/licenses/LICENSE-2.0 
- * 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
- * License for the specific language governing permissions and limitations under 
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
  * the License.
- * 
+ *
  * User: fyfej
  * Date: 2021-8-5
  */
+
 using NHapi.Model.V25.Message;
+using SanteDB.Core;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Messaging.HL7.Query;
 using System;
@@ -29,7 +31,6 @@ using System.Xml.Serialization;
 
 namespace SanteDB.Messaging.HL7.ParameterMap
 {
-
     /// <summary>
     /// Represents a query parameter map
     /// </summary>
@@ -37,7 +38,6 @@ namespace SanteDB.Messaging.HL7.ParameterMap
     [XmlRoot(nameof(Hl7QueryParameterMap), Namespace = "http://santedb.org/model/hl7")]
     public class Hl7QueryParameterMap
     {
-
         /// <summary>
         /// The type of the map
         /// </summary>
@@ -49,7 +49,6 @@ namespace SanteDB.Messaging.HL7.ParameterMap
         /// </summary>
         public void Merge(Hl7QueryParameterMap map)
         {
-
             foreach (var itm in map.Map)
             {
                 var myMapping = this.Map.FirstOrDefault(p => p.Trigger == itm.Trigger);
@@ -64,7 +63,6 @@ namespace SanteDB.Messaging.HL7.ParameterMap
                 }
                 else // we just add
                     this.Map.Add(itm);
-
             }
         }
     }
@@ -75,7 +73,6 @@ namespace SanteDB.Messaging.HL7.ParameterMap
     [XmlType(nameof(Hl7QueryParameterType), Namespace = "http://santedb.org/model/hl7")]
     public class Hl7QueryParameterType
     {
-
         /// <summary>
         /// Trigger for this query
         /// </summary>
@@ -114,7 +111,8 @@ namespace SanteDB.Messaging.HL7.ParameterMap
         /// The model type
         /// </summary>
         [XmlAttribute("queryTarget")]
-        public String QueryTargetXml {
+        public String QueryTargetXml
+        {
             get { return this.QueryTarget.GetCustomAttribute<XmlRootAttribute>().ElementName; }
             set { this.QueryTarget = new SanteDB.Core.Model.Serialization.ModelSerializationBinder().BindToType(typeof(Patient).Assembly.FullName, value); }
         }
@@ -132,7 +130,7 @@ namespace SanteDB.Messaging.HL7.ParameterMap
         public String QueryHandlerXml
         {
             get { return this.QueryHandler.GetType().AssemblyQualifiedName; }
-            set { this.QueryHandler = Activator.CreateInstance(Type.GetType(value)) as IQueryHandler; }
+            set { this.QueryHandler = Type.GetType(value).CreateInjected() as IQueryHandler; }
         }
 
         /// <summary>
@@ -146,16 +144,14 @@ namespace SanteDB.Messaging.HL7.ParameterMap
         /// </summary>
         [XmlElement("parameter")]
         public List<Hl7QueryParameterMapProperty> Parameters { get; set; }
-
     }
 
     /// <summary>
-    /// Represents a query parameter map 
+    /// Represents a query parameter map
     /// </summary>
     [XmlType(nameof(Hl7QueryParameterMapProperty), Namespace = "http://santedb.org/model/hl7")]
     public class Hl7QueryParameterMapProperty
     {
-
         /// <summary>
         /// The model query parameter
         /// </summary>
@@ -192,5 +188,4 @@ namespace SanteDB.Messaging.HL7.ParameterMap
         [XmlAttribute("fuzzy")]
         public bool AllowFuzzy { get; set; }
     }
-
 }

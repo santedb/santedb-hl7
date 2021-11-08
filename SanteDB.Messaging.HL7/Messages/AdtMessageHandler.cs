@@ -46,11 +46,13 @@ namespace SanteDB.Messaging.HL7.Messages
     [DisplayName("SanteDB ADT Message Handler")]
     public class AdtMessageHandler : MessageHandlerBase
     {
-        // Tracer
-        private Tracer m_tracer = Tracer.GetTracer(typeof(AdtMessageHandler));
-
-        // Localization service
-        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+        /// <summary>
+        /// DI constructor
+        /// </summary>
+        /// <param name="localizationService"></param>
+        public AdtMessageHandler(ILocalizationService localizationService) : base(localizationService)
+        {
+        }
 
         /// <summary>
         /// Supported triggers
@@ -78,7 +80,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     return this.PerformMerge(e, parsed);
 
                 default:
-                    this.m_tracer.TraceError($"Do not understand event {msh.MessageType.TriggerEvent.Value}");
+                    this.m_traceSource.TraceError($"Do not understand event {msh.MessageType.TriggerEvent.Value}");
                     throw new InvalidOperationException(this.m_localizationService.FormatString("error.type.InvalidOperation.eventNotUnderstood", new
                     {
                         param = msh.MessageType.TriggerEvent.Value
@@ -96,14 +98,14 @@ namespace SanteDB.Messaging.HL7.Messages
                 var patient = insertBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
                 if (patient == null)
                 {
-                    this.m_tracer.TraceError("Message did not contain a patient");
+                    this.m_traceSource.TraceError("Message did not contain a patient");
                     throw new ArgumentNullException(nameof(insertBundle), this.m_localizationService.GetString("error.type.ArgumentNullException.missingPatient"));
                 }
 
                 var repoService = ApplicationServiceContext.Current.GetService<IRepositoryService<Bundle>>();
                 if (repoService == null)
                 {
-                    this.m_tracer.TraceError("Cannot find repository for Patient");
+                    this.m_traceSource.TraceError("Cannot find repository for Patient");
                     throw new InvalidOperationException(this.m_localizationService.GetString("error.type.InvalidOperation.missingPatientRepo"));
                 }
 
@@ -117,7 +119,7 @@ namespace SanteDB.Messaging.HL7.Messages
             catch (Exception ex)
             {
                 this.SendAuditAdmit(OutcomeIndicator.EpicFail, e.Message, null);
-                this.m_tracer.TraceError("Error performing admit");
+                this.m_traceSource.TraceError("Error performing admit");
                 throw new HL7ProcessingException(this.m_localizationService.GetString("error.messaging.hl7.messages.errorPerformingAdmit"), null, null, 0, 0, ex);
             }
         }
@@ -125,9 +127,9 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// Send an audit of admit
         /// </summary>
-        protected virtual void SendAuditAdmit(OutcomeIndicator outcome, IMessage message, IEnumerable<IdentifiedData> enumerable)
+        protected virtual void SendAuditAdmit(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditCreate(OutcomeIndicator.Success, null, enumerable.ToArray());
+            AuditUtil.AuditCreate(OutcomeIndicator.Success, null, results?.ToArray());
         }
 
         /// <summary>
@@ -140,7 +142,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 var patient = updateBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
                 if (patient == null)
                 {
-                    this.m_tracer.TraceError("Message did not contain a patient");
+                    this.m_traceSource.TraceError("Message did not contain a patient");
                     throw new ArgumentNullException(nameof(updateBundle), this.m_localizationService.GetString("error.type.ArgumentNullException.missingPatient"));
                 }
                 else if (!patient.Key.HasValue)
@@ -149,7 +151,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 var repoService = ApplicationServiceContext.Current.GetService<IRepositoryService<Bundle>>();
                 if (repoService == null)
                 {
-                    this.m_tracer.TraceError("Cannot find repository for Patient");
+                    this.m_traceSource.TraceError("Cannot find repository for Patient");
                     throw new InvalidOperationException(this.m_localizationService.GetString("error.type.InvalidOperation.missingPatientRepo"));
                 }
 
@@ -172,7 +174,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// </summary>
         protected virtual void SendAuditUpdate(OutcomeIndicator outcome, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditUpdate(outcome, null, results.ToArray());
+            AuditUtil.AuditUpdate(outcome, null, results?.ToArray());
         }
 
         /// <summary>
@@ -186,7 +188,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 var mergePairs = bundle.Item.OfType<Bundle>();
                 if (!mergePairs.Any())
                 {
-                    this.m_tracer.TraceError("Merge requires at least one pair of PID and MRG");
+                    this.m_traceSource.TraceError("Merge requires at least one pair of PID and MRG");
                     throw new InvalidOperationException(this.m_localizationService.GetString("error.messaging.hl7.messages.mergeMissingPair"));
                 }
 
@@ -198,7 +200,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     var victims = mrgPair.Item.OfType<Patient>().Where(o => o.GetTag("$v2.segment") == "MRG");
                     if (survivor == null || !victims.Any())
                     {
-                        this.m_tracer.TraceError("Merge requires at least one pair of PID and MRG");
+                        this.m_traceSource.TraceError("Merge requires at least one pair of PID and MRG");
                         throw new InvalidOperationException(this.m_localizationService.GetString("error.messaging.hl7.messages.mergeMissingPair"));
                     }
 

@@ -49,13 +49,28 @@ namespace SanteDB.Messaging.HL7.Query
     /// <summary>
     /// Query result handler
     /// </summary>
-    public class CrossReferenceQueryHandler : IQueryHandler
+    public class CrossReferenceQueryHandler : IQueryHandler, IServiceImplementation
     {
         // Get configuration
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current?.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
-        private readonly ILocalizationService m_localizationService = ApplicationServiceContext.Current.GetService<ILocalizationService>();
+        private readonly ILocalizationService m_localizationService;
 
         private readonly Tracer m_tracer = Tracer.GetTracer(typeof(CrossReferenceQueryHandler));
+
+        /// <summary>
+        /// DI constructor
+        /// </summary>
+        /// <param name="localizationService"></param>
+        public CrossReferenceQueryHandler(ILocalizationService localizationService)
+        {
+            this.m_localizationService = localizationService;
+        }
+
+        /// <summary>
+        /// Get the service name
+        /// </summary>
+        public string ServiceName => "Cross Reference Query Handler";
+
         /// <summary>
         /// Append query results to the message
         /// </summary>
