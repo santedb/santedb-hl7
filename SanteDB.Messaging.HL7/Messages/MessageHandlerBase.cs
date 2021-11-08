@@ -152,7 +152,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 if (String.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value))
                 {
                     this.m_traceSource.TraceError("MSH-4 must be provided for authenticating device");
-                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authenticating", new
                     {
                         param = "MSH-4",
                         param2 = " device"
@@ -161,7 +161,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 else if (String.IsNullOrEmpty(msh.SendingApplication.NamespaceID.Value))
                 {
                     this.m_traceSource.TraceError("MSH-3 must be provided for authenticating device/application");
-                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authenticating", new
                     {
                         param = "MSH-3",
                         param2 = " device/application"
@@ -170,7 +170,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
                 {
                     this.m_traceSource.TraceError("SFT-4 must be provided for authenticating application");
-                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authenticating", new
                     {
                         param = "SFT-4",
                         param2 = " application"
@@ -179,7 +179,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
                 {
                     this.m_traceSource.TraceError("MSH-8 must be provided for authenticating application");
-                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authenticating", new
                     {
                         param = "MSH-8",
                         param2 = " application"
@@ -227,7 +227,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 else if (string.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value))
                 {
                     this.m_traceSource.TraceError("MSH-3 must be provided for authenticating application");
-                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authenticating", new
                     {
                         param = "MSH-3",
                         param2 = "application"
@@ -236,7 +236,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
                 {
                     this.m_traceSource.TraceError("SFT-4 must be provided for authenticating application");
-                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authenticating", new
                     {
                         param = "SFT-4",
                         param2 = "application"
@@ -246,7 +246,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 {
                     this.m_traceSource.TraceError("MSH-8 must be provided for authenticating application");
 
-                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
+                    throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authenticating", new
                     {
                         param = "MSH-8",
                         param2 = "application"

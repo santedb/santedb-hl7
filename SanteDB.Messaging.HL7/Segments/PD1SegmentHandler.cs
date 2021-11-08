@@ -147,7 +147,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         catch (Exception e)
                         {
-                            throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException",
+                            throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException",
                                 new
                                 {
                                     param = "patient primary facility"
@@ -171,7 +171,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         else
                         {
                             this.m_tracer.TraceError($"Facility {idnumber} could not be found");
-                            throw new KeyNotFoundException(this.m_localizationService.FormatString("error.messaging.hl7.facilityId", new
+                            throw new KeyNotFoundException(this.m_localizationService.GetString("error.messaging.hl7.facilityId", new
                             {
                                 param = idnumber
                             }));
@@ -202,7 +202,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     else
                     {
                         this.m_tracer.TraceError($"Protection indicator {pd1Segment.ProtectionIndicator.Value} is not valid");
-                        throw new ArgumentOutOfRangeException(this.m_localizationService.FormatString("error.messaging.hl7.protectionInvalid", new
+                        throw new ArgumentOutOfRangeException(this.m_localizationService.GetString("error.messaging.hl7.protectionInvalid", new
                         {
                             param = pd1Segment.ProtectionIndicator.Value
                         }));
@@ -218,7 +218,7 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (HL7DatatypeProcessingException e)
             {
-                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException",
+                throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException",
                     new
                     {
                         param = "PD1"
@@ -226,7 +226,7 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (Exception e)
             {
-                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException.",
+                throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException.",
                     new
                     {
                         param = "PD1"

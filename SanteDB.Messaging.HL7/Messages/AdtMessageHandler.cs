@@ -81,7 +81,7 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 default:
                     this.m_traceSource.TraceError($"Do not understand event {msh.MessageType.TriggerEvent.Value}");
-                    throw new InvalidOperationException(this.m_localizationService.FormatString("error.type.InvalidOperation.eventNotUnderstood", new
+                    throw new InvalidOperationException(this.m_localizationService.GetString("error.type.InvalidOperation.eventNotUnderstood", new
                     {
                         param = msh.MessageType.TriggerEvent.Value
                     }));

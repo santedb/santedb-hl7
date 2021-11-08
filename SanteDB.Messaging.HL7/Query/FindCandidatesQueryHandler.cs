@@ -175,7 +175,7 @@ namespace SanteDB.Messaging.HL7.Query
                 catch (Exception e)
                 {
                     this.m_tracer.TraceError("Error processing query parameter", "QPD", "1", 3, 0, e);
-                    throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                    throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                     {
                         param = "query parameter"
                     }), "QPD", "1", 3, 0, e);
@@ -198,7 +198,7 @@ namespace SanteDB.Messaging.HL7.Query
                 catch (Exception e)
                 {
                     this.m_tracer.TraceError("Error processing return domains", "QPD", "1", 8, 0, e);
-                    throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                    throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                     {
                         param = "return domains"
                     }), "QPD", "1", 8, 0, e);

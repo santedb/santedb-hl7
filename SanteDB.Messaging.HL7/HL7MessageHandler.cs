@@ -57,7 +57,7 @@ namespace SanteDB.Messaging.HL7
         #region IMessageHandlerService Members
 
         // HL7 Trace source name
-        private Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
+        private readonly Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
 
         // Configuration
         private Hl7ConfigurationSection m_configuration;

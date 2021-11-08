@@ -43,7 +43,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
     [Description("ER7 over LLP")]
     public class LlpTransport : ITransportProtocol
     {
-        protected Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
+        protected readonly Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
 
         /// <summary>
         /// Start transmission

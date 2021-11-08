@@ -175,7 +175,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 if (repoService == null)
                 {
                     m_traceSource.TraceError($"Cannot find repository service for {map.QueryTargetXml}");
-                    throw new InvalidOperationException(m_localizationService.FormatString("error.messaging.hl7.repositoryService", new
+                    throw new InvalidOperationException(m_localizationService.GetString("error.messaging.hl7.repositoryService", new
                     {
                         param = map.QueryTargetXml
                     }));
@@ -308,7 +308,7 @@ namespace SanteDB.Messaging.HL7.Messages
             if (!s_map.Map.Any(m => m.Trigger == trigger))
             {
                 m_traceSource.TraceError($"{trigger} not understood or mapped");
-                throw new NotSupportedException(m_localizationService.FormatString("error.messaging.hl7.notUnderstood", new
+                throw new NotSupportedException(m_localizationService.GetString("error.messaging.hl7.notUnderstood", new
                 {
                     param = trigger
                 }));

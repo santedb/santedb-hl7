@@ -89,7 +89,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (patient == null)
                 {
                     this.m_tracer.TraceError("MRG Requires PID segment to be processed");
-                    throw new InvalidOperationException(this.m_localizationService.FormatString("error.messaging.hl7.segmentRequirement", new
+                    throw new InvalidOperationException(this.m_localizationService.GetString("error.messaging.hl7.segmentRequirement", new
                     {
                         param = "MRG",
                         param2 = "PID"
@@ -112,7 +112,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     }
                     catch (Exception e)
                     {
-                        throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                        throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                         {
                             param = "assigning authority"
                         }), "MRG", "1", 1, 4, e);
@@ -121,7 +121,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     if (authority == null)
                     {
                         m_tracer.TraceError($"No authority configured for {id.AssigningAuthority.NamespaceID.Value}");
-                        throw new HL7ProcessingException(this.m_localizationService.FormatString("error.messaging.hl7.authorityNone", new
+                        throw new HL7ProcessingException(this.m_localizationService.GetString("error.messaging.hl7.authorityNone", new
                         {
                             param = id.AssigningAuthority.NamespaceID.Value
                         }), "MRG", "1", 3, 4);
@@ -161,14 +161,14 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (HL7DatatypeProcessingException e)
             {
-                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                 {
                     param = "MRG segment"
                 }), "PID", "1", 1, e.Component, e);
             }
             catch (Exception e)
             {
-                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                 {
                     param = "MRG segment"
                 }), "PID", "1", 1, 1, e);

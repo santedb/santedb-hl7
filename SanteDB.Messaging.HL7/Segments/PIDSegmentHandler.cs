@@ -101,7 +101,7 @@ namespace SanteDB.Messaging.HL7.Segments
             if (patient == null)
             {
                 this.m_tracer.TraceError($"Cannot convert {data.GetType().Name} to PID");
-                throw new InvalidOperationException(this.m_localizationService.FormatString("error.messaging.hl7.conversionPID", new
+                throw new InvalidOperationException(this.m_localizationService.GetString("error.messaging.hl7.conversionPID", new
                 {
                     param = data.GetType().Name
                 }));
@@ -275,7 +275,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         catch (Exception e)
                         {
-                            throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                            throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                             {
                                 param = "assigning authority"
                             }), "PID", pidSegment.SetIDPID.Value, 3, 4, e);
@@ -285,7 +285,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         if (authority == null)
                         {
                             this.m_tracer.TraceError($"No authority configured for {id.AssigningAuthority.NamespaceID.Value}");
-                            throw new HL7ProcessingException(this.m_localizationService.FormatString("error.messaging.hl7.authorityNone", new
+                            throw new HL7ProcessingException(this.m_localizationService.GetString("error.messaging.hl7.authorityNone", new
                             {
                                 param = id.AssigningAuthority.NamespaceID.Value
                             }),"PID", pidSegment.SetIDPID.Value, 3, 4);
@@ -367,7 +367,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         catch (Exception e)
                         {
-                            throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                            throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                             {
                                 param = "mother's identifiers"
                             }), "PID", pidSegment.SetIDPID.Value, 21, 3);
@@ -593,7 +593,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         else
                         {
-                            throw new KeyNotFoundException(this.m_localizationService.FormatString("error.messaging.hl7.birthPlace", new
+                            throw new KeyNotFoundException(this.m_localizationService.GetString("error.messaging.hl7.birthPlace", new
                             {
                                 param = pidSegment.BirthPlace.Value,
                                 param2 = places.Count()
@@ -626,7 +626,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         else
                         {
                             m_tracer.TraceError($"Cannot find country with code {cit.Identifier.Value}");
-                            throw new KeyNotFoundException(this.m_localizationService.FormatString("error.messaging.hl7.countryCode", new
+                            throw new KeyNotFoundException(this.m_localizationService.GetString("error.messaging.hl7.countryCode", new
                             {
                                 param = cit.Identifier.Value
                             }));
@@ -667,7 +667,7 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (HL7DatatypeProcessingException e)
             {
-                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException",
+                throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException",
                     new
                     {
                         param = "PID"
@@ -675,7 +675,7 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (Exception e)
             {
-                throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException",
+                throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException",
                     new
                     {
                         param = "PID"
