@@ -25,6 +25,7 @@ using NHapi.Base.Util;
 using NHapi.Model.V25.Datatype;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Audit;
 using SanteDB.Core.Model.Collection;
@@ -60,6 +61,7 @@ namespace SanteDB.Messaging.HL7.Messages
         private static Hl7QueryParameterMap s_map;
         // localization service
         private static readonly ILocalizationService m_localizationService;
+
         // Tracer
         public static readonly Tracer m_tracer = Tracer.GetTracer(typeof(QbpMessageHandler));
 
