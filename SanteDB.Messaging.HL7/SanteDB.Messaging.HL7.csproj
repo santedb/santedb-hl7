@@ -176,9 +176,7 @@
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
     </PackageReference>
-    <PackageReference Include="NHapi.Parser.Agfa">
-      <Version>1.0.1</Version>
-    </PackageReference>
+    <PackageReference Include="nhapi" Version="3.0.4" />
   </ItemGroup>
   <ItemGroup>
     <None Include="applet\controllers\config\hl7.js" />

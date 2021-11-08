@@ -58,7 +58,7 @@ namespace SanteDB.Messaging.HL7.Messages
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current?.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
 
         // Tracer
-        protected Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
+        protected readonly Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
 
         // Localization service
         protected readonly ILocalizationService m_localizationService;
