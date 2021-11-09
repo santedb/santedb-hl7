@@ -127,9 +127,9 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// Send an audit of admit
         /// </summary>
-        protected virtual void SendAuditAdmit(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> results)
+        protected virtual void SendAuditAdmit(OutcomeIndicator outcomeIndicator, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditCreate(Core.Auditing.OutcomeIndicator.Success, null, results?.ToArray());
+            AuditUtil.AuditCreate(outcomeIndicator, null, results?.ToArray());
         }
 
         /// <summary>
