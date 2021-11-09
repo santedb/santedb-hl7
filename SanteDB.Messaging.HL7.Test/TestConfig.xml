@@ -139,4 +139,11 @@
 		  <add>4326A4421216AC254DA93DC61B93160B08925BB1</add>
 	  </trustedPublishers>
   </section>
+  <section xsi:type="AuditAccountabilityConfigurationSection" completeAuditTrail="false">
+	  <filters>
+		  <add outcome="fail.minor fail.major fail.epic" insert="true" ship="true" />
+		  <add action="c r u d" insert="true" ship="true" />
+		  <add action="x" event="network security restrictedFn" outcome="ok" insert="false" ship="false" />
+	  </filters>
+  </section>
 </SanteDBConfiguration>
