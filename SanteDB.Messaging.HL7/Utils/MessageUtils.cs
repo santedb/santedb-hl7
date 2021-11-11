@@ -203,7 +203,7 @@ namespace SanteDB.Messaging.HL7.Utils
                 throw new InvalidOperationException("Message appears to be invalid");
             else
             {
-                originalVersion = match.Groups[2].Value;
+                originalVersion = match.Groups[1].Value;
 
                 // Because NHAPI is really finicky with message types we want to replace the appropriate message type
                 messageData = Regex.Replace(messageData, @"^MSH\|\^\~\\\&\|(?:.*?\|){6}(.*?)[\|\r\n].*$", (o) =>

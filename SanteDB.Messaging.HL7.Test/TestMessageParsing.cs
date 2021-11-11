@@ -85,6 +85,13 @@ namespace SanteDB.Messaging.HL7.Test
                 AssigningApplicationKey = app.Key
             });
 
+            metadataService.Insert(new Core.Model.DataTypes.AssigningAuthority("SSN", "US Social Security Number", "2.16.840.1.113883.4.1")
+            {
+                IsUnique = false,
+                Url = "http://hl7.org/fhir/sid/us-ssn",
+                AssigningApplicationKey = app.Key
+            });
+
             // Add another application for security checks
             dev = new SecurityDevice()
             {
