@@ -424,7 +424,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     {
                         // Was the mother found?
 
-                        existingRelationship.BatchOperation = BatchOperationType.Obsolete;
+                        existingRelationship.BatchOperation = BatchOperationType.Delete;
                         retCollection.Add(existingRelationship);
                         retVal.Relationships.Remove(existingRelationship);
                         retCollection.Add(new EntityRelationship(EntityRelationshipTypeKeys.Mother, motherEntity.Key) { SourceEntityKey = retVal.Key });
