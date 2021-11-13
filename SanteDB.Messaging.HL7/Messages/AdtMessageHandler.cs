@@ -46,12 +46,19 @@ namespace SanteDB.Messaging.HL7.Messages
     [DisplayName("SanteDB ADT Message Handler")]
     public class AdtMessageHandler : MessageHandlerBase
     {
+        // Merging service
+        private readonly IRecordMergingService<Patient> m_mergeService;
+
+        // Bundle service
+        private readonly IRepositoryService<Bundle> m_bundleService;
+
         /// <summary>
         /// DI constructor
         /// </summary>
-        /// <param name="localizationService"></param>
-        public AdtMessageHandler(ILocalizationService localizationService) : base(localizationService)
+        public AdtMessageHandler(ILocalizationService localizationService, IRecordMergingService<Patient> mergeService, IRepositoryService<Bundle> bundleService) : base(localizationService)
         {
+            this.m_mergeService = mergeService;
+            this.m_bundleService = bundleService;
         }
 
         /// <summary>
@@ -102,14 +109,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     throw new ArgumentNullException(nameof(insertBundle), this.m_localizationService.GetString("error.type.ArgumentNullException.missingPatient"));
                 }
 
-                var repoService = ApplicationServiceContext.Current.GetService<IRepositoryService<Bundle>>();
-                if (repoService == null)
-                {
-                    this.m_traceSource.TraceError("Cannot find repository for Patient");
-                    throw new InvalidOperationException(this.m_localizationService.GetString("error.type.InvalidOperation.missingPatientRepo"));
-                }
-
-                insertBundle = repoService.Insert(insertBundle);
+                insertBundle = this.m_bundleService.Insert(insertBundle);
 
                 this.SendAuditAdmit(OutcomeIndicator.Success, e.Message, insertBundle.Item.OfType<IdentifiedData>());
 
@@ -127,9 +127,9 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// Send an audit of admit
         /// </summary>
-        protected virtual void SendAuditAdmit(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> results)
+        protected virtual void SendAuditAdmit(OutcomeIndicator outcomeIndicator, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditCreate(Core.Auditing.OutcomeIndicator.Success, null, results?.ToArray());
+            AuditUtil.AuditCreate(outcomeIndicator, null, results?.ToArray());
         }
 
         /// <summary>
@@ -148,14 +148,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 else if (!patient.Key.HasValue)
                     throw new InvalidOperationException("Update can only be performed on existing patients. Ensure that a unique identifier exists on the update record");
 
-                var repoService = ApplicationServiceContext.Current.GetService<IRepositoryService<Bundle>>();
-                if (repoService == null)
-                {
-                    this.m_traceSource.TraceError("Cannot find repository for Patient");
-                    throw new InvalidOperationException(this.m_localizationService.GetString("error.type.InvalidOperation.missingPatientRepo"));
-                }
-
-                updateBundle = repoService.Save(updateBundle);
+                updateBundle = this.m_bundleService.Save(updateBundle);
 
                 this.SendAuditUpdate(Core.Auditing.OutcomeIndicator.Success, e.Message, updateBundle.Item.ToArray());
 
@@ -193,8 +186,6 @@ namespace SanteDB.Messaging.HL7.Messages
                     throw new InvalidOperationException(this.m_localizationService.GetString("error.messaging.hl7.messages.mergeMissingPair"));
                 }
 
-                var mergeService = ApplicationServiceContext.Current.GetService<IRecordMergingService<Patient>>();
-                var patientService = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>();
                 foreach (var mrgPair in mergePairs)
                 {
                     var survivor = mrgPair.Item.OfType<Patient>().FirstOrDefault(o => o.GetTag("$v2.segment") == "PID");
@@ -206,7 +197,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     }
 
                     // Perform the merge
-                    this.SendAuditMerge(Core.Auditing.OutcomeIndicator.Success, e.Message, mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value)));
+                    this.SendAuditMerge(Core.Auditing.OutcomeIndicator.Success, e.Message, this.m_mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value)));
                 }
 
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"Merge accepted");
