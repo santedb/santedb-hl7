@@ -419,10 +419,13 @@ namespace SanteDB.Messaging.HL7
                 {
                     throw new SecurityException($"Cannot perform application<>identity domain XREF - no application principal present");
                 }
-                assigningAuthority = assigningAuthorityRepositoryService.Find(o => o.AssigningApplication.Name == appPrincipal.Name, 0, 2, out int tr).FirstOrDefault();
-                if (tr > 1)
+                try
                 {
-                    throw new HL7DatatypeProcessingException($"Ambiguous authority - {appPrincipal.Name} auto mapping of sender to authority can only be done if there are 1 authorities - this device has {tr}", 4);
+                    assigningAuthority = assigningAuthorityRepositoryService.Find(o => o.AssigningApplication.Name == appPrincipal.Name).SingleOrDefault();
+                }
+                catch (Exception e)
+                {
+                    throw new HL7DatatypeProcessingException($"Cannot load {appPrincipal.Name}", 2, e);
                 }
             }
             return assigningAuthority;
