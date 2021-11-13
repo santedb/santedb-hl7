@@ -196,7 +196,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     }
 
                     // Perform the merge
-                    this.SendAuditMerge(Core.Auditing.OutcomeIndicator.Success, e.Message, this.m_mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value)));
+                    this.SendAuditMerge(OutcomeIndicator.Success, e.Message, this.m_mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value)));
                 }
 
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"Merge accepted");
