@@ -36,7 +36,6 @@ namespace SanteDB.Messaging.HL7.Test
             var p = FirebirdSql.Data.FirebirdClient.FbCharset.Ascii;
             TestApplicationContext.TestAssembly = typeof(TestMessageParsing).Assembly;
             TestApplicationContext.Initialize(TestContext.CurrentContext.TestDirectory);
-            TestApplicationContext.Current.Start();
 
             // Create the test harness device / application
             var securityDevService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityDevice>>();
@@ -103,7 +102,7 @@ namespace SanteDB.Messaging.HL7.Test
             app.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
             app.AddPolicy(PermissionPolicyIdentifiers.UnrestrictedClinicalData);
             app.AddPolicy(PermissionPolicyIdentifiers.ReadMetadata);
-            app = securityAppService.Insert(app);
+            securityAppService.Insert(app);
         }
 
         /// <summary>
@@ -144,9 +143,10 @@ namespace SanteDB.Messaging.HL7.Test
 
                 var patientOriginal = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-1")).SingleOrDefault();
 
+                Assert.NotNull(patientOriginal);
+
                 msg = TestUtil.GetMessage("ADT_UPDATE");
                 message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
-                messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
 
                 // Ensure that the patient actually was persisted
@@ -201,7 +201,6 @@ namespace SanteDB.Messaging.HL7.Test
                 Assert.IsNotNull(patient);
                 msg = TestUtil.GetMessage("QBP_SIMPLE");
                 var message = this.m_serviceManager.CreateInjected<QbpMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
-                var messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("SMITH", ((message.GetStructure("QUERY_RESPONSE") as AbstractGroup).GetStructure("PID") as PID).GetMotherSMaidenName(0).FamilyName.Surname.Value);
                 Assert.AreEqual("AA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
                 Assert.AreEqual("OK", (message.GetStructure("QAK") as QAK).QueryResponseStatus.Value);
