@@ -59,6 +59,7 @@
       <oid xmlns="http://santedb.org/model">2.16.840.1.113883.4.1</oid>
       <url xmlns="http://santedb.org/model">http://hl7.org/fhir/sid/us-ssn</url>
     </ssnAuthority>
+    <facility>44746968-AB60-4190-867C-05335014F7C5</facility>
     <services>
       <add address="llp://0.0.0.0:2100" name="LLP" receiveTimeout="20000">
         <!-- If you want to enable security Encryption
