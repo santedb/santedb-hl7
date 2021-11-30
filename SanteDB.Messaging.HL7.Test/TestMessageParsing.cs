@@ -379,7 +379,7 @@ namespace SanteDB.Messaging.HL7.Test
                 Assert.AreEqual(patientA.Key, afterMergeB.Key); // Patient B => Patient A
                 var oldMaster = entityRepository.Get(patientB.Key.Value);
                 oldMaster.LoadProperty(o => o.StatusConcept);
-                Assert.AreEqual(StatusKeys.Obsolete, oldMaster.StatusConceptKey); // Old Master is obsolete
+                Assert.AreEqual(StatusKeys.Inactive, oldMaster.StatusConceptKey); // Old Master is obsolete
             }
         }
     }
