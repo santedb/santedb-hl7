@@ -21,11 +21,6 @@
 using NHapi.Base.Model;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SanteDB.Messaging.HL7
 {
