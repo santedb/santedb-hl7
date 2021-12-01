@@ -466,9 +466,8 @@ namespace SanteDB.Messaging.HL7.Messages
             // FAST ACK carry same response message type as request
             if (retVal is ACK ack)
             {
-                ack.MSH.MessageType.MessageStructure.Value = "ACK";
-                ack.MSH.MessageType.MessageCode.Value = "ACK";
-                ack.MSH.MessageType.TriggerEvent.Value = (request.GetStructure("MSH") as MSH).MessageType.TriggerEvent.Value;
+                ack.MSH.MessageType.MessageStructure.Value = ack.MSH.MessageType.MessageCode.Value = "ACK";
+                ack.MSH.MessageType.TriggerEvent.Value = ack.MSH.MessageType.TriggerEvent.Value;
             }
 
             return retVal;
