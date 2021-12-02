@@ -470,7 +470,7 @@ namespace SanteDB.Messaging.HL7.Messages
             if (retVal is ACK ack)
             {
                 ack.MSH.MessageType.MessageStructure.Value = ack.MSH.MessageType.MessageCode.Value = "ACK";
-                ack.MSH.MessageType.TriggerEvent.Value = ack.MSH.MessageType.TriggerEvent.Value;
+                ack.MSH.MessageType.TriggerEvent.Value = ack.MSH.MessageType.TriggerEvent.Value = "A01";
             }
 
             return retVal;
