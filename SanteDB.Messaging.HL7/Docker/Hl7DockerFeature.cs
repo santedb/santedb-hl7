@@ -29,6 +29,7 @@ using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,6 +39,7 @@ namespace SanteDB.Messaging.HL7.Docker
     /// <summary>
     /// Configures the HL7 feature in docker
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class Hl7DockerFeature : IDockerFeature
     {
         /// <summary>
