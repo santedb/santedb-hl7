@@ -11,7 +11,6 @@
     <add type="SanteDB.Core.Configuration.Data.DataConfigurationSection, SanteDB.Core.Api, Version=1.11.0.29460, Culture=neutral, PublicKeyToken=null" />
     <add type="SanteDB.Core.Configuration.ResourceManagementConfigurationSection, SanteDB.Core.Api" />
     <add type="SanteDB.Server.Core.Configuration.SecurityConfigurationSection, SanteDB.Server.Core" />
-    <add type="SanteDB.Server.Core.Configuration.AppletConfigurationSection, SanteDB.Server.Core" />
   </sections>
   <section xsi:type="DataConfigurationSection">
     <connectionStrings>
@@ -59,6 +58,7 @@
       <oid xmlns="http://santedb.org/model">2.16.840.1.113883.4.1</oid>
       <url xmlns="http://santedb.org/model">http://hl7.org/fhir/sid/us-ssn</url>
     </ssnAuthority>
+    <facility>44746968-AB60-4190-867C-05335014F7C5</facility>
     <services>
       <add address="llp://0.0.0.0:2100" name="LLP" receiveTimeout="20000">
         <!-- If you want to enable security Encryption
@@ -127,19 +127,13 @@
       <add type="SanteDB.Persistence.Data.ADO.Services.AdoRoleProvider, SanteDB.Persistence.Data.ADO" />
       <add type="SanteDB.Server.Core.Services.Impl.DefaultPolicyEnforcementService, SanteDB.Server.Core" />
       <add type="SanteDB.Server.Core.Services.Impl.DefaultNetworkInformationService, SanteDB.Server.Core" />
-      <add type="SanteDB.Core.Applets.Services.Impl.AppletLocalizationService, SanteDB.Core.Applets" />
+      <add type="SanteDB.Core.TestFramework.TestLocalizationService, SanteDB.Core.TestFramework"/>
       <add type="SanteDB.Core.Security.Privacy.DataPolicyFilterService, SanteDB.Core.Api" />
-      <add type="SanteDB.Server.Core.Services.Impl.LocalAppletManagerService, SanteDB.Server.Core" />
       <add type="SanteDB.Persistence.Data.ADO.Services.AdoServiceFactory, SanteDB.Persistence.Data.ADO" />
       <add type="SanteDB.Persistence.MDM.Services.MdmDataManagementService, SanteDB.Persistence.MDM" />
     </serviceProviders>
   </section>
-  <section xsi:type="AppletConfigurationSection" appletDirectory=".\applets" allowUnsignedApplets="true">
-    <trustedPublishers>
-      <add>82C63E1E9B87578D0727E871D7613F2F0FAF683B</add>
-      <add>4326A4421216AC254DA93DC61B93160B08925BB1</add>
-    </trustedPublishers>
-  </section>
+  
   <section xsi:type="AuditAccountabilityConfigurationSection" completeAuditTrail="false">
     <filters>
       <add outcome="fail.minor fail.major fail.epic" insert="true" ship="true" />

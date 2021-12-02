@@ -4,6 +4,7 @@ using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Messages;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
@@ -12,6 +13,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
     /// <summary>
     /// Configuration for HL7 message handler
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class Hl7ConfigurationFeature : IFeature
     {
 
@@ -162,6 +164,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
     /// <summary>
     /// Remove the HL7 message handler from the configuration file
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal class UninstallHl7MessageHandler : IConfigurationTask
     {
 
@@ -233,6 +236,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
     /// <summary>
     /// Represents a task that installs the HL7 messaging feature.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal class InstallHl7MessageHandler : IConfigurationTask
     {
 

@@ -22,17 +22,13 @@
 using Newtonsoft.Json;
 using SanteDB.Core;
 using SanteDB.Core.Configuration;
-using SanteDB.Core.Interfaces;
 using SanteDB.Core.Model.Attributes;
 using SanteDB.Core.Model.DataTypes;
-using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace SanteDB.Messaging.HL7.Configuration
@@ -40,6 +36,7 @@ namespace SanteDB.Messaging.HL7.Configuration
     /// <summary>
     /// Represents the HL7 configuration
     /// </summary>
+    [ExcludeFromCodeCoverage]
     [XmlType(nameof(Hl7ConfigurationSection), Namespace = "http://santedb.org/configuration")]
     public class Hl7ConfigurationSection : IConfigurationSection
     {
@@ -155,6 +152,7 @@ namespace SanteDB.Messaging.HL7.Configuration
     /// <summary>
     /// Handler definition
     /// </summary>
+    [ExcludeFromCodeCoverage]
     [XmlType(nameof(HandlerDefinition), Namespace = "http://santedb.org/configuration")]
     public class HandlerDefinition
     {
@@ -248,6 +246,7 @@ namespace SanteDB.Messaging.HL7.Configuration
     /// <summary>
     /// Message definition
     /// </summary>
+    [ExcludeFromCodeCoverage]
     [XmlType(nameof(MessageDefinition), Namespace = "http://santedb.org/configuration")]
     public class MessageDefinition
     {
@@ -274,6 +273,7 @@ namespace SanteDB.Messaging.HL7.Configuration
     /// <summary>
     /// Service definition
     /// </summary>
+    [ExcludeFromCodeCoverage]
     [XmlType(nameof(Hl7ServiceDefinition), Namespace = "http://santedb.org/configuration")]
     public class Hl7ServiceDefinition : Hl7EndpointConfiguration
     {
