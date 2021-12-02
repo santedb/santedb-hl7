@@ -26,6 +26,7 @@ using NHapi.Model.V25.Segment;
 using SanteDB.Core;
 using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Exceptions;
+using SanteDB.Core.Model;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Security;
 using SanteDB.Core.Security.Audit;
@@ -113,7 +114,9 @@ namespace SanteDB.Messaging.HL7.Messages
                         throw new ArgumentException(this.m_localizationService.GetString("error.messaging.hl7.invalidMessage"));
                     }
 
-                    return this.HandleMessageInternal(e, MessageUtils.Parse(e.Message));
+                    var bundle = MessageUtils.Parse(e.Message);
+                    bundle.AddAnnotationToAll(SanteDBConstants.NoDynamicLoadAnnotation);
+                    return this.HandleMessageInternal(e, bundle);
                 }
             }
             catch (Exception ex)
