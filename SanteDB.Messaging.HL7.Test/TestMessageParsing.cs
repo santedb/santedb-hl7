@@ -144,18 +144,22 @@ namespace SanteDB.Messaging.HL7.Test
                 var msg = TestUtil.GetMessage("ADT_SIMPLE");
                 var message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
+
                 Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
 
-                var patientOriginal = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-1")).SingleOrDefault();
+                var patientOriginal = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
 
                 Assert.NotNull(patientOriginal);
 
                 msg = TestUtil.GetMessage("ADT_UPDATE");
                 message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                messageStr = TestUtil.ToString(message);
+
                 Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
 
                 // Ensure that the patient actually was persisted
-                var patientNew = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-1")).SingleOrDefault();
+                var patientNew = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
+
                 Assert.IsNotNull(patientNew);
                 Assert.IsTrue(messageStr.Contains(patientNew.Key.ToString()));
                 Assert.AreEqual(1, patientNew.Names.Count);
