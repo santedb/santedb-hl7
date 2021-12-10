@@ -343,7 +343,7 @@ namespace SanteDB.Messaging.HL7.Utils
         public static String EncodeMessage(IMessage response, string originalVersion)
         {
             // Rewrite back to original version
-            (response.GetStructure("MSH") as MSH).VersionID.VersionID.Value = originalVersion;
+            (response.GetStructure("MSH") as MSH).VersionID.VersionID.Value = originalVersion.Trim();
             return new PipeParser().Encode(response);
         }
     }

@@ -41,7 +41,6 @@ namespace SanteDB.Messaging.HL7.Test
             var p = FirebirdSql.Data.FirebirdClient.FbCharset.Ascii;
             TestApplicationContext.TestAssembly = typeof(TestMessageParsing).Assembly;
             TestApplicationContext.Initialize(TestContext.CurrentContext.TestDirectory);
-            TestApplicationContext.Current.Start();
 
             // Create the test harness device / application
             var securityDevService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityDevice>>();
@@ -51,6 +50,7 @@ namespace SanteDB.Messaging.HL7.Test
             this.m_serviceManager = ApplicationServiceContext.Current.GetService<IServiceManager>();
 
             AuthenticationContext.EnterSystemContext();
+
             // Create device
             var dev = new SecurityDevice()
             {
@@ -141,17 +141,22 @@ namespace SanteDB.Messaging.HL7.Test
                 var msg = TestUtil.GetMessage("ADT_SIMPLE");
                 var message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
+
                 Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
 
-                var patientOriginal = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-1")).SingleOrDefault();
+                var patientOriginal = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
+
+                Assert.NotNull(patientOriginal);
 
                 msg = TestUtil.GetMessage("ADT_UPDATE");
                 message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 messageStr = TestUtil.ToString(message);
+
                 Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
 
                 // Ensure that the patient actually was persisted
-                var patientNew = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-1")).SingleOrDefault();
+                var patientNew = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
+
                 Assert.IsNotNull(patientNew);
                 Assert.IsTrue(messageStr.Contains(patientNew.Key.ToString()));
                 Assert.AreEqual(1, patientNew.Names.Count);
@@ -202,7 +207,6 @@ namespace SanteDB.Messaging.HL7.Test
                 Assert.IsNotNull(patient);
                 msg = TestUtil.GetMessage("QBP_SIMPLE");
                 var message = this.m_serviceManager.CreateInjected<QbpMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
-                var messageStr = TestUtil.ToString(message);
                 Assert.AreEqual("SMITH", ((message.GetStructure("QUERY_RESPONSE") as AbstractGroup).GetStructure("PID") as PID).GetMotherSMaidenName(0).FamilyName.Surname.Value);
                 Assert.AreEqual("AA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
                 Assert.AreEqual("OK", (message.GetStructure("QAK") as QAK).QueryResponseStatus.Value);
@@ -220,11 +224,11 @@ namespace SanteDB.Messaging.HL7.Test
             {
                 var msg = TestUtil.GetMessage("QBP_COMPLEX_PRE");
                 this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
-                var patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-9"), AuthenticationContext.Current.Principal).SingleOrDefault();
+                var patient = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-9")).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 // Just diagnosing an update bug
                 this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
-                patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-9"), AuthenticationContext.Current.Principal).SingleOrDefault();
+                patient = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-9")).SingleOrDefault();
                 Assert.AreEqual(9, patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).Count());
                 Assert.IsNotNull(patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother));
                 msg = TestUtil.GetMessage("QBP_COMPLEX");
@@ -285,7 +289,6 @@ namespace SanteDB.Messaging.HL7.Test
             {
                 var msg = TestUtil.GetMessage("ADT_INV_GC");
                 var errmsg = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
-                var messageStr = TestUtil.ToString(errmsg);
 
                 var ack = errmsg as ACK;
                 Assert.AreNotEqual(0, ack.ERRRepetitionsUsed);
@@ -381,7 +384,7 @@ namespace SanteDB.Messaging.HL7.Test
                 Assert.AreEqual(patientA.Key, afterMergeB.Key); // Patient B => Patient A
                 var oldMaster = entityRepository.Get(patientB.Key.Value);
                 oldMaster.LoadProperty(o => o.StatusConcept);
-                Assert.AreEqual(StatusKeys.Obsolete, oldMaster.StatusConceptKey); // Old Master is obsolete
+                Assert.AreEqual(StatusKeys.Inactive, oldMaster.StatusConceptKey); // Old Master is obsolete
             }
         }
     }

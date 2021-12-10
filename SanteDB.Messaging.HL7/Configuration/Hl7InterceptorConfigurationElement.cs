@@ -22,6 +22,7 @@ using Newtonsoft.Json;
 using SanteDB.Core.Model.DataTypes;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Xml.Serialization;
 
 namespace SanteDB.Messaging.HL7.Configuration
@@ -29,6 +30,7 @@ namespace SanteDB.Messaging.HL7.Configuration
     /// <summary>
     /// HL7 Notifications Configuration Element
     /// </summary>
+    [ExcludeFromCodeCoverage]
     [XmlType(nameof(Hl7InterceptorConfigurationElement), Namespace = "http://santedb.org/configuration")]
     public class Hl7InterceptorConfigurationElement
     {

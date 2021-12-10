@@ -24,6 +24,7 @@ using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Xml.Serialization;
 
 namespace SanteDB.Messaging.HL7.Configuration
@@ -31,6 +32,7 @@ namespace SanteDB.Messaging.HL7.Configuration
     /// <summary>
     /// Represents HL7 endpoint configuration data
     /// </summary>
+    [ExcludeFromCodeCoverage]
     [XmlType(nameof(Hl7EndpointConfiguration), Namespace = "http://santedb.org/configuration")]
     public class Hl7EndpointConfiguration
     {
@@ -83,6 +85,7 @@ namespace SanteDB.Messaging.HL7.Configuration
     /// <summary>
     /// Represents a remote endpoint
     /// </summary>
+    [ExcludeFromCodeCoverage]
     [XmlType(nameof(Hl7RemoteEndpointConfiguration), Namespace = "http://santedb.org/configuration")]
     public class Hl7RemoteEndpointConfiguration : Hl7EndpointConfiguration
     {

@@ -30,6 +30,7 @@ using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 
@@ -38,6 +39,7 @@ namespace SanteDB.Messaging.HL7
     /// <summary>
     /// Message handler service
     /// </summary>
+    [ExcludeFromCodeCoverage]
     [ServiceProvider("HL7v2 API Endpoint")]
     public class HL7MessageHandler : IDaemonService, IApiEndpointProvider
     {
