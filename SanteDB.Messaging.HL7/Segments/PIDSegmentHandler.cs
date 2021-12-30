@@ -232,7 +232,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 retVal.Religion.FromModel(patient.LoadProperty<Concept>(nameof(Patient.ReligiousAffiliation)), ReligionCodeSystem);
 
             // Ethnic groups
-            if (patient.EthnicGroupCodeKey.HasValue)
+            if (patient.EthnicGroupKey.HasValue)
                 retVal.GetEthnicGroup(0).FromModel(patient.LoadProperty<Concept>(nameof(Patient.EthnicGroup)), EthnicGroupCodeSystem);
 
             // Primary language
@@ -509,7 +509,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 // Ethinic groups
                 fieldNo = 22;
                 if (pidSegment.EthnicGroupRepetitionsUsed > 0)
-                    retVal.EthnicGroupCodeKey = pidSegment.GetEthnicGroup().First().ToModel(EthnicGroupCodeSystem).Key;
+                    retVal.EthnicGroupKey = pidSegment.GetEthnicGroup().First().ToModel(EthnicGroupCodeSystem).Key;
 
                 fieldNo = 18;
                 // Patient account, locate the specified account

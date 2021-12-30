@@ -128,6 +128,8 @@ namespace SanteDB.Messaging.HL7.Segments
             if (!evnSegment.EventFacility.IsEmpty())
                 ;
 
+            // Set the creation time for the act if applicable
+            context.OfType<Entity>().ToList().ForEach(o => o.CreationActKey = retVal.Key);
             return new IdentifiedData[] { retVal };
         }
     }
