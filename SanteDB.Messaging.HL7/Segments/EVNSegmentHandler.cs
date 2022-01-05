@@ -64,7 +64,7 @@ namespace SanteDB.Messaging.HL7.Segments
             evn.RecordedDateTime.Time.SetLongDateWithFractionOfSecond(act.CreationTime.DateTime);
 
             // Is there a participation for location
-            var location = act.LoadCollection<ActParticipation>("Participations").FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKey.Location)?.PlayerEntityKey;
+            var location = act.LoadCollection<ActParticipation>("Participations").FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKeys.Location)?.PlayerEntityKey;
             if (location.HasValue)
             {
                 evn.EventFacility.UniversalID.Value = location.Value.ToString();
@@ -73,9 +73,9 @@ namespace SanteDB.Messaging.HL7.Segments
 
             /// Planned event time
             if(act.MoodConceptKey == ActMoodKeys.Eventoccurrence)
-                evn.EventOccurred.Time.SetLongDateWithFractionOfSecond(act.ActTime.DateTime);
+                evn.EventOccurred.Time.SetLongDateWithFractionOfSecond(act.ActTime.GetValueOrDefault().DateTime);
             else if(act.MoodConceptKey == ActMoodKeys.Intent)
-                evn.DateTimePlannedEvent.Time.SetLongDateWithFractionOfSecond(act.ActTime.DateTime);
+                evn.DateTimePlannedEvent.Time.SetLongDateWithFractionOfSecond(act.ActTime.GetValueOrDefault().DateTime);
 
             evn.EventReasonCode.FromModel(act.LoadProperty<Concept>("ReasonConcept"), EventReasonCodeSystem);
             evn.EventTypeCode.FromModel(act.LoadProperty<Concept>("TypeConcept"), EventTriggerCodeSystem);

@@ -219,7 +219,7 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Account number
-            var account = participations.FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKey.Holder && o.LoadProperty<Account>(nameof(ActParticipation.Act)) != null);
+            var account = participations.FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKeys.Holder && o.LoadProperty<Account>(nameof(ActParticipation.Act)) != null);
             if (account != null)
                 retVal.PatientAccountNumber.FromModel(account.Act.Identifiers.FirstOrDefault() ?? new ActIdentifier(this.m_configuration.LocalAuthority, account.Key.ToString()));
 
@@ -517,10 +517,10 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     var account = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Account>>()?.Query(o => o.Identifiers.Any(i => i.Value == pidSegment.PatientAccountNumber.IDNumber.Value), AuthenticationContext.SystemPrincipal).FirstOrDefault();
                     if (account != null)
-                        retVal.Participations.Add(new ActParticipation(ActParticipationKey.Holder, retVal) { SourceEntityKey = account.Key });
+                        retVal.Participations.Add(new ActParticipation(ActParticipationKeys.Holder, retVal) { SourceEntityKey = account.Key });
                     else
                     {
-                        retVal.Participations.Add(new ActParticipation(ActParticipationKey.Holder, retVal)
+                        retVal.Participations.Add(new ActParticipation(ActParticipationKeys.Holder, retVal)
                         {
                             SourceEntity = new Account()
                             {
