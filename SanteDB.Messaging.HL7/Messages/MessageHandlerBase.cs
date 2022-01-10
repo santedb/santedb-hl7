@@ -190,7 +190,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 }
 
                 String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
-                    deviceSecret = BitConverter.ToString(auth.AuthorizationToken).Replace("-", ""),
+                    deviceSecret = BitConverter.ToString(auth.AuthorizationToken).Replace("-", "").ToLowerInvariant(),
                     applicationId = msh.SendingApplication.NamespaceID.Value, applicationSecret = null;
 
                 switch (this.m_configuration.Security)
