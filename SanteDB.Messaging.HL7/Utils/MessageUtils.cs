@@ -117,9 +117,9 @@ namespace SanteDB.Messaging.HL7.Utils
         {
             Bundle retVal = new Bundle();
             var finder = new SegmentFinder(message);
-            while (finder.hasNextChild())
+            while (finder.HasNextChild())
             {
-                finder.nextChild();
+                finder.NextChild();
                 foreach (var current in finder.CurrentChildReps)
                 {
                     if (current is AbstractGroupItem)
