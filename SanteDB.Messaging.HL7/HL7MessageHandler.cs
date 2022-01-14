@@ -37,8 +37,14 @@ using System.Threading;
 namespace SanteDB.Messaging.HL7
 {
     /// <summary>
-    /// Message handler service
+    /// Implementation of the <see cref="IApiEndpointProvider"/> providing support for Health Level 7 Version 2.x messaging
     /// </summary>
+    /// <remarks>
+    /// <para>This service is responsible for starting up and tearing down the various <see cref="IHL7MessageHandler"/> interfaces
+    /// configured for SanteDB's implementation of <see href="https://help.santesuite.org/developers/service-apis/hl7v2">HL7v2 support</see>. This
+    /// service starts up the necessary <see cref="ITransportProtocol"/> interfaces and initializes the message handlers for receiving and handling 
+    /// inbound messages on LLP, SLLP, or TCP.</para>
+    /// </remarks>
     [ExcludeFromCodeCoverage]
     [ServiceProvider("HL7v2 API Endpoint")]
     public class HL7MessageHandler : IDaemonService, IApiEndpointProvider
