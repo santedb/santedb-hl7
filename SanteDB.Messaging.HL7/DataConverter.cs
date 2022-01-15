@@ -827,9 +827,9 @@ namespace SanteDB.Messaging.HL7
             me.AssigningAuthority.FromModel(id.LoadProperty<AssigningAuthority>("Authority"));
 
             if (id.ExpiryDate.HasValue)
-                me.ExpirationDate.setYearMonthDayPrecision(id.ExpiryDate.Value.Year, id.ExpiryDate.Value.Month, id.ExpiryDate.Value.Day);
+                me.ExpirationDate.SetYearMonthDayPrecision(id.ExpiryDate.Value.Year, id.ExpiryDate.Value.Month, id.ExpiryDate.Value.Day);
             if (id.IssueDate.HasValue)
-                me.EffectiveDate.setYearMonthDayPrecision(id.IssueDate.Value.Year, id.IssueDate.Value.Month, id.IssueDate.Value.Day);
+                me.EffectiveDate.SetYearMonthDayPrecision(id.IssueDate.Value.Year, id.IssueDate.Value.Month, id.IssueDate.Value.Day);
 
             me.CheckDigit.Value = id.CheckDigit;
             me.CheckDigitScheme.Value = id.LoadProperty<AssigningAuthority>("Authority").GetCustomValidator()?.Name;

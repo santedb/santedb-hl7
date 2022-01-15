@@ -86,7 +86,7 @@ namespace SanteDB.Messaging.HL7.Query
             foreach (var rt in rqo.QPD.GetField(4).OfType<Varies>())
             {
                 var rid = new CX(rqo.Message);
-                DeepCopy.copy(rt.Data as GenericComposite, rid);
+                DeepCopy.Copy(rt.Data as GenericComposite, rid);
                 var domain = rid.AssigningAuthority.ToModel();
                 returnDomains.Add(domain);
             }
@@ -155,7 +155,7 @@ namespace SanteDB.Messaging.HL7.Query
                 try
                 {
                     var rid = new CX(qpd.Message);
-                    DeepCopy.copy(rt.Data as GenericComposite, rid);
+                    DeepCopy.Copy(rt.Data as GenericComposite, rid);
                     var authority = rid.AssigningAuthority.ToModel();
 
                     if (authority.Key == m_configuration.LocalAuthority.Key)
@@ -182,7 +182,7 @@ namespace SanteDB.Messaging.HL7.Query
                 try
                 {
                     var rid = new CX(qpd.Message);
-                    DeepCopy.copy(rt.Data as GenericComposite, rid);
+                    DeepCopy.Copy(rt.Data as GenericComposite, rid);
                     var authority = rid.AssigningAuthority.ToModel();
                 }
                 catch (Exception e)
