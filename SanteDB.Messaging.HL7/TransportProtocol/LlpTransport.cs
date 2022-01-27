@@ -19,8 +19,10 @@
  * Date: 2021-8-5
  */
 
+using NHapi.Base.Parser;
 using SanteDB.Core;
 using SanteDB.Core.Diagnostics;
+using SanteDB.Core.Security.Audit;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Utils;
@@ -30,6 +32,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -201,6 +204,27 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 
                                 // Call any bound event handlers that there is a message available
                                 OnMessageReceived(messageArgs);
+                            }
+                            catch (Exception e)
+                            {
+                                this.m_traceSource.TraceError("Error processing HL7 message: {0}", e);
+                                if (messageArgs != null)
+                                {
+                                    var nack = new NHapi.Model.V25.Message.ACK();
+                                    nack.MSH.SetDefault(messageArgs.Message.GetStructure("MSH") as NHapi.Model.V25.Segment.MSH);
+                                    nack.MSA.AcknowledgmentCode.Value = "AE";
+                                    nack.MSA.TextMessage.Value = $"FATAL - {e.Message}";
+                                    nack.MSA.MessageControlID.Value = (messageArgs.Message.GetStructure("MSH") as NHapi.Model.V25.Segment.MSH).MessageControlID.Value;
+                                    messageArgs.Response = nack;
+
+                                    var icomps = PipeParser.Encode(messageArgs.Message.GetStructure("MSH") as NHapi.Base.Model.ISegment, new EncodingCharacters('|', "^~\\&")).Split('|');
+                                    var ocomps = PipeParser.Encode(messageArgs.Response.GetStructure("MSH") as NHapi.Base.Model.ISegment, new EncodingCharacters('|', "^~\\&")).Split('|');
+                                    AuditUtil.AuditNetworkRequestFailure(e, messageArgs.ReceiveEndpoint, Enumerable.Range(1, icomps.Length).ToDictionary(o=>$"MSH-{o}", o=>icomps[o-1]), Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => ocomps[o - 1]));
+                                }
+                                else
+                                {
+                                    AuditUtil.AuditNetworkRequestFailure(e, localEndpoint, new System.Collections.Specialized.NameValueCollection(), new System.Collections.Specialized.NameValueCollection());
+                                }
                             }
                             finally
                             {

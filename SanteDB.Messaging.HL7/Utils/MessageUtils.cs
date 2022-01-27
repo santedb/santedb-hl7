@@ -185,8 +185,7 @@ namespace SanteDB.Messaging.HL7.Utils
             var config = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
             msh.MessageControlID.Value = Guid.NewGuid().ToString();
             msh.SendingApplication.NamespaceID.Value = ApplicationServiceContext.Current.GetService<INetworkInformationService>()?.GetMachineName();
-            msh.SendingFacility.UniversalID.Value = config.LocalFacility.ToString();
-            msh.SendingFacility.UniversalIDType.Value = "GUID";
+            msh.SendingFacility.NamespaceID.Value = config.LocalFacility.ToString();
             msh.ReceivingApplication.NamespaceID.Value = inbound.SendingApplication.NamespaceID.Value;
             msh.ReceivingFacility.NamespaceID.Value = inbound.SendingFacility.NamespaceID.Value;
             msh.DateTimeOfMessage.Time.Value = DateTime.Now.ToString("yyyyMMddHHmmss");
@@ -219,7 +218,7 @@ namespace SanteDB.Messaging.HL7.Utils
                 }, RegexOptions.Multiline);
 
                 PipeParser parser = new PipeParser();
-                return parser.Parse(messageData, "2.5");
+                return parser.Parse(messageData, "2.5", new ParserOptions() { UnexpectedSegmentBehaviour = UnexpectedSegmentBehaviour.DropToRoot });
             }
         }
 
@@ -344,7 +343,10 @@ namespace SanteDB.Messaging.HL7.Utils
         {
             // Rewrite back to original version
             (response.GetStructure("MSH") as MSH).VersionID.VersionID.Value = originalVersion.Trim();
-            return new PipeParser().Encode(response);
+            var pp = new PipeParser();
+            
+            return pp.Encode(response);
+            
         }
     }
 }
