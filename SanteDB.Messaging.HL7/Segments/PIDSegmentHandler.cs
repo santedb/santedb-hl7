@@ -326,7 +326,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     retVal.Identifiers.RemoveAll(o => messageIdentifiers.Any(i => i.ObsoleteVersionSequenceId.HasValue && i.AuthorityKey == o.AuthorityKey && i.Value == o.Value));
 
                     // Add any identifiers which we don't have any other identifier domain for
-                    retVal.Identifiers.AddRange(messageIdentifiers.Where(o => !o.ObsoleteVersionSequenceId.HasValue && !retVal.Identifiers.Any(i => i.Authority.Key == o.AuthorityKey && i.Value == o.Value)));
+                    retVal.Identifiers.AddRange(messageIdentifiers.Where(o => !o.ObsoleteVersionSequenceId.HasValue && !retVal.Identifiers.Any(i => i.AuthorityKey == o.AuthorityKey && i.Value == o.Value)));
                 }
 
                 // Find the key for the patient
@@ -546,7 +546,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     var ssn = pidSegment.SSNNumberPatient.Value;
                     // Lookup identity domain which is designated as SSN , if they already have one update it, if not, add it
-                    var existing = retVal.Identifiers.FirstOrDefault(o => o.Authority.DomainName == this.m_configuration.SsnAuthority?.DomainName);
+                    var existing = retVal.Identifiers.FirstOrDefault(o => o.AuthorityKey == this.m_configuration.SsnAuthority.Key ||  o.LoadProperty(x=>x.AuthorityXml).DomainName == this.m_configuration.SsnAuthority?.DomainName);
                     if (existing == null)
                         retVal.Identifiers.Add(new EntityIdentifier(this.m_configuration.SsnAuthority, ssn));
                     else
@@ -557,12 +557,12 @@ namespace SanteDB.Messaging.HL7.Segments
                 fieldNo = 23;
                 if (!pidSegment.BirthPlace.IsEmpty()) // We need to find the birthplace relationship
                 {
-                    var existing = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Birthplace);
+                    var existing = retVal.LoadProperty(o=>o.Relationships).FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Birthplace);
 
                     if (Guid.TryParse(pidSegment.BirthPlace.Value, out Guid birthPlaceId))
                     {
                         if (existing == null)
-                            retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Birthplace, birthPlaceId));
+                            retVal.LoadProperty(o => o.Relationships).Add(new EntityRelationship(EntityRelationshipTypeKeys.Birthplace, birthPlaceId));
                         else
                             existing.TargetEntityKey = birthPlaceId;
                     }

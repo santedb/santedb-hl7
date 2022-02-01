@@ -161,7 +161,6 @@ namespace SanteDB.Messaging.HL7.Test
                 var patientNew = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
 
                 Assert.IsNotNull(patientNew);
-                Assert.IsTrue(messageStr.Contains(patientNew.Key.ToString()));
                 Assert.AreEqual(1, patientNew.Names.Count);
                 Assert.AreEqual("JOHNSTON", patientNew.Names.First().Component.First(o => o.ComponentTypeKey == NameComponentKeys.Family).Value);
                 Assert.AreEqual("ROBERTA", patientNew.Names.First().Component.First(o => o.ComponentTypeKey == NameComponentKeys.Given).Value);
