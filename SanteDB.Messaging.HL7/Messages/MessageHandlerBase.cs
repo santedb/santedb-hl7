@@ -442,8 +442,8 @@ namespace SanteDB.Messaging.HL7.Messages
             var ocomps = PipeParser.Encode(retVal.GetStructure("MSH") as MSH, new EncodingCharacters('|', "^~\\&")).Split('|');
 
             AuditUtil.AuditNetworkRequestFailure(error, receiveData.ReceiveEndpoint,
-                Enumerable.Range(0, icomps.Length).ToDictionary(o => $"MSH-{o}", o => icomps[o]),
-                Enumerable.Range(0, ocomps.Length).ToDictionary(o => $"MSA-{o}", o => ocomps[o]));
+                Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => icomps[o-1]),
+                Enumerable.Range(1, ocomps.Length).ToDictionary(o => $"MSA-{o}", o => ocomps[o-1]));
 
             return retVal;
         }
