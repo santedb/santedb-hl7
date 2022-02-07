@@ -156,7 +156,7 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Gender
-            retVal.AdministrativeSex.FromModel(patient.LoadProperty<Concept>("GenderConcept"), AdministrativeGenderCodeSystem);
+            retVal.AdministrativeSex.FromModel(patient.LoadProperty(o=>o.GenderConcept), AdministrativeGenderCodeSystem);
 
             // Deceased date
             if (patient.DeceasedDate.HasValue)
@@ -214,27 +214,27 @@ namespace SanteDB.Messaging.HL7.Segments
             foreach (var itm in citizenships)
             {
                 var ce = retVal.GetCitizenship(retVal.CitizenshipRepetitionsUsed);
-                var place = itm.LoadProperty<Place>(nameof(EntityRelationship.TargetEntity));
+                var place = itm.LoadProperty(o=>o.TargetEntity);
                 ce.Identifier.Value = place.LoadProperty(o => o.Identifiers).FirstOrDefault(o => o.AuthorityKey == AssigningAuthorityKeys.Iso3166CountryCode)?.Value;
                 ce.Text.Value = place.LoadProperty(o => o.Names).FirstOrDefault(o => o.NameUseKey == NameUseKeys.OfficialRecord)?.LoadCollection<EntityNameComponent>(nameof(EntityName.Component)).FirstOrDefault()?.Value;
             }
 
             // Account number
-            var account = participations.FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKey.Holder && o.LoadProperty<Account>(nameof(ActParticipation.Act)) != null);
+            var account = participations.FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKey.Holder && o.LoadProperty(x=>x.Act) is Account);
             if (account != null)
                 retVal.PatientAccountNumber.FromModel(account.Act.Identifiers.FirstOrDefault() ?? new ActIdentifier(this.m_configuration.LocalAuthority, account.Key.ToString()));
 
             // Marital status
             if (patient.MaritalStatusKey.HasValue)
-                retVal.MaritalStatus.FromModel(patient.LoadProperty<Concept>(nameof(Patient.MaritalStatus)), MaritalStatusCodeSystem);
+                retVal.MaritalStatus.FromModel(patient.LoadProperty(o=>o.MaritalStatus), MaritalStatusCodeSystem);
 
             // Religion
             if (patient.ReligiousAffiliationKey.HasValue)
-                retVal.Religion.FromModel(patient.LoadProperty<Concept>(nameof(Patient.ReligiousAffiliation)), ReligionCodeSystem);
+                retVal.Religion.FromModel(patient.LoadProperty(o=>o.ReligiousAffiliation), ReligionCodeSystem);
 
             // Ethnic groups
             if (patient.EthnicGroupCodeKey.HasValue)
-                retVal.GetEthnicGroup(0).FromModel(patient.LoadProperty<Concept>(nameof(Patient.EthnicGroup)), EthnicGroupCodeSystem);
+                retVal.GetEthnicGroup(0).FromModel(patient.LoadProperty(o=>o.EthnicGroup), EthnicGroupCodeSystem);
 
             // Primary language
             var lang = patient.LoadCollection<PersonLanguageCommunication>(nameof(Patient.LanguageCommunication)).FirstOrDefault(o => o.IsPreferred);
