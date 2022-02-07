@@ -409,7 +409,6 @@ namespace SanteDB.Messaging.HL7.Segments
                         {
                             existingMother.Identifiers = pidSegment.GetMotherSIdentifier().ToModel().ToList();
                         }
-                        existingMother.Names = pidSegment.GetMotherSMaidenName().ToModel(NameUseKeys.MaidenName).ToList();
                         motherEntity = existingMother;
                         retCollection.Add(motherEntity);
                     }
