@@ -117,7 +117,7 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Map alternate identifiers
-            foreach (var id in patient.GetIdentifiers())
+            foreach (var id in patient.LoadProperty(o=>o.Identifiers))
             {
                 if (exportDomains == null || exportDomains.Any(e => e.Key == id.AuthorityKey) == true)
                 {
@@ -129,11 +129,11 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Addresses
-            foreach (var addr in patient.GetAddresses())
+            foreach (var addr in patient.LoadProperty(o=>o.Addresses))
                 retVal.GetPatientAddress(retVal.PatientAddressRepetitionsUsed).FromModel(addr);
 
             // Names
-            foreach (var en in patient.GetNames())
+            foreach (var en in patient.LoadProperty(o=>o.Names))
                 retVal.GetPatientName(retVal.PatientNameRepetitionsUsed).FromModel(en);
 
             // Date of birth
