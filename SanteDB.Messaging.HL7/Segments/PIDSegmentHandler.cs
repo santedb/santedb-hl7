@@ -34,6 +34,7 @@ using SanteDB.Core.Security;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
+using SanteDB.Persistence.MDM.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -354,7 +355,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.GetMotherSIdentifier().Any(o => !o.IsEmpty()))
                 {
                     var personService = ApplicationServiceContext.Current.GetService<IRepositoryService<Person>>();
-                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity) as Person;
+                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity).GetMaster() as Person;
                     Person foundMother = null;
 
                     // Attempt to find the existing mother in the database based on ID

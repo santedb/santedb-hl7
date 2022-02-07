@@ -187,6 +187,9 @@
     <EmbeddedResource Include="Docker\Hl7Feature.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\santedb-mdm\SanteDB.Persistence.MDM\SanteDB.Persistence.MDM.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="data\009-HL7v2ContactRole.dataset">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
