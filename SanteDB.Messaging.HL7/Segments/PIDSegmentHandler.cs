@@ -77,7 +77,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// </summary>
         public PIDSegmentHandler()
         {
-        }
+        } 
 
         /// <summary>
         /// Gets the name of the segment
