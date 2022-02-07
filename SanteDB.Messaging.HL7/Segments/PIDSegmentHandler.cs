@@ -184,7 +184,7 @@ namespace SanteDB.Messaging.HL7.Segments
             var motherRelation = patient.GetRelationships().FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother);
             if (motherRelation != null)
             {
-                var mother = motherRelation.LoadProperty(nameof(EntityRelationship.TargetEntity)) as Person;
+                var mother = motherRelation.LoadProperty(nameof(EntityRelationship.TargetEntity)).GetMaster() as Person;
                 foreach (var nam in mother.GetNames().Where(n => n.NameUseKey == NameUseKeys.MaidenName))
                     retVal.GetMotherSMaidenName(retVal.MotherSMaidenNameRepetitionsUsed).FromModel(nam);
                 foreach (var id in mother.GetIdentifiers())
