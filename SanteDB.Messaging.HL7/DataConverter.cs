@@ -478,7 +478,7 @@ namespace SanteDB.Messaging.HL7
                             id.IssueDate = new DateTime(cx.EffectiveDate.Year, cx.EffectiveDate.Month, cx.EffectiveDate.Day);
 
                             if (id.IssueDate <= DateTime.Now.Date) // Value is being actively changed - indicate this
-                                id.EffectiveVersionSequenceId = Int32.MaxValue;
+                                id.ObsoleteVersionSequenceId = Int32.MaxValue;
                         }
 
                         entityIdentifiers.Add(id);
