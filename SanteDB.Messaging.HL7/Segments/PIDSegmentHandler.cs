@@ -34,6 +34,7 @@ using SanteDB.Core.Security;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
+using SanteDB.Persistence.MDM.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -76,7 +77,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// </summary>
         public PIDSegmentHandler()
         {
-        }
+        } 
 
         /// <summary>
         /// Gets the name of the segment
@@ -116,7 +117,7 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Map alternate identifiers
-            foreach (var id in patient.GetIdentifiers())
+            foreach (var id in patient.LoadProperty(o=>o.Identifiers))
             {
                 if (exportDomains == null || exportDomains.Any(e => e.Key == id.AuthorityKey) == true)
                 {
@@ -128,11 +129,11 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Addresses
-            foreach (var addr in patient.GetAddresses())
+            foreach (var addr in patient.LoadProperty(o=>o.Addresses))
                 retVal.GetPatientAddress(retVal.PatientAddressRepetitionsUsed).FromModel(addr);
 
             // Names
-            foreach (var en in patient.GetNames())
+            foreach (var en in patient.LoadProperty(o=>o.Names))
                 retVal.GetPatientName(retVal.PatientNameRepetitionsUsed).FromModel(en);
 
             // Date of birth
@@ -155,7 +156,7 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Gender
-            retVal.AdministrativeSex.FromModel(patient.LoadProperty<Concept>("GenderConcept"), AdministrativeGenderCodeSystem);
+            retVal.AdministrativeSex.FromModel(patient.LoadProperty(o=>o.GenderConcept), AdministrativeGenderCodeSystem);
 
             // Deceased date
             if (patient.DeceasedDate.HasValue)
@@ -180,18 +181,19 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Mother's info
-            var motherRelation = patient.GetRelationships().FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother);
+            var relationships = patient.LoadProperty(o => o.Relationships);
+            var motherRelation = relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother);
             if (motherRelation != null)
             {
-                var mother = motherRelation.LoadProperty(nameof(EntityRelationship.TargetEntity)) as Person;
-                foreach (var nam in mother.GetNames().Where(n => n.NameUseKey == NameUseKeys.MaidenName))
+                var mother = motherRelation.LoadProperty(o=>o.TargetEntity).GetMaster() as Person;
+                foreach (var nam in mother.LoadProperty(o=>o.Names).Where(n => n.NameUseKey == NameUseKeys.MaidenName))
                     retVal.GetMotherSMaidenName(retVal.MotherSMaidenNameRepetitionsUsed).FromModel(nam);
-                foreach (var id in mother.GetIdentifiers())
+                foreach (var id in mother.LoadProperty(o=>o.Identifiers))
                     retVal.GetMotherSIdentifier(retVal.MotherSIdentifierRepetitionsUsed).FromModel(id);
             }
 
             // Telecoms
-            foreach (var tel in patient.GetTelecoms())
+            foreach (var tel in patient.LoadProperty(o=>o.Telecoms))
             {
                 if (tel.AddressUseKey.GetValueOrDefault() == AddressUseKeys.WorkPlace)
                     retVal.GetPhoneNumberBusiness(retVal.PhoneNumberBusinessRepetitionsUsed).FromModel(tel);
@@ -200,40 +202,39 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Load relationships
-            var relationships = patient.GetRelationships();
             var participations = patient.LoadCollection<ActParticipation>(nameof(Entity.Participations));
 
             // Birthplace
             var birthplace = relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Birthplace);
             if (birthplace != null)
-                retVal.BirthPlace.Value = birthplace.LoadProperty<Entity>(nameof(EntityRelationship.TargetEntity)).GetNames().FirstOrDefault()?.LoadCollection<EntityNameComponent>(nameof(EntityName.Component)).FirstOrDefault()?.Value;
+                retVal.BirthPlace.Value = birthplace.LoadProperty(o=>o.TargetEntity).LoadProperty(o=>o.Names).FirstOrDefault()?.LoadCollection<EntityNameComponent>(nameof(EntityName.Component)).FirstOrDefault()?.Value;
 
             // Citizenships
             var citizenships = relationships.Where(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Citizen);
             foreach (var itm in citizenships)
             {
                 var ce = retVal.GetCitizenship(retVal.CitizenshipRepetitionsUsed);
-                var place = itm.LoadProperty<Place>(nameof(EntityRelationship.TargetEntity));
-                ce.Identifier.Value = place.GetIdentifiers().FirstOrDefault(o => o.AuthorityKey == AssigningAuthorityKeys.Iso3166CountryCode)?.Value;
-                ce.Text.Value = place.GetNames().FirstOrDefault(o => o.NameUseKey == NameUseKeys.OfficialRecord)?.LoadCollection<EntityNameComponent>(nameof(EntityName.Component)).FirstOrDefault()?.Value;
+                var place = itm.LoadProperty(o=>o.TargetEntity);
+                ce.Identifier.Value = place.LoadProperty(o => o.Identifiers).FirstOrDefault(o => o.AuthorityKey == AssigningAuthorityKeys.Iso3166CountryCode)?.Value;
+                ce.Text.Value = place.LoadProperty(o => o.Names).FirstOrDefault(o => o.NameUseKey == NameUseKeys.OfficialRecord)?.LoadCollection<EntityNameComponent>(nameof(EntityName.Component)).FirstOrDefault()?.Value;
             }
 
             // Account number
-            var account = participations.FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKeys.Holder && o.LoadProperty<Account>(nameof(ActParticipation.Act)) != null);
+            var account = participations.FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKey.Holder && o.LoadProperty(x=>x.Act) is Account);
             if (account != null)
                 retVal.PatientAccountNumber.FromModel(account.Act.Identifiers.FirstOrDefault() ?? new ActIdentifier(this.m_configuration.LocalAuthority, account.Key.ToString()));
 
             // Marital status
             if (patient.MaritalStatusKey.HasValue)
-                retVal.MaritalStatus.FromModel(patient.LoadProperty<Concept>(nameof(Patient.MaritalStatus)), MaritalStatusCodeSystem);
+                retVal.MaritalStatus.FromModel(patient.LoadProperty(o=>o.MaritalStatus), MaritalStatusCodeSystem);
 
             // Religion
             if (patient.ReligiousAffiliationKey.HasValue)
-                retVal.Religion.FromModel(patient.LoadProperty<Concept>(nameof(Patient.ReligiousAffiliation)), ReligionCodeSystem);
+                retVal.Religion.FromModel(patient.LoadProperty(o=>o.ReligiousAffiliation), ReligionCodeSystem);
 
             // Ethnic groups
-            if (patient.EthnicGroupKey.HasValue)
-                retVal.GetEthnicGroup(0).FromModel(patient.LoadProperty<Concept>(nameof(Patient.EthnicGroup)), EthnicGroupCodeSystem);
+            if (patient.EthnicGroupCodeKey.HasValue)
+                retVal.GetEthnicGroup(0).FromModel(patient.LoadProperty(o=>o.EthnicGroup), EthnicGroupCodeSystem);
 
             // Primary language
             var lang = patient.LoadCollection<PersonLanguageCommunication>(nameof(Patient.LanguageCommunication)).FirstOrDefault(o => o.IsPreferred);
@@ -354,7 +355,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.GetMotherSIdentifier().Any(o => !o.IsEmpty()))
                 {
                     var personService = ApplicationServiceContext.Current.GetService<IRepositoryService<Person>>();
-                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity) as Person;
+                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity).GetMaster() as Person;
                     Person foundMother = null;
 
                     // Attempt to find the existing mother in the database based on ID
@@ -408,7 +409,6 @@ namespace SanteDB.Messaging.HL7.Segments
                         {
                             existingMother.Identifiers = pidSegment.GetMotherSIdentifier().ToModel().ToList();
                         }
-                        existingMother.Names = pidSegment.GetMotherSMaidenName().ToModel(NameUseKeys.MaidenName).ToList();
                         motherEntity = existingMother;
                         retCollection.Add(motherEntity);
                     }
