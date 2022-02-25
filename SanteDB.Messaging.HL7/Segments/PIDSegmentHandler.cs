@@ -220,7 +220,7 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Account number
-            var account = participations.FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKey.Holder && o.LoadProperty(x=>x.Act) is Account);
+            var account = participations.FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKeys.Holder && o.LoadProperty(x=>x.Act) is Account);
             if (account != null)
                 retVal.PatientAccountNumber.FromModel(account.Act.Identifiers.FirstOrDefault() ?? new ActIdentifier(this.m_configuration.LocalAuthority, account.Key.ToString()));
 
@@ -233,7 +233,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 retVal.Religion.FromModel(patient.LoadProperty(o=>o.ReligiousAffiliation), ReligionCodeSystem);
 
             // Ethnic groups
-            if (patient.EthnicGroupCodeKey.HasValue)
+            if (patient.EthnicGroupKey.HasValue)
                 retVal.GetEthnicGroup(0).FromModel(patient.LoadProperty(o=>o.EthnicGroup), EthnicGroupCodeSystem);
 
             // Primary language
