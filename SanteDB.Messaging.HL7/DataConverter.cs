@@ -465,7 +465,7 @@ namespace SanteDB.Messaging.HL7
                         if (!String.IsNullOrEmpty(cx.IdentifierTypeCode.Value))
                         {
                             int tr = 0;
-                            var idType = ApplicationServiceContext.Current.GetService<IDataPersistenceService<IdentifierType>>().Query(o => o.TypeConcept.ReferenceTerms.Any(r => r.ReferenceTerm.Mnemonic == cx.IdentifierTypeCode.Value && r.ReferenceTerm.CodeSystem.Oid == IdentifierTypeCodeSystem), 0, 1, out tr, AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                            var idType = ApplicationServiceContext.Current.GetService<IDataPersistenceService<IdentifierType>>().Query(o => o.TypeConcept.ReferenceTerms.Any(r => r.ReferenceTerm.Mnemonic == cx.IdentifierTypeCode.Value && r.ReferenceTerm.CodeSystem.Oid == IdentifierTypeCodeSystem), AuthenticationContext.SystemPrincipal).FirstOrDefault();
                             id.IdentifierTypeKey = idType?.Key;
                         }
 
@@ -530,7 +530,7 @@ namespace SanteDB.Messaging.HL7
                         if (!String.IsNullOrEmpty(xon.IdentifierTypeCode.Value))
                         {
                             int tr = 0;
-                            var idType = ApplicationServiceContext.Current.GetService<IDataPersistenceService<IdentifierType>>().Query(o => o.TypeConcept.ReferenceTerms.Any(r => r.ReferenceTerm.Mnemonic == xon.IdentifierTypeCode.Value && r.ReferenceTerm.CodeSystem.Oid == IdentifierTypeCodeSystem), 0, 1, out tr, AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                            var idType = ApplicationServiceContext.Current.GetService<IDataPersistenceService<IdentifierType>>().Query(o => o.TypeConcept.ReferenceTerms.Any(r => r.ReferenceTerm.Mnemonic == xon.IdentifierTypeCode.Value && r.ReferenceTerm.CodeSystem.Oid == IdentifierTypeCodeSystem), AuthenticationContext.SystemPrincipal).FirstOrDefault();
                             id.IdentifierTypeKey = idType?.Key;
                         }
 

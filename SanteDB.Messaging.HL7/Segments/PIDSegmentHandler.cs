@@ -106,7 +106,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     param = data.GetType().Name
                 }));
             }
-                
+
 
             // Map patient to PID
             if (exportDomains == null || exportDomains?.Length == 0 || exportDomains?.Any(d => d.Key == this.m_configuration.LocalAuthority.Key) == true)
@@ -288,7 +288,7 @@ namespace SanteDB.Messaging.HL7.Segments
                             throw new HL7ProcessingException(this.m_localizationService.GetString("error.messaging.hl7.authorityNone", new
                             {
                                 param = id.AssigningAuthority.NamespaceID.Value
-                            }),"PID", pidSegment.SetIDPID.Value, 3, 4);
+                            }), "PID", pidSegment.SetIDPID.Value, 3, 4);
                         }
 
                         Guid idguid = Guid.Empty;
@@ -546,7 +546,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     var ssn = pidSegment.SSNNumberPatient.Value;
                     // Lookup identity domain which is designated as SSN , if they already have one update it, if not, add it
-                    var existing = retVal.Identifiers.FirstOrDefault(o => o.AuthorityKey == this.m_configuration.SsnAuthority.Key ||  o.LoadProperty(x=>x.AuthorityXml).DomainName == this.m_configuration.SsnAuthority?.DomainName);
+                    var existing = retVal.Identifiers.FirstOrDefault(o => o.AuthorityKey == this.m_configuration.SsnAuthority.Key || o.LoadProperty(x => x.Authority).DomainName == this.m_configuration.SsnAuthority?.DomainName);
                     if (existing == null)
                         retVal.Identifiers.Add(new EntityIdentifier(this.m_configuration.SsnAuthority, ssn));
                     else
@@ -557,7 +557,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 fieldNo = 23;
                 if (!pidSegment.BirthPlace.IsEmpty()) // We need to find the birthplace relationship
                 {
-                    var existing = retVal.LoadProperty(o=>o.Relationships).FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Birthplace);
+                    var existing = retVal.LoadProperty(o => o.Relationships).FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Birthplace);
 
                     if (Guid.TryParse(pidSegment.BirthPlace.Value, out Guid birthPlaceId))
                     {
@@ -599,7 +599,7 @@ namespace SanteDB.Messaging.HL7.Segments
                                 param2 = places.Count()
                             }));
                         }
-                            
+
                     }
                 }
 
