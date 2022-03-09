@@ -189,10 +189,12 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                         Uri localEndpoint = new Uri(String.Format("llp://{0}:{1}", localEp.Address, localEp.Port));
                         Uri remoteEndpoint = new Uri(String.Format("llp://{0}:{1}", remoteEp.Address, remoteEp.Port));
 
-                        foreach (var messagePart in messageData.ToString().Split((char)END_TX))
+                        foreach (var messagePart in messageData.ToString().Split((char) END_TX))
+                        {
+                            if (messagePart == "\r") continue;
+
                             try
                             {
-                                if (messagePart == "\r") continue;
                                 this.m_traceSource.TraceInfo("Received message from llp://{0}:{1} : {2}", remoteEp.Address, remoteEp.Port, messagePart);
                                 // HACK: nHAPI doesn't like URLs ... Will fix this later
                                 string messageString = messagePart.Replace("|URL|", "|ST|");
@@ -249,6 +251,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                                 }
                                 lastReceive = DateTime.Now; // Update the last receive time so the timeout function works
                             }
+                        }
 
                         if (!stream.DataAvailable)
                             return;
