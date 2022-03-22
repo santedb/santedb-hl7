@@ -19,18 +19,15 @@
  * Date: 2021-8-5
  */
 using NHapi.Base.Model;
-using SanteDB.Messaging.HL7.Configuration;
 using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 
 namespace SanteDB.Messaging.HL7.TransportProtocol
 {
-	/// <summary>
-	/// Transport protocol
-	/// </summary>
-	public interface ITransportProtocol
+    /// <summary>
+    /// Transport protocol
+    /// </summary>
+    public interface ITransportProtocol
 	{
 		/// <summary>
 		/// Message has been received
