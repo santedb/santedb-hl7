@@ -152,16 +152,7 @@ namespace SanteDB.Messaging.HL7.Messages
             else if (e is AuthenticatedHl7MessageReceivedEventArgs auth && auth.AuthorizationToken != null)
             {
                 // Ensure proper authentication exists
-                if (String.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value))
-                {
-                    this.m_traceSource.TraceError("MSH-4 must be provided for authenticating device");
-                    throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
-                    {
-                        param = "MSH-4",
-                        param2 = " device"
-                    }));
-                }
-                else if (String.IsNullOrEmpty(msh.SendingApplication.NamespaceID.Value))
+                if (String.IsNullOrEmpty(msh.SendingApplication.NamespaceID.Value))
                 {
                     this.m_traceSource.TraceError("MSH-3 must be provided for authenticating device/application");
                     throw new SecurityException(this.m_localizationService.FormatString("error.messaging.h17.authenticating", new
@@ -189,9 +180,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     }));
                 }
 
-                String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
-                    deviceSecret = BitConverter.ToString(auth.AuthorizationToken).Replace("-", "").ToLowerInvariant(),
-                    applicationId = msh.SendingApplication.NamespaceID.Value, applicationSecret = null;
+                String applicationId = msh.SendingApplication.NamespaceID.Value, applicationSecret = null;
 
                 switch (this.m_configuration.Security)
                 {
@@ -208,7 +197,7 @@ namespace SanteDB.Messaging.HL7.Messages
                         break;
                 }
 
-                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.Services.AuthenticationMethod.Local),
+                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(auth.AuthorizationToken),
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
 
                 if (applicationPrincipal == null && this.m_configuration.RequireAuthenticatedApplication)
