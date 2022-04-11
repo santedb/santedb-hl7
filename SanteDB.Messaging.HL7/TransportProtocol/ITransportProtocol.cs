@@ -100,7 +100,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         /// <summary>
         /// Creates a new instance of the Hl7MessageReceivedEventArgs
         /// </summary>
-        public AuthenticatedHl7MessageReceivedEventArgs(IMessage message, Uri solicitorEp, Uri receiveEp, DateTime timestamp, byte[] authorization) : 
+        public AuthenticatedHl7MessageReceivedEventArgs(IMessage message, Uri solicitorEp, Uri receiveEp, DateTime timestamp, X509Certificate2 authorization) : 
             base(message, solicitorEp, receiveEp, timestamp)
         {
             this.AuthorizationToken = authorization;
@@ -109,7 +109,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         /// <summary>
         /// Gets the authorization token (X509 thumbprint) validated by this entity
         /// </summary>
-        public byte[] AuthorizationToken { get; private set; }
+        public X509Certificate2 AuthorizationToken { get; private set; }
 
     }
 }
