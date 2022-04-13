@@ -31,6 +31,7 @@ using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Security;
 using SanteDB.Core.Security.Audit;
 using SanteDB.Core.Security.Claims;
+using SanteDB.Core.Security.Principal;
 using SanteDB.Core.Security.Services;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
@@ -197,16 +198,26 @@ namespace SanteDB.Messaging.HL7.Messages
                         break;
                 }
 
-                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(auth.AuthorizationToken),
-                    applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
+                IPrincipal certificatePrincipal = ApplicationServiceContext.Current.GetService<ICertificateIdentityProvider>()?.Authenticate(auth.AuthorizationToken);
 
-                if (applicationPrincipal == null && this.m_configuration.RequireAuthenticatedApplication)
+                if(certificatePrincipal == null)
                 {
-                    this.m_traceSource.TraceError("Server requires authenticated application");
-                    throw new UnauthorizedAccessException(this.m_localizationService.GetString("error.type.UnauthorizedAccessException"));
+                    throw new InvalidOperationException("In order to use node authentication with X509 certificates - there must be a CertificateIdentityProvider configured");
                 }
-
-                principal = new SanteDBClaimsPrincipal(new IIdentity[] { devicePrincipal.Identity, applicationPrincipal?.Identity }.OfType<IClaimsIdentity>());
+                else if (certificatePrincipal.Identity is IApplicationIdentity)
+                {
+                    principal = certificatePrincipal;
+                }
+                else
+                {
+                    var applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
+                    if (applicationPrincipal == null && this.m_configuration.RequireAuthenticatedApplication)
+                    {
+                        this.m_traceSource.TraceError("Server requires authenticated application");
+                        throw new UnauthorizedAccessException(this.m_localizationService.GetString("error.type.UnauthorizedAccessException"));
+                    }
+                    principal = new SanteDBClaimsPrincipal(new IIdentity[] { certificatePrincipal.Identity, applicationPrincipal?.Identity }.OfType<IClaimsIdentity>());
+                }
             }
             else if (this.m_configuration.Security != Configuration.AuthenticationMethod.None)
             {
