@@ -189,9 +189,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     }));
                 }
 
-                String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
-                    deviceSecret = BitConverter.ToString(auth.AuthorizationToken).Replace("-", "").ToLowerInvariant(),
-                    applicationId = msh.SendingApplication.NamespaceID.Value, applicationSecret = null;
+                String applicationId = msh.SendingApplication.NamespaceID.Value, applicationSecret = null;
 
                 switch (this.m_configuration.Security)
                 {
@@ -208,7 +206,7 @@ namespace SanteDB.Messaging.HL7.Messages
                         break;
                 }
 
-                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.Services.AuthenticationMethod.Local),
+                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(auth.AuthorizationToken),
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
 
                 if (applicationPrincipal == null && this.m_configuration.RequireAuthenticatedApplication)
