@@ -21,6 +21,7 @@
 using NHapi.Base.Model;
 using System;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SanteDB.Messaging.HL7.TransportProtocol
 {
