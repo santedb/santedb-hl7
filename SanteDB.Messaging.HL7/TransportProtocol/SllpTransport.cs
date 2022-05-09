@@ -20,14 +20,8 @@
  */
 using SanteDB.Core;
 using SanteDB.Core.Auditing;
-using SanteDB.Core.Configuration;
-using SanteDB.Core.Diagnostics;
-using SanteDB.Core.Security;
-using SanteDB.Core.Security.Audit;
 using SanteDB.Core.Security.Configuration;
-using SanteDB.Core.Security.Services;
 using SanteDB.Core.Services;
-using SanteDB.Messaging.HL7.Configuration;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -39,7 +33,6 @@ using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Threading;
 using System.Xml.Serialization;
 
 namespace SanteDB.Messaging.HL7.TransportProtocol
@@ -279,7 +272,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 
 						this.m_traceSource.TraceInfo("Received message from sllp://{0} : {1}", tcpClient.Client.RemoteEndPoint, messageData.ToString());
 
-						messageArgs = new AuthenticatedHl7MessageReceivedEventArgs(message, localEndpoint, remoteEndpoint, DateTime.Now, stream.RemoteCertificate?.GetPublicKey());
+						messageArgs = new AuthenticatedHl7MessageReceivedEventArgs(message, localEndpoint, remoteEndpoint, DateTime.Now, new X509Certificate2(stream.RemoteCertificate.GetPublicKey()));
 
                         HL7OperationContext.Current = new HL7OperationContext(messageArgs);
 

@@ -19,18 +19,16 @@
  * Date: 2021-8-5
  */
 using NHapi.Base.Model;
-using SanteDB.Messaging.HL7.Configuration;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 
 namespace SanteDB.Messaging.HL7.TransportProtocol
 {
-	/// <summary>
-	/// Transport protocol
-	/// </summary>
-	public interface ITransportProtocol
+    /// <summary>
+    /// Transport protocol
+    /// </summary>
+    public interface ITransportProtocol
 	{
 		/// <summary>
 		/// Message has been received
@@ -103,7 +101,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         /// <summary>
         /// Creates a new instance of the Hl7MessageReceivedEventArgs
         /// </summary>
-        public AuthenticatedHl7MessageReceivedEventArgs(IMessage message, Uri solicitorEp, Uri receiveEp, DateTime timestamp, byte[] authorization) : 
+        public AuthenticatedHl7MessageReceivedEventArgs(IMessage message, Uri solicitorEp, Uri receiveEp, DateTime timestamp, X509Certificate2 authorization) : 
             base(message, solicitorEp, receiveEp, timestamp)
         {
             this.AuthorizationToken = authorization;
@@ -112,7 +110,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         /// <summary>
         /// Gets the authorization token (X509 thumbprint) validated by this entity
         /// </summary>
-        public byte[] AuthorizationToken { get; private set; }
+        public X509Certificate2 AuthorizationToken { get; private set; }
 
     }
 }
