@@ -116,13 +116,13 @@ namespace SanteDB.Messaging.HL7.Docker
             // Next, local domain
             if (settings.TryGetValue(LocalAuthoritySetting, out string localAuth))
             {
-                hl7Configuration.LocalAuthority = new Core.Model.DataTypes.AssigningAuthority(localAuth, localAuth, null);
+                hl7Configuration.LocalAuthority = new Core.Model.DataTypes.IdentityDomain(localAuth, localAuth, null);
             }
 
             // Next the SSN domain
             if (settings.TryGetValue(SsnAuthoritySetting, out string ssnAuth))
             {
-                hl7Configuration.SsnAuthority = new Core.Model.DataTypes.AssigningAuthority(ssnAuth, ssnAuth, null);
+                hl7Configuration.SsnAuthority = new Core.Model.DataTypes.IdentityDomain(ssnAuth, ssnAuth, null);
             }
 
             // Next listen address

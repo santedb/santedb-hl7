@@ -178,18 +178,17 @@ namespace SanteDB.Messaging.HL7.Messages
                 }
                 // Build query
                 int totalResults = 0;
-                IEnumerable results = null;
+                IQueryResultSet results = null;
                 Expression filterQuery = null;
 
                 if (query.ContainsKey("_id"))
                 {
                     Guid id = Guid.Parse(query["_id"][0]);
-                    object result = repoService.GetType().GetMethod("Get", new Type[] { typeof(Guid) }).Invoke(repoService, new object[] { id });
-                    results = new List<IdentifiedData>();
+                    var result = repoService.GetType().GetMethod("Get", new Type[] { typeof(Guid) }).Invoke(repoService, new object[] { id });
 
-                    if (result != null)
+                    if (result is IdentifiedData iddat)
                     {
-                        (results as IList).Add(result);
+                        results  = new MemoryQueryResultSet(new List<IdentifiedData>() { iddat });
                         totalResults = 1;
                     }
                 }
@@ -201,15 +200,18 @@ namespace SanteDB.Messaging.HL7.Messages
                     filterQuery = queryMethod.Invoke(null, new object[] { query }) as Expression;
 
                     // Now we want to query
-                    object[] parameters = { filterQuery, offset.Value, (int?)count ?? 100, null, queryId, null };
-                    var findMethod = repoService.GetType().GetMethod("Find", new Type[] { filterQuery.GetType(), typeof(int), typeof(int?), typeof(int).MakeByRefType(), typeof(Guid), typeof(ModelSort<>).MakeGenericType(map.QueryTarget).MakeArrayType() });
-                    results = findMethod.Invoke(repoService, parameters) as IEnumerable;
-                    totalResults = (int)parameters[3];
+                    object[] parameters = { filterQuery };
+                    var findMethod = repoService.GetType().GetMethod("Find", new Type[] { filterQuery.GetType() });
+                    results = findMethod.Invoke(repoService, parameters) as IQueryResultSet;
+                    totalResults = results.Count();
                 }
                 // Save the tag
                 if (dsc.ContinuationPointer.Value != queryId.ToString() &&
                     offset.Value + count.GetValueOrDefault() < totalResults)
+                {
+                    results = results.AsStateful(queryId);
                     ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>()?.SetQueryTag(queryId, count);
+                }
 
                 this.SendAuditQuery(OutcomeIndicator.Success, e.Message, results.OfType<IdentifiedData>().ToArray());
 

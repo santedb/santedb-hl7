@@ -95,7 +95,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// <param name="data">The data to be created</param>
         /// <param name="context">The message in which the segment is created</param>
         /// <returns>The segments to add to the messge</returns>
-        public virtual IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, AssigningAuthority[] exportDomains)
+        public virtual IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, IdentityDomain[] exportDomains)
         {
             var retVal = context.GetStructure("PID") as PID;
             var patient = data as Patient;
@@ -215,7 +215,7 @@ namespace SanteDB.Messaging.HL7.Segments
             {
                 var ce = retVal.GetCitizenship(retVal.CitizenshipRepetitionsUsed);
                 var place = itm.LoadProperty(o=>o.TargetEntity);
-                ce.Identifier.Value = place.LoadProperty(o => o.Identifiers).FirstOrDefault(o => o.AuthorityKey == AssigningAuthorityKeys.Iso3166CountryCode)?.Value;
+                ce.Identifier.Value = place.LoadProperty(o => o.Identifiers).FirstOrDefault(o => o.AuthorityKey == IdentityDomainKeys.Iso3166CountryCode)?.Value;
                 ce.Text.Value = place.LoadProperty(o => o.Names).FirstOrDefault(o => o.NameUseKey == NameUseKeys.OfficialRecord)?.LoadCollection<EntityNameComponent>(nameof(EntityName.Component)).FirstOrDefault()?.Value;
             }
 
@@ -257,7 +257,21 @@ namespace SanteDB.Messaging.HL7.Segments
 
             try
             {
-                Patient retVal = new Patient() { Key = Guid.NewGuid(), StatusConceptKey = StatusKeys.New };
+                Patient retVal = new Patient()
+                {
+                    Key = Guid.NewGuid(),
+                    StatusConceptKey = StatusKeys.New,
+                    Identifiers = new List<EntityIdentifier>(),
+                    Addresses = new List<EntityAddress>(),
+                    Relationships = new List<EntityRelationship>(),
+                    LanguageCommunication = new List<PersonLanguageCommunication>(),
+                    Names = new List<EntityName>(),
+                    Extensions = new List<EntityExtension>(),
+                    Policies = new List<Core.Model.Security.SecurityPolicyInstance>(),
+                    Tags = new List<EntityTag>(),
+                    Telecoms = new List<EntityTelecomAddress>()
+                };
+                
                 Person motherEntity = null;
                 List<IdentifiedData> retCollection = new List<IdentifiedData>();
 
@@ -269,7 +283,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     foreach (var id in pidSegment.GetPatientIdentifierList())
                     {
                         var idnumber = id.IDNumber.Value;
-                        AssigningAuthority authority;
+                        IdentityDomain authority;
                         try
                         {
                             authority = id.AssigningAuthority.ToModel();
@@ -294,13 +308,16 @@ namespace SanteDB.Messaging.HL7.Segments
 
                         Guid idguid = Guid.Empty;
                         Patient found = null;
-                        if (authority.Key == this.m_configuration.LocalAuthority.Key)
+                        using (DataPersistenceControlContext.Create(LoadMode.FullLoad))
                         {
-                            found = patientService.Get(Guid.Parse(id.IDNumber.Value), Guid.Empty);
-                        }
-                        else if (authority?.IsUnique == true)
-                        {
-                            found = patientService.Find(o => o.Identifiers.Any(i => i.Authority.Key == authority.Key && i.Value == idnumber)).FirstOrDefault();
+                            if (authority.Key == this.m_configuration.LocalAuthority.Key)
+                            {
+                                found = patientService.Get(Guid.Parse(id.IDNumber.Value), Guid.Empty);
+                            }
+                            else if (authority?.IsUnique == true)
+                            {
+                                found = patientService.Find(o => o.Identifiers.Any(i => i.Authority.Key == authority.Key && i.Value == idnumber)).FirstOrDefault();
+                            }
                         }
 
                         if (found != null)
@@ -361,7 +378,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     // Attempt to find the existing mother in the database based on ID
                     foreach (var id in pidSegment.GetMotherSIdentifier().Where(o => !o.IsEmpty()))
                     {
-                        AssigningAuthority authority = null;
+                        IdentityDomain authority = null;
                         try
                         {
                             authority = id.AssigningAuthority.ToModel();
@@ -615,7 +632,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     foreach (var cit in pidSegment.GetCitizenship())
                     {
-                        var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == AssigningAuthorityKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                        var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == IdentityDomainKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
                         if (place != null)
                         {
                             if (!retVal.Relationships.Any(r => r.RelationshipTypeKey == EntityRelationshipTypeKeys.Citizen && r.TargetEntityKey == place.Key))

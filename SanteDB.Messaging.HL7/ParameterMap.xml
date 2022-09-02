@@ -31,8 +31,8 @@
     <parameter hl7="@PID.13.4.1" model="telecom.value" type="concept"/>
     <parameter hl7="@PID.13.12.1" model="telecom[MobileContact|EmergencyContact].value" type="concept"/>
     <parameter hl7="@PID.3.1.1" model="identifier.value"/>
-    <parameter hl7="@PID.3.4.1" model="identifier.authority.domainName"/>
-    <parameter hl7="@PID.3.4.2" model="identifier.authority.oid"/>
+    <parameter hl7="@PID.3.4.1" model="identifier.domain.domainName"/>
+    <parameter hl7="@PID.3.4.2" model="identifier.domain.oid"/>
     <parameter hl7="@PID.3.1.1" model="id" />
     <parameter hl7="@PID.11.4.1" model="address.component[State].value"/>
     <parameter hl7="@PID.11.3.1" model="address.component[City].value"/>

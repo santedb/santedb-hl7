@@ -53,7 +53,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         [XmlElement("localAuthority"), JsonProperty("localAuthority")]
         [DisplayName("Local Domain"), Description("The local identity domain. When this identity domain appears in the CX.4 of a message, it will be assumed to be an internal key")]
         [TypeConverter(typeof(ExpandableObjectConverter))]
-        public AssigningAuthority LocalAuthority { get; set; }
+        public IdentityDomain LocalAuthority { get; set; }
 
         /// <summary>
         /// Security method
@@ -90,7 +90,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         [XmlElement("ssnAuthority"), JsonProperty("ssnAuthority")]
         [TypeConverter(typeof(ExpandableObjectConverter))]
         [DisplayName("SSN Authority"), Description("The assigning authority which should be used when PID-19 (SSN) is provided")]
-        public AssigningAuthority SsnAuthority { get; set; }
+        public IdentityDomain SsnAuthority { get; set; }
 
         /// <summary>
         /// Birthplace class keys

@@ -63,7 +63,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// Gets or sets the identity domains to notify the remote target of
         /// </summary>
         [XmlArray("domains"), XmlArrayItem("add"), JsonProperty("domains")]
-        public List<AssigningAuthority> ExportDomains { get; set; }
+        public List<IdentityDomain> ExportDomains { get; set; }
 
         /// <summary>
         /// Sets the version

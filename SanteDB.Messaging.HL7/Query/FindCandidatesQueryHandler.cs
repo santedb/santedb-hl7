@@ -91,7 +91,7 @@ namespace SanteDB.Messaging.HL7.Query
 
             // Return domains
             var rqo = evt.Message as QBP_Q21;
-            List<AssigningAuthority> returnDomains = new List<AssigningAuthority>();
+            List<IdentityDomain> returnDomains = new List<IdentityDomain>();
             foreach (var rt in rqo.QPD.GetField(8).OfType<Varies>())
             {
                 var rid = new CX(rqo.Message);

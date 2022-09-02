@@ -70,7 +70,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// <summary>
         /// Create the MRG segment
         /// </summary>
-        public IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, AssigningAuthority[] exportDomains)
+        public IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, IdentityDomain[] exportDomains)
         {
             // TODO: When broadcasting a MRG event this will need to be constructed only
             throw new NotImplementedException(this.m_localizationService.GetString("error.type.NotImplementedException.userMessage"));
@@ -104,7 +104,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 foreach (var id in mrgSegment.GetPriorPatientIdentifierList())
                 {
                     var idnumber = id.IDNumber.Value;
-                    AssigningAuthority authority;
+                    IdentityDomain authority;
                     try
                     {
                         authority = id.AssigningAuthority.ToModel();

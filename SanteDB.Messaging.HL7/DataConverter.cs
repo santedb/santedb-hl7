@@ -102,7 +102,7 @@ namespace SanteDB.Messaging.HL7
 
             foreach (var xad in addresses)
             {
-                var entityAddress = new EntityAddress();
+                var entityAddress = new EntityAddress() {  Component = new List<EntityAddressComponent>() };
                 var addressUse = AddressUseKeys.TemporaryAddress;
 
                 if (!string.IsNullOrEmpty(xad.AddressType.Value) && !string.IsNullOrWhiteSpace(xad.AddressType.Value))
@@ -264,7 +264,10 @@ namespace SanteDB.Messaging.HL7
 
             foreach (var xpn in names)
             {
-                var entityName = new EntityName();
+                var entityName = new EntityName()
+                {
+                    Component = new List<EntityNameComponent>()
+                };
                 var nameUse = nameUseKey ?? NameUseKeys.Search;
 
                 if (!string.IsNullOrEmpty(xpn.NameTypeCode.Value))
@@ -370,14 +373,14 @@ namespace SanteDB.Messaging.HL7
         }
 
         /// <summary>
-		/// Converts an <see cref="HD"/> instance to an <see cref="AssigningAuthority"/> instance.
+		/// Converts an <see cref="HD"/> instance to an <see cref="IdentityDomain"/> instance.
 		/// </summary>
 		/// <param name="id">The id value to be converted.</param>
 		/// <returns>Returns the converted assigning authority.</returns>
-		public static AssigningAuthority ToModel(this HD id)
+		public static IdentityDomain ToModel(this HD id)
         {
-            var assigningAuthorityRepositoryService = ApplicationServiceContext.Current.GetService<IAssigningAuthorityRepositoryService>();
-            AssigningAuthority assigningAuthority = null;
+            var assigningAuthorityRepositoryService = ApplicationServiceContext.Current.GetService<IIdentityDomainRepositoryService>();
+            IdentityDomain assigningAuthority = null;
 
             if (id == null)
                 throw new ArgumentNullException(nameof(id), "Missing ID parameter");
@@ -421,7 +424,7 @@ namespace SanteDB.Messaging.HL7
                 }
                 try
                 {
-                    assigningAuthority = assigningAuthorityRepositoryService.Find(o => o.AssigningApplication.Name == appPrincipal.Name).SingleOrDefault();
+                    assigningAuthority = assigningAuthorityRepositoryService.Find(o => o.AssigningAuthority.Any(a=>a.AssigningApplication.Name == appPrincipal.Name && a.Reliability == IdentifierReliability.Authoritative)).SingleOrDefault();
                 }
                 catch (Exception e)
                 {
@@ -824,7 +827,7 @@ namespace SanteDB.Messaging.HL7
             where TBind : VersionedEntityData<TBind>, new()
         {
             me.IDNumber.Value = id.Value;
-            me.AssigningAuthority.FromModel(id.LoadProperty<AssigningAuthority>("Authority"));
+            me.AssigningAuthority.FromModel(id.LoadProperty<IdentityDomain>("Authority"));
 
             if (id.ExpiryDate.HasValue)
                 me.ExpirationDate.SetYearMonthDayPrecision(id.ExpiryDate.Value.Year, id.ExpiryDate.Value.Month, id.ExpiryDate.Value.Day);
@@ -832,7 +835,7 @@ namespace SanteDB.Messaging.HL7
                 me.EffectiveDate.SetYearMonthDayPrecision(id.IssueDate.Value.Year, id.IssueDate.Value.Month, id.IssueDate.Value.Day);
 
             me.CheckDigit.Value = id.CheckDigit;
-            me.CheckDigitScheme.Value = id.LoadProperty<AssigningAuthority>("Authority").GetCustomValidator()?.Name;
+            me.CheckDigitScheme.Value = id.LoadProperty<IdentityDomain>("Authority").GetCustomValidator()?.Name;
 
             // Identifier type
             if (id.IdentifierType?.TypeConceptKey.HasValue == true)
@@ -849,7 +852,7 @@ namespace SanteDB.Messaging.HL7
         /// <summary>
         /// Convert assigning authortiy to v2
         /// </summary>
-        public static HD FromModel(this HD me, AssigningAuthority authority)
+        public static HD FromModel(this HD me, IdentityDomain authority)
         {
             me.NamespaceID.Value = authority.DomainName;
             me.UniversalID.Value = authority.Oid;

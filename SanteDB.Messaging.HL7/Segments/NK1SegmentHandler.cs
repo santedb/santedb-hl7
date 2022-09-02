@@ -97,7 +97,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// <summary>
         /// Create next of kin relationship
         /// </summary>
-        public virtual IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, AssigningAuthority[] exportDomains)
+        public virtual IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, IdentityDomain[] exportDomains)
         {
             List<ISegment> retVal = new List<ISegment>();
             var patient = data as Patient;
@@ -178,7 +178,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     var ce = nk1.GetCitizenship(nk1.CitizenshipRepetitionsUsed);
                     var place = itm.LoadProperty<Place>(nameof(EntityRelationship.TargetEntity));
-                    ce.Identifier.Value = place.LoadCollection<EntityIdentifier>(nameof(Entity.Identifiers)).FirstOrDefault(o => o.AuthorityKey == AssigningAuthorityKeys.Iso3166CountryCode)?.Value;
+                    ce.Identifier.Value = place.LoadCollection<EntityIdentifier>(nameof(Entity.Identifiers)).FirstOrDefault(o => o.AuthorityKey == IdentityDomainKeys.Iso3166CountryCode)?.Value;
                     ce.Text.Value = place.LoadCollection<EntityName>(nameof(Entity.Names)).FirstOrDefault(o => o.NameUseKey == NameUseKeys.OfficialRecord)?.LoadCollection<EntityNameComponent>(nameof(EntityName.Component)).FirstOrDefault()?.Value;
                 }
 
@@ -235,7 +235,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 foreach (var id in nk1Segment.GetNextOfKinAssociatedPartySIdentifiers())
                 {
                     var idnumber = id.IDNumber.Value;
-                    AssigningAuthority authority = null;
+                    IdentityDomain authority = null;
                     try
                     {
                         authority = id.AssigningAuthority.ToModel();
@@ -400,7 +400,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     foreach (var cit in nk1Segment.GetCitizenship())
                     {
-                        var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == AssigningAuthorityKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                        var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == IdentityDomainKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
                         if (place != null)
                         {
                             if (!retVal.Relationships.Any(r => r.RelationshipTypeKey == EntityRelationshipTypeKeys.Citizen && r.TargetEntityKey == place.Key))

@@ -46,7 +46,7 @@ namespace SanteDB.Messaging.HL7.Test
             var securityDevService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityDevice>>();
             var securityAppService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityApplication>>();
             var pipService = ApplicationServiceContext.Current.GetService<IPolicyInformationService>();
-            var metadataService = ApplicationServiceContext.Current.GetService<IAssigningAuthorityRepositoryService>();
+            var metadataService = ApplicationServiceContext.Current.GetService<IIdentityDomainRepositoryService>();
             this.m_serviceManager = ApplicationServiceContext.Current.GetService<IServiceManager>();
 
             AuthenticationContext.EnterSystemContext();
@@ -58,7 +58,7 @@ namespace SanteDB.Messaging.HL7.Test
                 Name = "TEST_HARNESS|TEST"
             };
             dev = securityDevService.Insert(dev);
-            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService);
+            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, PermissionPolicyIdentifiers.UnrestrictedClinicalData, PermissionPolicyIdentifiers.ReadMetadata);
 
             // Create device
             dev = new SecurityDevice()
@@ -67,7 +67,7 @@ namespace SanteDB.Messaging.HL7.Test
                 Name = "TEST_HARNESS|MASTER"
             };
             dev = securityDevService.Insert(dev);
-            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, "1.3.6.1.4.1.33349.3.1.5.9.2.6");
+            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.UnrestrictedAll, "1.3.6.1.4.1.33349.3.1.5.9.2.6");
 
             var app = new SecurityApplication()
             {
@@ -76,18 +76,19 @@ namespace SanteDB.Messaging.HL7.Test
             };
             app = securityAppService.Insert(app);
             pipService.AddPolicies(app, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, PermissionPolicyIdentifiers.UnrestrictedClinicalData, PermissionPolicyIdentifiers.ReadMetadata);
-            metadataService.Insert(new Core.Model.DataTypes.AssigningAuthority("TEST", "TEST", "1.2.3.4.5.6.7")
+            metadataService.Insert(new Core.Model.DataTypes.IdentityDomain("TEST", "TEST", "1.2.3.4.5.6.7")
             {
                 IsUnique = true,
-                AssigningApplicationKey = app.Key
+                AssigningAuthority = new System.Collections.Generic.List<Core.Model.DataTypes.AssigningAuthority>()
+                {
+                    new Core.Model.DataTypes.AssigningAuthority()
+                    {
+                        AssigningApplicationKey = app.Key, 
+                        Reliability = Core.Model.DataTypes.IdentifierReliability.Authoritative
+                    }
+                }
             });
 
-            metadataService.Insert(new Core.Model.DataTypes.AssigningAuthority("SSN", "US Social Security Number", "2.16.840.1.113883.4.1")
-            {
-                IsUnique = false,
-                Url = "http://hl7.org/fhir/sid/us-ssn",
-                AssigningApplicationKey = app.Key
-            });
 
             // Add another application for security checks
             dev = new SecurityDevice()
@@ -383,7 +384,7 @@ namespace SanteDB.Messaging.HL7.Test
                 Assert.AreEqual(patientA.Key, afterMergeB.Key); // Patient B => Patient A
                 var oldMaster = entityRepository.Get(patientB.Key.Value);
                 oldMaster.LoadProperty(o => o.StatusConcept);
-                Assert.AreEqual(StatusKeys.Inactive, oldMaster.StatusConceptKey); // Old Master is obsolete
+                Assert.IsNotNull(oldMaster.ObsoletionTime);
             }
         }
     }

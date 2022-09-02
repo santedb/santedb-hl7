@@ -77,7 +77,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// <summary>
         /// Create PD1
         /// </summary>
-        public virtual IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, AssigningAuthority[] exportDomains)
+        public virtual IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, IdentityDomain[] exportDomains)
         {
             var retVal = context.GetStructure("PD1") as PD1;
             var patient = data as Patient;
@@ -140,7 +140,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     var sdlRepo = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>();
                     foreach (var xon in pd1Segment.GetPatientPrimaryFacility())
                     {
-                        AssigningAuthority authority;
+                        IdentityDomain authority;
                         try
                         {
                             authority = xon.AssigningAuthority.ToModel();

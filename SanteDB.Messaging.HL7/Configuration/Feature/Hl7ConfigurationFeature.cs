@@ -88,8 +88,8 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
                         EntityClassKeys.ServiceDeliveryLocation,
                         EntityClassKeys.Country
                     },
-                    LocalAuthority = new Core.Model.DataTypes.AssigningAuthority("YOUR_LOCAL_V2_AUTHORITY", "Local Authority", $"2.25.{BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0)}"),
-                    SsnAuthority = new Core.Model.DataTypes.AssigningAuthority("SSN", "Social Security Number", "2.16.840.1.113883.4.1"),
+                    LocalAuthority = new Core.Model.DataTypes.IdentityDomain("YOUR_LOCAL_V2_AUTHORITY", "Local Authority", $"2.25.{BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0)}"),
+                    SsnAuthority = new Core.Model.DataTypes.IdentityDomain("SSN", "Social Security Number", "2.16.840.1.113883.4.1"),
                     IdentifierReplacementBehavior = IdentifierReplacementMode.Specific,
                     LocalFacility = Guid.Empty,
                     Security = AuthenticationMethod.Msh8,
