@@ -226,7 +226,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 }
 
                 // Next of kin is a person
-                Person retVal = new Person() { Key = Guid.NewGuid() };
+                Person retVal = new Person() { Key = Guid.NewGuid(), Relationships = new List<EntityRelationship>() };
                 EntityRelationship retValRelation = new EntityRelationship(EntityRelationshipTypeKeys.NextOfKin, retVal.Key) { SourceEntityKey = patient.Key };
                 bool foundByKey = false;
 
@@ -247,7 +247,8 @@ namespace SanteDB.Messaging.HL7.Segments
                     Guid idguid = Guid.Empty;
                     int tr = 0;
                     Person found = null;
-                    if (authority.Key == this.m_configuration.LocalAuthority.Key)
+                    if (authority.Key == this.m_configuration.LocalAuthority.Key || 
+                        authority.DomainName == this.m_configuration.LocalAuthority.DomainName)
                     {
                         found = personService.Get(Guid.Parse(id.IDNumber.Value), null, AuthenticationContext.SystemPrincipal);
                     }
@@ -263,13 +264,14 @@ namespace SanteDB.Messaging.HL7.Segments
                     }
                 }
 
+               
                 // Relationship type
                 fieldNo = 3;
                 if (!nk1Segment.Relationship.IsEmpty())
                     retValRelation.RelationshipTypeKey = nk1Segment.Relationship.ToModel(RelationshipCodeSystem)?.Key;
 
                 // Some relationships only allow one person, we should update them
-                var existingNokRel = patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).FirstOrDefault(o => o.RelationshipTypeKey == retValRelation.RelationshipTypeKey);
+                var existingNokRel = patient.LoadProperty(o=>o.Relationships).FirstOrDefault(o => o.RelationshipTypeKey == retValRelation.RelationshipTypeKey);
                 if (existingNokRel != null)
                 {
                     retValRelation = existingNokRel;
@@ -298,7 +300,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     foreach (var itm in nk1Segment.GetName())
                     {
                         var model = itm.ToModel();
-                        var existing = retVal.Names.FirstOrDefault(o => o.NameUseKey == model.NameUseKey);
+                        var existing = retVal.LoadProperty(o=>o.Names).FirstOrDefault(o => o.NameUseKey == model.NameUseKey);
                         if (existing == null)
                             retVal.Names.Add(model);
                         else
@@ -311,7 +313,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     foreach (var itm in nk1Segment.GetAddress())
                     {
                         var model = itm.ToModel();
-                        var existing = retVal.Addresses.FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
+                        var existing = retVal.LoadProperty(o=>o.Addresses).FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
                         if (existing == null)
                             retVal.Addresses.Add(model);
                         else
@@ -324,7 +326,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 foreach (var itm in telecoms)
                 {
                     var model = itm.ToModel();
-                    var existing = retVal.Telecoms.FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
+                    var existing = retVal.LoadProperty(o=>o.Telecoms).FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
                     if (existing == null)
                         retVal.Telecoms.Add(model);
                     else
@@ -354,14 +356,14 @@ namespace SanteDB.Messaging.HL7.Segments
                                     Identifiers = new List<EntityIdentifier>() { id },
                                     Names = new List<EntityName>() { new EntityName(NameUseKeys.Assigned, xon.OrganizationName.Value) }
                                 };
-                                retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization)
+                                retVal.LoadProperty(o=>o.Relationships).Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization)
                                 {
                                     ClassificationKey = RelationshipClassKeys.ContainedObjectLink
                                 });
                             }
                             else
                             {
-                                retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization));
+                                retVal.LoadProperty(o => o.Relationships).Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization));
                             }
                         }
                         else
@@ -378,7 +380,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     var existingConRole = patient.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Contact && retVal.Key == o.TargetEntityKey);
                     if (existingConRole == null)
                     {
-                        patient.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Contact, retVal.Key)
+                        patient.LoadProperty(o => o.Relationships).Add(new EntityRelationship(EntityRelationshipTypeKeys.Contact, retVal.Key)
                         {
                             RelationshipRole = nk1Segment.ContactRole.ToModel(ContactRoleRelationship, true)
                         });
@@ -403,7 +405,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == IdentityDomainKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
                         if (place != null)
                         {
-                            if (!retVal.Relationships.Any(r => r.RelationshipTypeKey == EntityRelationshipTypeKeys.Citizen && r.TargetEntityKey == place.Key))
+                            if (!retVal.LoadProperty(o => o.Relationships).Any(r => r.RelationshipTypeKey == EntityRelationshipTypeKeys.Citizen && r.TargetEntityKey == place.Key))
                             {
                                 retVal.Relationships.Add(new EntityRelationship(EntityRelationshipTypeKeys.Citizen, place.Key));
                             }
@@ -422,9 +424,9 @@ namespace SanteDB.Messaging.HL7.Segments
                 fieldNo = 20;
                 if (!nk1Segment.PrimaryLanguage.IsEmpty())
                     retVal.LanguageCommunication = new List<PersonLanguageCommunication>()
-                {
-                    new PersonLanguageCommunication(nk1Segment.PrimaryLanguage.Identifier.Value.ToLower(), true)
-                };
+                    {
+                        new PersonLanguageCommunication(nk1Segment.PrimaryLanguage.Identifier.Value.ToLower(), true)
+                    };
 
                 // Privacy code
                 fieldNo = 23;
@@ -454,7 +456,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 }
 
                 // Find the existing relationship on the patient
-                if (!patient.Relationships.Any(o => o.RelationshipTypeKey == retValRelation.RelationshipTypeKey && o.TargetEntityKey == retValRelation.TargetEntityKey))
+                if (!patient.LoadProperty(o => o.Relationships).Any(o => o.RelationshipTypeKey == retValRelation.RelationshipTypeKey && o.TargetEntityKey == retValRelation.TargetEntityKey))
                 {
                     patient.Relationships.Add(retValRelation);
                 }
@@ -470,19 +472,11 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (HL7DatatypeProcessingException e)
             {
-                throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException",
-                    new
-                    {
-                        param = "NK1"
-                    }), "NK1", nk1Segment.SetIDNK1.Value, fieldNo, e.Component, e);
+                throw new HL7ProcessingException(this.m_localizationService.GetString(Hl7Constants.ERR_GENERAL_PROCESSING), "NK1", nk1Segment.SetIDNK1.Value, fieldNo, e.Component, e);
             }
             catch (Exception e)
             {
-                throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException",
-                    new
-                    {
-                        param = "NK1"
-                    }), "NK1", nk1Segment.SetIDNK1.Value, fieldNo, 1, e);
+                throw new HL7ProcessingException(this.m_localizationService.GetString(Hl7Constants.ERR_GENERAL_PROCESSING), "NK1", nk1Segment.SetIDNK1.Value, fieldNo, 1, e);
             }
         }
     }

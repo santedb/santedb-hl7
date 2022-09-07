@@ -213,10 +213,11 @@ namespace SanteDB.Messaging.HL7.Messages
                     ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>()?.SetQueryTag(queryId, count);
                 }
 
-                this.SendAuditQuery(OutcomeIndicator.Success, e.Message, results.OfType<IdentifiedData>().ToArray());
+                var resultArray = results.OfType<IdentifiedData>().ToArray();
+                this.SendAuditQuery(OutcomeIndicator.Success, e.Message, resultArray);
 
                 // Query basics
-                return this.CreateQueryResponse(e, filterQuery, map, results, queryId, offset.GetValueOrDefault(), count ?? 100, totalResults);
+                return this.CreateQueryResponse(e, filterQuery, map, resultArray, queryId, offset.GetValueOrDefault(), count ?? 100, totalResults);
             }
             catch (Exception ex)
             {
@@ -263,7 +264,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <param name="offset">The offset to the first result</param>
         /// <param name="queryId">The unique query identifier used</param>
         /// <returns>The constructed result message</returns>
-        protected virtual IMessage CreateQueryResponse(Hl7MessageReceivedEventArgs request, Expression filter, Hl7QueryParameterType map, IEnumerable results, Guid queryId, int offset, int count, int totalResults)
+        protected virtual IMessage CreateQueryResponse(Hl7MessageReceivedEventArgs request, Expression filter, Hl7QueryParameterType map, Array results, Guid queryId, int offset, int count, int totalResults)
         {
             var retVal = this.CreateACK(map.ResponseType, request.Message, "AA", "Query Success");
             var omsh = retVal.GetStructure("MSH") as MSH;
@@ -279,7 +280,7 @@ namespace SanteDB.Messaging.HL7.Messages
             qak.HitCount.Value = totalResults.ToString();
             qak.HitsRemaining.Value = (totalResults - offset - count > 0 ? totalResults - offset - count : 0).ToString();
             qak.QueryResponseStatus.Value = totalResults == 0 ? "NF" : "OK";
-            qak.ThisPayload.Value = results.OfType<Object>().Count().ToString();
+            qak.ThisPayload.Value = results.Length.ToString();
 
             if (ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>() != null &&
                 Int32.Parse(qak.HitsRemaining.Value) > 0)

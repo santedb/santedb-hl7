@@ -147,17 +147,23 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         catch (Exception e)
                         {
-                            throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException",
-                                new
-                                {
-                                    param = "patient primary facility"
-                                }), "PD1", "1", 3, 5, e);
+                            throw new HL7ProcessingException(this.m_localizationService.GetString(Hl7Constants.ERR_GENERAL_PROCESSING), "PD1", "1", 3, 5, e);
                         }
                         var idnumber = xon.OrganizationIdentifier.Value ?? xon.IDNumber.Value;
                         // Find the org or SDL
                         Place place = null;
-                        if (authority.Key == this.m_configuration.LocalAuthority.Key)
-                            place = sdlRepo.Get(Guid.Parse(idnumber), null, AuthenticationContext.SystemPrincipal);
+                        if (authority.Key == this.m_configuration.LocalAuthority.Key ||
+                            authority.DomainName == this.m_configuration.LocalAuthority.DomainName)
+                        {
+                            if (Guid.TryParse(idnumber, out var idNumberGuid))
+                            {
+                                place = sdlRepo.Get(idNumberGuid, null, AuthenticationContext.SystemPrincipal);
+                            }
+                            else
+                            {
+                                throw new HL7ProcessingException(this.m_localizationService.GetString(Hl7Constants.ERR_LOCAL_UUID), "PD1", "1", 3, 10);
+                            }
+                        }
                         else
                             place = sdlRepo.Query(o => o.ClassConceptKey == EntityClassKeys.ServiceDeliveryLocation && o.Identifiers.Any(i => i.Value == idnumber && i.Authority.Key == authority.Key), AuthenticationContext.SystemPrincipal).SingleOrDefault();
 
@@ -171,9 +177,9 @@ namespace SanteDB.Messaging.HL7.Segments
                         else
                         {
                             this.m_tracer.TraceError($"Facility {idnumber} could not be found");
-                            throw new KeyNotFoundException(this.m_localizationService.GetString("error.messaging.hl7.facilityId", new
+                            throw new KeyNotFoundException(this.m_localizationService.GetString(Hl7Constants.ERR_FACILITY_NOT_FOUND, new
                             {
-                                param = idnumber
+                                id = idnumber
                             }));
                         }
                             
@@ -218,19 +224,11 @@ namespace SanteDB.Messaging.HL7.Segments
             }
             catch (HL7DatatypeProcessingException e)
             {
-                throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException",
-                    new
-                    {
-                        param = "PD1"
-                    }), "PD1", null, fieldNo, e.Component, e);
+                throw new HL7ProcessingException(this.m_localizationService.GetString(Hl7Constants.ERR_GENERAL_PROCESSING), "PD1", null, fieldNo, e.Component, e);
             }
             catch (Exception e)
             {
-                throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException.",
-                    new
-                    {
-                        param = "PD1"
-                    }), "PD1", null, fieldNo, 1, e);
+                throw new HL7ProcessingException(this.m_localizationService.GetString(Hl7Constants.ERR_GENERAL_PROCESSING), "PD1", null, fieldNo, 1, e);
             }
         }
     }

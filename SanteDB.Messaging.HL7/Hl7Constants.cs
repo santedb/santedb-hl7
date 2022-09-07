@@ -30,5 +30,21 @@ namespace SanteDB.Messaging.HL7
 
         // Focal object
         public const string FocalObjectTag = "$hl7.focal";
+
+        /// <summary>
+        /// Localization string like "Local identifiers must be UUIDs"
+        /// </summary>
+        public const string ERR_LOCAL_UUID = "error.messaging.hl7.localUuid";
+
+        /// <summary>
+        /// Localization string like "Facility {id} not found"
+        /// </summary>
+        public const string ERR_FACILITY_NOT_FOUND = "error.messaging.hl7.facilityId";
+
+        /// <summary>
+        /// Localization string like: "Error processing HL7 message contents"
+        /// </summary>
+        public const string ERR_GENERAL_PROCESSING = "error.messaging.hl7.general";
+
     }
 }
