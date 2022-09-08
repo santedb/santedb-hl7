@@ -122,6 +122,9 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\SanteDB.licenseheader">
+      <Link>SanteDB.licenseheader</Link>
+    </None>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
