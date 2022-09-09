@@ -32,6 +32,7 @@ using SanteDB.Messaging.HL7.ParameterMap;
 using SanteDB.Messaging.HL7.Segments;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -301,7 +302,7 @@ namespace SanteDB.Messaging.HL7.Utils
                         {
                             transform = "{0}";
                         }
-                        retVal.Add(parm.ModelName, transform.Split(',').Select(tx => String.Format(tx, qvalue)).ToList());
+                        retVal.Add(parm.ModelName, transform.Split(',').Select(tx => String.Format(tx, qvalue)));
                         break;
 
                     case "date":
@@ -316,18 +317,17 @@ namespace SanteDB.Messaging.HL7.Utils
 
                     default:
                         var txv = parm.ValueTransform ?? "{0}";
-                        retVal.Add(parm.ModelName, txv.Split(',').Select(tx => String.Format(tx, qvalue)).ToList());
+                        retVal.Add(parm.ModelName, txv.Split(',').Select(tx => String.Format(tx, qvalue)));
                         break;
                 }
             }
 
             // HACK: Are they asking for the @PID.3.4.1 of our local auth?
-            List<String> localId = null;
-            if (retVal.TryGetValue("identifier.authority.domainName", out localId) &&
+            if (retVal.TryGetValue("identifier.authority.domainName", out var localId) &&
                 localId.Contains(config.LocalAuthority.DomainName))
             {
                 retVal.Remove("identifier.authority.domainName");
-                localId = retVal["identifier.value"];
+                localId = retVal.GetValues("identifier.value");
                 retVal.Remove("identifier.value");
                 retVal.Add("_id", localId);
             }

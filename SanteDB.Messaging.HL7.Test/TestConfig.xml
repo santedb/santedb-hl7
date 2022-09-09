@@ -30,7 +30,7 @@
     <add type="SanteDB.OrmLite.Configuration.OrmConfigurationSection, SanteDB.OrmLite" />
     <add type="SanteDB.Core.Configuration.Data.DataConfigurationSection, SanteDB.Core.Api, Version=1.11.0.29460, Culture=neutral, PublicKeyToken=null" />
     <add type="SanteDB.Core.Configuration.ResourceManagementConfigurationSection, SanteDB.Core.Api" />
-    <add type="SanteDB.Server.Core.Configuration.SecurityConfigurationSection, SanteDB.Server.Core" />
+    <add type="SanteDB.Core.Security.Configuration.SecurityConfigurationSection, SanteDB.Core.Api" />
   </sections>
   <section xsi:type="DataConfigurationSection">
     <connectionStrings>
@@ -130,12 +130,12 @@
   </section>
   <section xsi:type="ApplicationServiceContextConfigurationSection" allowUnsignedAssemblies="true" threadPoolSize="4">
     <serviceProviders>
-      <add type="SanteDB.Server.Core.Security.SHA256PasswordHashingService, SanteDB.Server.Core" />
+      <add type="SanteDB.Core.Security.SHA256PasswordHashingService,SanteDB.Core.Api" />
       <add type="SanteDB.Core.Security.DefaultPolicyDecisionService, SanteDB.Core.Api" />
       <add type="SanteDB.Caching.Memory.MemoryCacheService, SanteDB.Caching.Memory" />
       <add type="SanteDB.Caching.Memory.MemoryQueryPersistenceService, SanteDB.Caching.Memory" />
       <add type="SanteDB.Core.Services.Impl.DefaultThreadPoolService, SanteDB.Core.Api" />
-      <add type="SanteDB.Server.Core.Services.Impl.LocalRepositoryService, SanteDB.Server.Core" />
+      <add type="SanteDB.Core.Services.Impl.Repository.LocalRepositoryFactory,SanteDB.Core.Api" />
       <add type="SanteDB.Persistence.Data.Services.AdoApplicationIdentityProvider, SanteDB.Persistence.Data" />
       <add type="SanteDB.Persistence.Data.Services.AdoDeviceIdentityProvider, SanteDB.Persistence.Data" />
       <add type="SanteDB.Persistence.Data.Services.AdoIdentityProvider, SanteDB.Persistence.Data" />
@@ -146,7 +146,6 @@
       <add type="SanteDB.Persistence.Data.Services.AdoSessionProvider, SanteDB.Persistence.Data" />
       <add type="SanteDB.Persistence.Data.Services.AdoPersistenceService, SanteDB.Persistence.Data" />
       <add type="SanteDB.Persistence.Data.Services.AdoPersistenceService, SanteDB.Persistence.Data" />
-      <add type="SanteDB.Core.TestFramework.TestLocalizationService, SanteDB.Core.TestFramework"/>
       <add type="SanteDB.Core.Security.Privacy.DataPolicyFilterService, SanteDB.Core.Api" />
       <add type="SanteDB.Persistence.MDM.Services.MdmDataManagementService, SanteDB.Persistence.MDM" />
     </serviceProviders>

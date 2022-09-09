@@ -43,6 +43,7 @@ using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Core.Matching;
 using SanteDB.Core.Diagnostics;
+using System.Collections.Specialized;
 
 namespace SanteDB.Messaging.HL7.Query
 {

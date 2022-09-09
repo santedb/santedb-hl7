@@ -42,6 +42,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using SanteDB.Core.Diagnostics;
+using System.Collections.Specialized;
 
 namespace SanteDB.Messaging.HL7.Query
 {
@@ -166,10 +167,11 @@ namespace SanteDB.Messaging.HL7.Query
             Double? strength = String.IsNullOrEmpty(strStrength) ? null : (double?)Double.Parse(strStrength);
 
             // Query parameters
-            foreach (var itm in MessageUtils.ParseQueryElement(qpd.GetField(3).OfType<Varies>(), map, algorithm, strength))
+            var queryElementParsed = MessageUtils.ParseQueryElement(qpd.GetField(3).OfType<Varies>(), map, algorithm, strength);
+            foreach (var itm in queryElementParsed.AllKeys)
                 try
                 {
-                    retVal.Add(itm.Key, itm.Value);
+                    Array.ForEach(queryElementParsed.GetValues(itm), o => retVal.Add(itm, o));
                 }
                 catch (Exception e)
                 {

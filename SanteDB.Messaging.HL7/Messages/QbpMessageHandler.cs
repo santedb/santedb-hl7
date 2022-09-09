@@ -180,9 +180,9 @@ namespace SanteDB.Messaging.HL7.Messages
                 IQueryResultSet results = null;
                 Expression filterQuery = null;
 
-                if (query.ContainsKey("_id"))
+                if (query.TryGetValue("_id", out var _))
                 {
-                    Guid id = Guid.Parse(query["_id"][0]);
+                    Guid id = Guid.Parse(query["_id"]);
                     var result = repoService.GetType().GetMethod("Get", new Type[] { typeof(Guid) }).Invoke(repoService, new object[] { id });
 
                     if (result is IdentifiedData iddat)
@@ -193,10 +193,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 }
                 else
                 {
-                    var queryMethod = typeof(QueryExpressionParser).GetGenericMethod(nameof(QueryExpressionParser.BuildLinqExpression),
-                        new Type[] { map.QueryTarget },
-                        new Type[] { typeof(NameValueCollection) });
-                    filterQuery = queryMethod.Invoke(null, new object[] { query }) as Expression;
+                    filterQuery = QueryExpressionParser.BuildLinqExpression(map.QueryTarget, query);
 
                     // Now we want to query
                     object[] parameters = { filterQuery };
