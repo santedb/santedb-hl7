@@ -115,7 +115,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     }
 
                     var bundle = MessageUtils.Parse(e.Message);
-                    bundle.AddAnnotationToAll(SanteDBConstants.NoDynamicLoadAnnotation);
+                    bundle.AddAnnotationToAll(SanteDBModelConstants.NoDynamicLoadAnnotation);
                     return this.HandleMessageInternal(e, bundle);
                 }
             }
