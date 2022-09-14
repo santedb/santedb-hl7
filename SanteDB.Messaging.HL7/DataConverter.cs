@@ -19,6 +19,7 @@
  * Date: 2021-8-5
  */
 
+using Microsoft.IdentityModel.Tokens;
 using NHapi.Base.Model;
 using NHapi.Base.Parser;
 using NHapi.Model.V25.Datatype;
@@ -38,6 +39,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Security;
 using System.Security.Claims;
@@ -641,86 +643,118 @@ namespace SanteDB.Messaging.HL7
 		/// <returns>Returns the converted entity telecom address instance.</returns>
 		public static EntityTelecomAddress ToModel(this XTN xtn)
         {
-            var re = new Regex(@"([+0-9A-Za-z]{1,4})?\((\d{3})\)?(\d{3})\-(\d{4})X?(\d{1,6})?");
-            var retVal = new EntityTelecomAddress();
-
-            if (!String.IsNullOrEmpty(xtn.EmailAddress?.Value))
-                retVal.IETFValue = $"mailto:{xtn.EmailAddress.Value}";
-            else if (xtn.AnyText.Value == null)
+            if (null == xtn)
             {
-                var sb = new StringBuilder("tel:");
+                throw new ArgumentNullException(nameof(xtn), "XTN cannot be null.");
+            }
 
-                try
+            var conceptrepository = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>() ?? throw new InvalidOperationException("Error processing XTN. The service provider does not have an IConceptRepositoryService implementation defined. This is a configuration issue.");
+
+            EntityTelecomAddress retVal = new EntityTelecomAddress();
+            bool set = false;
+
+            if (!string.IsNullOrEmpty(xtn.TelecommunicationEquipmentType?.Value))
+            {
+                retVal.TypeConcept = xtn.TelecommunicationEquipmentType.ToConcept(TelecomTypeCodeSystem, conceptrepository, throwIfNotFound: false);
+
+                if (null == retVal.TypeConcept) //Invalid since a code was provided and we don't have a concept for it.
                 {
-                    if (xtn.CountryCode.Value != null)
-                        sb.AppendFormat("{0}{1}-", xtn.CountryCode.Value.Contains("+") ? "" : "+", xtn.CountryCode);
-
-                    if (!String.IsNullOrEmpty(xtn.TelephoneNumber?.Value))
-                    {
-                        if (xtn.TelephoneNumber?.Value != null && !xtn.TelephoneNumber.Value.Contains("-"))
-                            xtn.TelephoneNumber.Value = xtn.TelephoneNumber.Value.Insert(3, "-");
-                        sb.AppendFormat("{0}-{1}", xtn.AreaCityCode, xtn.TelephoneNumber.Value);
-                    }
-                    else
-                        sb.AppendFormat("{0}-{1}", xtn.AreaCityCode, xtn.LocalNumber.Value.Contains("-") ? xtn.LocalNumber.Value : xtn.LocalNumber.Value.Replace(" ", "-").Insert(3, "-"));
-
-                    if (xtn.Extension.Value != null)
-                        sb.AppendFormat(";ext={0}", xtn.Extension);
+                    throw new HL7DatatypeProcessingException("Error processing XTN", 2, new KeyNotFoundException($"Telecom equipment type {xtn.TelecommunicationEquipmentType.Value} not known"));
                 }
-                catch
-                {
-                    // ignored
-                }
-
-                if (sb.ToString().EndsWith("tel:") || sb.ToString() == "tel:-")
-                    retVal.IETFValue = "tel:" + xtn.AnyText.Value;
-                else
-                    retVal.IETFValue = sb.ToString();
             }
             else
             {
-                var match = re.Match(xtn.UnformattedTelephoneNumber.Value);
-                var sb = new StringBuilder("tel:");
-
-                for (var i = 1; i < 5; i++)
-                {
-                    if (!string.IsNullOrEmpty(match.Groups[i].Value))
-                        sb.AppendFormat("{0}{1}", match.Groups[i].Value, i == 4 ? "" : "-");
-                }
-
-                if (!string.IsNullOrEmpty(match.Groups[5].Value))
-                {
-                    sb.AppendFormat(";ext={0}", match.Groups[5].Value);
-                }
-
-                retVal.IETFValue = sb.ToString();
+                retVal.TypeConceptKey = NullReasonKeys.NoInformation;
             }
 
-            // Use code conversion
-            Guid use = NullReasonKeys.NoInformation;
-
-            if (!string.IsNullOrEmpty(xtn.TelecommunicationUseCode.Value))
+            if (!string.IsNullOrEmpty(xtn.TelecommunicationUseCode?.Value))
             {
-                var concept = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptByReferenceTerm(xtn.TelecommunicationUseCode.Value, TelecomUseCodeSystem);
+                retVal.AddressUse = xtn.TelecommunicationUseCode.ToConcept(TelecomUseCodeSystem, conceptrepository, throwIfNotFound: false);
 
-                if (concept == null)
+                if (null == retVal.AddressUse)
+                {
                     throw new HL7DatatypeProcessingException("Error processing XTN", 1, new KeyNotFoundException($"Telecom use code {xtn.TelecommunicationUseCode.Value} not known"));
-
-                use = concept.Key.Value;
+                }
             }
-
-            retVal.AddressUseKey = use;
-
-            // Type code conversion
-            Guid? type = null;
-            if (!string.IsNullOrEmpty(xtn.TelecommunicationEquipmentType.Value))
+            else
             {
-                var concept = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptByReferenceTerm(xtn.TelecommunicationEquipmentType.Value, TelecomTypeCodeSystem);
-                if (concept == null)
-                    throw new HL7DatatypeProcessingException("Error processing XTN", 2, new KeyNotFoundException($"Telecom equipment type {xtn.TelecommunicationEquipmentType.Value} not known"));
-                type = concept.Key.Value;
+                retVal.AddressUseKey = NullReasonKeys.NoInformation;
             }
-            retVal.TypeConceptKey = type;
+
+            if (!string.IsNullOrEmpty(xtn.EmailAddress?.Value))
+            {
+                retVal.Value = xtn.EmailAddress.Value;
+                if (retVal.TypeConceptKey == NullReasonKeys.NoInformation) //If they don't specify a type but _do_ specify an email address, we will know the type.
+                {
+                    retVal.TypeConceptKey = TelecomAddressTypeKeys.Internet;
+                }
+
+                if (set)
+                {
+                    throw new HL7DatatypeProcessingException("Error processing XTN", 3, new FormatException("Multiple values are present in the XTN in conflict."));
+                }
+                else
+                {
+                    set = true;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(xtn.LocalNumber?.Value))
+            {
+                var sb = new StringBuilder(16);
+
+                sb.Append(xtn.CountryCode?.Value ?? string.Empty);
+                sb.Append(xtn.AreaCityCode?.Value ?? string.Empty);
+                sb.Append(xtn.LocalNumber?.Value ?? string.Empty);
+                sb.Append(xtn.Extension?.Value ?? string.Empty);
+
+                retVal.Value = sb.ToString()?.Trim();
+
+                if (set)
+                {
+                    throw new HL7DatatypeProcessingException("Error processing XTN", 6, new FormatException("Multiple values are present in the XTN in conflict."));
+                }
+                else
+                {
+                    set = true;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(xtn.TelephoneNumber?.Value))
+            {
+                m_tracer.TraceInfo("Info processing XTN: Deprecated field TelephoneNumber used. This field use is discouraged.");
+                retVal.Value = xtn.TelephoneNumber.Value;
+
+                if (set)
+                {
+                    throw new HL7DatatypeProcessingException("Error processing XTN", 0, new FormatException("Multiple values are present in the XTN in conflict."));
+                }
+                else
+                {
+                    set = true;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(xtn.UnformattedTelephoneNumber?.Value))
+            {
+                retVal.Value = xtn.UnformattedTelephoneNumber.Value;
+
+                if (set)
+                {
+                    throw new HL7DatatypeProcessingException("Error processing XTN", 11, new FormatException("Multiple values are present in the XTN in conflict."));
+                }
+                else
+                {
+                    set = true;
+                }
+            }
+
+            if (!set && !string.IsNullOrEmpty(xtn.AnyText?.Value))
+            {
+                retVal.Value = xtn.AnyText.Value;
+                set = true;
+            }
+
             return retVal;
         }
 
@@ -767,8 +801,14 @@ namespace SanteDB.Messaging.HL7
         /// Convert a simple string to a concept in the specified domain
         /// </summary>
         public static Concept ToConcept(this IS me, String domain, bool throwIfNotFound = true)
+            => ToConcept(me, domain, ApplicationServiceContext.Current.GetService<IConceptRepositoryService>(), throwIfNotFound);
+
+        /// <summary>
+        /// Convert a simple string to a concept in the specified domain
+        /// </summary>
+        public static Concept ToConcept(this IS me, String domain, IConceptRepositoryService conceptRepository, bool throwIfNotFound = true)
         {
-            var concept = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptByReferenceTerm(me.Value, domain);
+            var concept = conceptRepository.GetConceptByReferenceTerm(me.Value, domain);
             if (concept == null && throwIfNotFound)
                 throw new KeyNotFoundException($"Concept {me.Value} is not registered in {domain}");
             else
@@ -776,11 +816,30 @@ namespace SanteDB.Messaging.HL7
         }
 
         /// <summary>
-        /// Convert a simple string to a concept in the specified domain
+        /// Convert an <see cref="ID"/> to a concept in the specified domain
         /// </summary>
         public static Concept ToConcept(this ID me, String domain)
+            => ToConcept(me, domain, ApplicationServiceContext.Current.GetService<IConceptRepositoryService>());
+
+        /// <summary>
+        /// Convert an ID to a concept in the specified domain.
+        /// </summary>
+        /// <param name="me">The <see cref="ID"/> to convert.</param>
+        /// <param name="domain">The domain to use to convert the <see cref="ID"/> to.</param>
+        /// <param name="conceptRepository">The repository to use to fetch the concept from.</param>
+        /// <param name="throwIfNotFound"><c>true</c> to throw a <see cref="KeyNotFoundException"/> if the concept is not registered, <c>false</c> to return null when not found.</param>
+        /// <returns>The <see cref="Concept"/> from the repository representing the <see cref="ID"/> in the <paramref name="domain"/> provided.</returns>
+        /// <exception cref="KeyNotFoundException">When <paramref name="throwIfNotFound"/> is <c>true</c>, thrown when the <paramref name="conceptRepository"/> does not contain a <see cref="Concept"/> for <paramref name="me"/>.</exception>
+        public static Concept ToConcept(this ID me, string domain, IConceptRepositoryService conceptRepository, bool throwIfNotFound = false)
         {
-            return ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptByReferenceTerm(me.Value, domain);
+            var concept = conceptRepository.GetConceptByReferenceTerm(me.Value, domain);
+            if (throwIfNotFound && null == concept)
+            {
+                throw new KeyNotFoundException($"Concept {me.Value} is not registered in {domain}");
+            }
+
+            return concept;
+
         }
 
         /// <summary>
