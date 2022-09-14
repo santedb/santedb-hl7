@@ -109,7 +109,7 @@ namespace SanteDB.Messaging.HL7.Query
                 }
 
                 foreach (var id in itm.LoadCollection<EntityIdentifier>("Identifiers"))
-                    if (returnDomains.Count == 0 || returnDomains.Any(o => o.Key == id.AuthorityKey))
+                    if (returnDomains.Count == 0 || returnDomains.Any(o => o.Key == id.IdentityDomainKey))
                         queryInstance.PID.GetPatientIdentifierList(queryInstance.PID.PatientIdentifierListRepetitionsUsed).FromModel(id);
 
                 if (returnDomains.Any(rid => rid.Key == this.m_configuration.LocalAuthority.Key))

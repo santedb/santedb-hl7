@@ -133,7 +133,7 @@ namespace SanteDB.Messaging.HL7.Segments
                     }
                     else if (authority?.IsUnique == true)
                     {
-                        found = patientService.Find(o => o.Identifiers.Any(i => i.Authority.Key == authority.Key && i.Value == idnumber)).FirstOrDefault();
+                        found = patientService.Find(o => o.Identifiers.Any(i => i.IdentityDomain.Key == authority.Key && i.Value == idnumber)).FirstOrDefault();
                     }
 
                     // Found

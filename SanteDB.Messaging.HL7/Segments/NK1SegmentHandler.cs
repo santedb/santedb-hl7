@@ -120,7 +120,7 @@ namespace SanteDB.Messaging.HL7.Segments
 
                 // Map alternate identifiers
                 foreach (var id in person.LoadCollection<EntityIdentifier>(nameof(Entity.Identifiers)))
-                    if (exportDomains == null || exportDomains.Any(e => e.Key == id.AuthorityKey) == true)
+                    if (exportDomains == null || exportDomains.Any(e => e.Key == id.IdentityDomainKey) == true)
                         nk1.GetNextOfKinAssociatedPartySIdentifiers(nk1.NextOfKinAssociatedPartySIdentifiersRepetitionsUsed).FromModel(id);
 
                 // Addresses
@@ -177,7 +177,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     var ce = nk1.GetCitizenship(nk1.CitizenshipRepetitionsUsed);
                     var place = itm.LoadProperty<Place>(nameof(EntityRelationship.TargetEntity));
-                    ce.Identifier.Value = place.LoadCollection<EntityIdentifier>(nameof(Entity.Identifiers)).FirstOrDefault(o => o.AuthorityKey == IdentityDomainKeys.Iso3166CountryCode)?.Value;
+                    ce.Identifier.Value = place.LoadCollection<EntityIdentifier>(nameof(Entity.Identifiers)).FirstOrDefault(o => o.IdentityDomainKey == IdentityDomainKeys.Iso3166CountryCode)?.Value;
                     ce.Text.Value = place.LoadCollection<EntityName>(nameof(Entity.Names)).FirstOrDefault(o => o.NameUseKey == NameUseKeys.OfficialRecord)?.LoadCollection<EntityNameComponent>(nameof(EntityName.Component)).FirstOrDefault()?.Value;
                 }
 
@@ -252,7 +252,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         found = personService.Get(Guid.Parse(id.IDNumber.Value), null, AuthenticationContext.SystemPrincipal);
                     }
                     else if (authority?.IsUnique == true)
-                        found = personService.Query(o => o.Identifiers.Any(i => i.Value == idnumber && i.Authority.Key == authority.Key), AuthenticationContext.SystemPrincipal).AsResultSet().Take(1).FirstOrDefault();
+                        found = personService.Query(o => o.Identifiers.Any(i => i.Value == idnumber && i.IdentityDomain.Key == authority.Key), AuthenticationContext.SystemPrincipal).AsResultSet().Take(1).FirstOrDefault();
                     if (found != null)
                     {
                         retVal = found;
@@ -347,7 +347,7 @@ namespace SanteDB.Messaging.HL7.Segments
                         // Lookup the organization scoper
                         if (id != null)
                         {
-                            var organization = orgService?.Query(o => o.Identifiers.Any(i => i.Value == id.Value && i.AuthorityKey == id.AuthorityKey), AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                            var organization = orgService?.Query(o => o.Identifiers.Any(i => i.Value == id.Value && i.IdentityDomainKey == id.IdentityDomainKey), AuthenticationContext.SystemPrincipal).FirstOrDefault();
                             if (organization == null && !this.m_configuration.StrictMetadataMatch)
                             {
                                 organization = new Organization()
@@ -401,7 +401,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     foreach (var cit in nk1Segment.GetCitizenship())
                     {
-                        var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == IdentityDomainKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                        var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.IdentityDomain.Key == IdentityDomainKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
                         if (place != null)
                         {
                             if (!retVal.LoadProperty(o => o.Relationships).Any(r => r.RelationshipTypeKey == EntityRelationshipTypeKeys.Citizen && r.TargetEntityKey == place.Key))

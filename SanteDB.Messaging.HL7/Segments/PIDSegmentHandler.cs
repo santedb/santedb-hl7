@@ -118,11 +118,11 @@ namespace SanteDB.Messaging.HL7.Segments
             // Map alternate identifiers
             foreach (var id in patient.LoadProperty(o=>o.Identifiers))
             {
-                if (exportDomains == null || exportDomains.Any(e => e.Key == id.AuthorityKey) == true)
+                if (exportDomains == null || exportDomains.Any(e => e.Key == id.IdentityDomainKey) == true)
                 {
                     retVal.GetPatientIdentifierList(retVal.PatientIdentifierListRepetitionsUsed).FromModel(id);
-                    if (id.Authority.DomainName == this.m_configuration.SsnAuthority?.DomainName ||
-                        id.Authority.Oid == this.m_configuration.SsnAuthority?.Oid)
+                    if (id.IdentityDomain.DomainName == this.m_configuration.SsnAuthority?.DomainName ||
+                        id.IdentityDomain.Oid == this.m_configuration.SsnAuthority?.Oid)
                         retVal.SSNNumberPatient.Value = id.Value;
                 }
             }
@@ -214,7 +214,7 @@ namespace SanteDB.Messaging.HL7.Segments
             {
                 var ce = retVal.GetCitizenship(retVal.CitizenshipRepetitionsUsed);
                 var place = itm.LoadProperty(o=>o.TargetEntity);
-                ce.Identifier.Value = place.LoadProperty(o => o.Identifiers).FirstOrDefault(o => o.AuthorityKey == IdentityDomainKeys.Iso3166CountryCode)?.Value;
+                ce.Identifier.Value = place.LoadProperty(o => o.Identifiers).FirstOrDefault(o => o.IdentityDomainKey == IdentityDomainKeys.Iso3166CountryCode)?.Value;
                 ce.Text.Value = place.LoadProperty(o => o.Names).FirstOrDefault(o => o.NameUseKey == NameUseKeys.OfficialRecord)?.LoadCollection<EntityNameComponent>(nameof(EntityName.Component)).FirstOrDefault()?.Value;
             }
 
@@ -316,7 +316,7 @@ namespace SanteDB.Messaging.HL7.Segments
                             }
                             else if (authority?.IsUnique == true)
                             {
-                                found = patientService.Find(o => o.Identifiers.Any(i => i.Authority.Key == authority.Key && i.Value == idnumber)).FirstOrDefault();
+                                found = patientService.Find(o => o.Identifiers.Any(i => i.IdentityDomain.Key == authority.Key && i.Value == idnumber)).FirstOrDefault();
                             }
                         }
 
@@ -338,13 +338,13 @@ namespace SanteDB.Messaging.HL7.Segments
                     var messageIdentifiers = pidSegment.GetPatientIdentifierList().ToModel();
 
                     if (this.m_configuration.IdentifierReplacementBehavior == IdentifierReplacementMode.AnyInDomain)
-                        retVal.Identifiers.RemoveAll(o => messageIdentifiers.Any(i => i.EffectiveVersionSequenceId.HasValue && i.AuthorityKey == o.AuthorityKey));
+                        retVal.Identifiers.RemoveAll(o => messageIdentifiers.Any(i => i.EffectiveVersionSequenceId.HasValue && i.IdentityDomainKey == o.IdentityDomainKey));
 
                     // Remove any identifiers matching the value explicitly
-                    retVal.Identifiers.RemoveAll(o => messageIdentifiers.Any(i => i.ObsoleteVersionSequenceId.HasValue && i.AuthorityKey == o.AuthorityKey && i.Value == o.Value));
+                    retVal.Identifiers.RemoveAll(o => messageIdentifiers.Any(i => i.ObsoleteVersionSequenceId.HasValue && i.IdentityDomainKey == o.IdentityDomainKey && i.Value == o.Value));
 
                     // Add any identifiers which we don't have any other identifier domain for
-                    retVal.Identifiers.AddRange(messageIdentifiers.Where(o => !o.ObsoleteVersionSequenceId.HasValue && !retVal.Identifiers.Any(i => i.AuthorityKey == o.AuthorityKey && i.Value == o.Value)));
+                    retVal.Identifiers.AddRange(messageIdentifiers.Where(o => !o.ObsoleteVersionSequenceId.HasValue && !retVal.Identifiers.Any(i => i.IdentityDomainKey == o.IdentityDomainKey && i.Value == o.Value)));
                 }
 
                 // Find the key for the patient
@@ -397,8 +397,8 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         else if (authority?.IsUnique == true)
                         {
-                            foundMother = personService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault() ??
-                                patientService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.Authority.Key == authority.Key)).FirstOrDefault();
+                            foundMother = personService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.IdentityDomain.Key == authority.Key)).FirstOrDefault() ??
+                                patientService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.IdentityDomain.Key == authority.Key)).FirstOrDefault();
                         }
 
                         if (foundMother != null)
@@ -545,7 +545,7 @@ namespace SanteDB.Messaging.HL7.Segments
                                 {
                                     new ActIdentifier()
                                     {
-                                        Authority = pidSegment.PatientAccountNumber.AssigningAuthority.ToModel(),
+                                        IdentityDomain = pidSegment.PatientAccountNumber.AssigningAuthority.ToModel(),
                                         Value = pidSegment.PatientAccountNumber.IDNumber.Value
                                     }
                                 },
@@ -563,7 +563,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     var ssn = pidSegment.SSNNumberPatient.Value;
                     // Lookup identity domain which is designated as SSN , if they already have one update it, if not, add it
-                    var existing = retVal.Identifiers.FirstOrDefault(o => o.AuthorityKey == this.m_configuration.SsnAuthority.Key || o.LoadProperty(x => x.Authority).DomainName == this.m_configuration.SsnAuthority?.DomainName);
+                    var existing = retVal.Identifiers.FirstOrDefault(o => o.IdentityDomainKey == this.m_configuration.SsnAuthority.Key || o.LoadProperty(x => x.IdentityDomain).DomainName == this.m_configuration.SsnAuthority?.DomainName);
                     if (existing == null)
                         retVal.Identifiers.Add(new EntityIdentifier(this.m_configuration.SsnAuthority, ssn));
                     else
@@ -632,7 +632,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     foreach (var cit in pidSegment.GetCitizenship())
                     {
-                        var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.Authority.Key == IdentityDomainKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                        var place = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Place>>()?.Query(o => o.Identifiers.Any(i => i.Value == cit.Identifier.Value && i.IdentityDomain.Key == IdentityDomainKeys.Iso3166CountryCode), AuthenticationContext.SystemPrincipal).FirstOrDefault();
                         if (place != null)
                         {
                             if (!retVal.Relationships.Any(r => r.RelationshipTypeKey == EntityRelationshipTypeKeys.Citizen && r.TargetEntityKey == place.Key))

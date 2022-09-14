@@ -164,7 +164,7 @@ namespace SanteDB.Messaging.HL7.Segments
                             }
                         }
                         else
-                            place = sdlRepo.Query(o => o.ClassConceptKey == EntityClassKeys.ServiceDeliveryLocation && o.Identifiers.Any(i => i.Value == idnumber && i.Authority.Key == authority.Key), AuthenticationContext.SystemPrincipal).SingleOrDefault();
+                            place = sdlRepo.Query(o => o.ClassConceptKey == EntityClassKeys.ServiceDeliveryLocation && o.Identifiers.Any(i => i.Value == idnumber && i.IdentityDomain.Key == authority.Key), AuthenticationContext.SystemPrincipal).SingleOrDefault();
 
                         if (place != null)
                         {

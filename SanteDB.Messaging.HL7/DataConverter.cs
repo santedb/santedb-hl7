@@ -648,7 +648,6 @@ namespace SanteDB.Messaging.HL7
         {
             var re = new Regex(@"([+0-9A-Za-z]{1,4})?\((\d{3})\)?(\d{3})\-(\d{4})X?(\d{1,6})?");
             var retVal = new EntityTelecomAddress();
-
             if (!String.IsNullOrEmpty(xtn.EmailAddress?.Value))
                 retVal.IETFValue = $"mailto:{xtn.EmailAddress.Value}";
             else if (xtn.AnyText.Value == null)
