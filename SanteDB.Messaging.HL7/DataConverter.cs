@@ -214,7 +214,7 @@ namespace SanteDB.Messaging.HL7
                     {  AddressComponentKeys.UnitIdentifier, nameof(XAD.StreetAddress) }
                 };
 
-            foreach (var itm in addr.LoadCollection<EntityAddressComponent>("Component"))
+            foreach (var itm in addr.LoadCollection(o=>o.Component))
             {
                 String propertyName = null;
                 if (itm.ComponentTypeKey.HasValue && mappedFields.TryGetValue(itm.ComponentTypeKey.Value, out propertyName))
@@ -348,7 +348,7 @@ namespace SanteDB.Messaging.HL7
                 me.NameTypeCode.Value = refTerm.Mnemonic;
 
             // Convert components
-            foreach (var itm in name.LoadCollection<EntityNameComponent>("Component"))
+            foreach (var itm in name.LoadCollection(o=>o.Component))
                 if (itm.ComponentTypeKey == NameComponentKeys.Family)
                 {
                     if (string.IsNullOrEmpty(me.FamilyName.Surname.Value))
@@ -825,7 +825,7 @@ namespace SanteDB.Messaging.HL7
             where TBind : VersionedEntityData<TBind>, new()
         {
             me.IDNumber.Value = id.Value;
-            me.AssigningAuthority.FromModel(id.LoadProperty<IdentityDomain>("Authority"));
+            me.AssigningAuthority.FromModel(id.LoadProperty(o=>o.IdentityDomain));
 
             if (id.ExpiryDate.HasValue)
                 me.ExpirationDate.SetYearMonthDayPrecision(id.ExpiryDate.Value.Year, id.ExpiryDate.Value.Month, id.ExpiryDate.Value.Day);
@@ -833,7 +833,7 @@ namespace SanteDB.Messaging.HL7
                 me.EffectiveDate.SetYearMonthDayPrecision(id.IssueDate.Value.Year, id.IssueDate.Value.Month, id.IssueDate.Value.Day);
 
             me.CheckDigit.Value = id.CheckDigit;
-            me.CheckDigitScheme.Value = id.LoadProperty<IdentityDomain>("Authority").GetCustomValidator()?.Name;
+            me.CheckDigitScheme.Value = id.LoadProperty(o=>o.IdentityDomain).GetCustomValidator()?.Name;
 
             // Identifier type
             if (id.IdentifierType?.TypeConceptKey.HasValue == true)
