@@ -134,7 +134,6 @@ namespace SanteDB.Messaging.HL7.Messages
             IPrincipal principal = null;
             var msh = e.Message.GetStructure("MSH") as MSH;
             var sft = e.Message.GetStructure("SFT") as SFT;
-            var sessionService = ApplicationServiceContext.Current.GetService<ISessionProviderService>();
 
             if (string.IsNullOrEmpty(msh.Security.Value) && this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8)
             {
@@ -143,10 +142,12 @@ namespace SanteDB.Messaging.HL7.Messages
             }
             if (msh.Security.Value?.StartsWith("sid://") == true) // Session identifier
             {
-                var session = sessionService.Get(Enumerable.Range(5, msh.Security.Value.Length - 5)
-                                    .Where(x => x % 2 == 0)
-                                    .Select(x => Convert.ToByte(msh.Security.Value.Substring(x, 2), 16))
-                                    .ToArray());
+                var sessiontokenresolver = ApplicationServiceContext.Current.GetService<ISessionTokenResolverService>();
+
+                var sessionidentifier = msh.Security.Value.Substring("sid://".Length);
+
+                var session = sessiontokenresolver.Resolve(sessionidentifier);
+
                 principal = ApplicationServiceContext.Current.GetService<ISessionIdentityProviderService>().Authenticate(session) as IClaimsPrincipal;
             }
             else if (e is AuthenticatedHl7MessageReceivedEventArgs auth && auth.AuthorizationToken != null)
