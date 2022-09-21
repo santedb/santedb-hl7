@@ -162,7 +162,6 @@
           <Project>{284CE885-78E0-48EA-A2E4-6957AD66EAB5}</Project>
           <Name>SanteDB.Docker.Core</Name>
         </ProjectReference>
-    <ProjectReference Include="..\..\santedb-mdm\SanteDB.Persistence.MDM\SanteDB.Persistence.MDM.csproj" />
       </ItemGroup>
     </When>
     <Otherwise>
@@ -170,7 +169,6 @@
         <PackageReference Include="SanteDB.Core.Api" Version="$(VersionNumber)" />
         <PackageReference Include="SanteDB.Core.Model" Version="$(VersionNumber)" />
         <PackageReference Include="SanteDB.Docker.Core" Version="$(VersionNumber)" />
-        <PackageReference Include="SanteDB.Persistence.MDM" Version="$(VersionNumber)" />
       </ItemGroup>
     </Otherwise>
   </Choose>

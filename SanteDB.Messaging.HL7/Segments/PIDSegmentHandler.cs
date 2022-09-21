@@ -33,7 +33,6 @@ using SanteDB.Core.Security;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
-using SanteDB.Persistence.MDM.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -184,7 +183,7 @@ namespace SanteDB.Messaging.HL7.Segments
             var motherRelation = relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother);
             if (motherRelation != null)
             {
-                var mother = motherRelation.LoadProperty(o=>o.TargetEntity).GetMaster() as Person;
+                var mother = motherRelation.LoadProperty(o=>o.TargetEntity).ResolveManagedTarget() as Person;
                 foreach (var nam in mother.LoadProperty(o=>o.Names).Where(n => n.NameUseKey == NameUseKeys.MaidenName))
                     retVal.GetMotherSMaidenName(retVal.MotherSMaidenNameRepetitionsUsed).FromModel(nam);
                 foreach (var id in mother.LoadProperty(o=>o.Identifiers))
@@ -372,7 +371,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.GetMotherSIdentifier().Any(o => !o.IsEmpty()))
                 {
                     var personService = ApplicationServiceContext.Current.GetService<IRepositoryService<Person>>();
-                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity).GetMaster() as Person;
+                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity).ResolveManagedTarget() as Person;
                     Person foundMother = null;
 
                     // Attempt to find the existing mother in the database based on ID
