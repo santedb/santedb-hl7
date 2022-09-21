@@ -63,14 +63,12 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="SanteDB.Core.Api" Version="2.1.161.0" />
-        <PackageReference Include="SanteDB.Core.Applets" Version="2.1.161.0" />
-        <PackageReference Include="SanteDB.Core.Model" Version="2.1.161.0" />
-        <PackageReference Include="SanteDB.Rest.Common" Version="2.1.161.0" />
-        <PackageReference Include="SanteDB.OrmLite" Version="2.1.161.0" />
-        <PackageReference Include="SanteDB.Core.TestFramework" Version="2.1.161.0" />
-        <PackageReference Include="SanteDB.Server.Plugin" Version="2.1.161.0" />
-        <PackageReference Include="SanteDB.Server.Plugin.Data" Version="2.1.161.0" />
+        <PackageReference Include="SanteDB.Core.Api" Version="$(VersionNumber)" />
+        <PackageReference Include="SanteDB.Core.Applets" Version="$(VersionNumber)" />
+        <PackageReference Include="SanteDB.Core.Model" Version="$(VersionNumber)" />
+        <PackageReference Include="SanteDB.Rest.Common" Version="$(VersionNumber)" />
+        <PackageReference Include="SanteDB.OrmLite" Version="$(VersionNumber)" />
+        <PackageReference Include="SanteDB.Core.TestFramework" Version="$(VersionNumber)" />
       </ItemGroup>
     </Otherwise>
   </Choose>
