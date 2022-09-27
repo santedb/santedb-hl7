@@ -205,6 +205,9 @@ namespace SanteDB.Messaging.HL7.Messages
                     case Configuration.AuthenticationMethod.Sft4:
                         applicationSecret = sft.SoftwareBinaryID.Value;
                         break;
+
+                    default:
+                        throw new InvalidOperationException("Unknown Security Method Configured");
                 }
 
                 IPrincipal certificatePrincipal = ApplicationServiceContext.Current.GetService<ICertificateIdentityProvider>()?.Authenticate(auth.AuthorizationToken);
@@ -377,7 +380,7 @@ namespace SanteDB.Messaging.HL7.Messages
             else if (rootCause is FileNotFoundException || rootCause is KeyNotFoundException)
                 retVal = this.CreateACK(nackType, request, "CE", "Data not found");
             else if (rootCause is DetectedIssueException)
-                retVal = this.CreateACK(nackType, request, "CE", "Business Rule Violation");
+                retVal = this.CreateACK(nackType, request, "CR", "Business Rule Violation");
             else if (rootCause is DataPersistenceException)
             {
                 // Data persistence failed because of D/I/E

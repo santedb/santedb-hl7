@@ -202,8 +202,9 @@ namespace SanteDB.Messaging.HL7.Messages
                     totalResults = results.Count();
                 }
                 // Save the tag
-                if (dsc.ContinuationPointer.Value != queryId.ToString() &&
-                    offset.Value + count.GetValueOrDefault() < totalResults)
+                if (queryId != Guid.Empty &&
+                    count.HasValue &&
+                    offset.Value + count < totalResults)
                 {
                     results = results.AsStateful(queryId);
                     ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>()?.SetQueryTag(queryId, count);

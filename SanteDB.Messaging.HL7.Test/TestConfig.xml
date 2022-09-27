@@ -127,6 +127,8 @@
       <add>value</add>
     </resources>
     -->
+    <validation unique="loose" scope="loose" format="loose" checkDigit="loose" authority="loose"/>
+
   </section>
   <section xsi:type="ApplicationServiceContextConfigurationSection" allowUnsignedAssemblies="true" threadPoolSize="4">
     <serviceProviders>

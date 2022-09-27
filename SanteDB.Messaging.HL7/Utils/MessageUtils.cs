@@ -184,7 +184,7 @@ namespace SanteDB.Messaging.HL7.Utils
         {
             var config = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
             msh.MessageControlID.Value = Guid.NewGuid().ToString();
-            msh.SendingApplication.NamespaceID.Value = ApplicationServiceContext.Current.GetService<INetworkInformationService>()?.GetMachineName();
+            msh.SendingApplication.NamespaceID.Value = ApplicationServiceContext.Current.ApplicationName; // Assembly.GetEntryAssembly().GetName().Name; // ApplicationServiceContext.Current.GetService<INetworkInformationService>()?.GetMachineName();
             msh.SendingFacility.NamespaceID.Value = config.LocalFacility.ToString();
             msh.ReceivingApplication.NamespaceID.Value = inbound.SendingApplication.NamespaceID.Value;
             msh.ReceivingFacility.NamespaceID.Value = inbound.SendingFacility.NamespaceID.Value;
