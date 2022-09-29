@@ -127,12 +127,18 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Addresses
-            foreach (var addr in patient.LoadProperty(o=>o.Addresses))
-                retVal.GetPatientAddress(retVal.PatientAddressRepetitionsUsed).FromModel(addr);
+            if (patient.LoadProperty(o => o.Addresses) != null)
+            {
+                foreach (var addr in patient.Addresses)
+                    retVal.GetPatientAddress(retVal.PatientAddressRepetitionsUsed).FromModel(addr);
+            }
 
             // Names
-            foreach (var en in patient.LoadProperty(o=>o.Names))
-                retVal.GetPatientName(retVal.PatientNameRepetitionsUsed).FromModel(en);
+            if (patient.LoadProperty(o => o.Names) != null)
+            {
+                foreach (var en in patient.Names)
+                    retVal.GetPatientName(retVal.PatientNameRepetitionsUsed).FromModel(en);
+            }
 
             // Date of birth
             if (patient.DateOfBirth.HasValue)
@@ -191,12 +197,15 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Telecoms
-            foreach (var tel in patient.LoadProperty(o=>o.Telecoms))
+            if (patient.LoadProperty(o => o.Telecoms) != null)
             {
-                if (tel.AddressUseKey.GetValueOrDefault() == AddressUseKeys.WorkPlace)
-                    retVal.GetPhoneNumberBusiness(retVal.PhoneNumberBusinessRepetitionsUsed).FromModel(tel);
-                else
-                    retVal.GetPhoneNumberHome(retVal.PhoneNumberHomeRepetitionsUsed).FromModel(tel);
+                foreach (var tel in patient.Telecoms)
+                {
+                    if (tel.AddressUseKey.GetValueOrDefault() == AddressUseKeys.WorkPlace)
+                        retVal.GetPhoneNumberBusiness(retVal.PhoneNumberBusinessRepetitionsUsed).FromModel(tel);
+                    else
+                        retVal.GetPhoneNumberHome(retVal.PhoneNumberHomeRepetitionsUsed).FromModel(tel);
+                }
             }
 
             // Load relationships

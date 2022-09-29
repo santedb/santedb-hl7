@@ -265,7 +265,7 @@ namespace SanteDB.Messaging.HL7.Utils
                                     break;
 
                                 case "pattern":
-                                    transform = "~*{0}*";
+                                    transform = "~{0}";
                                     break;
 
                                 case "soundex":
@@ -302,7 +302,7 @@ namespace SanteDB.Messaging.HL7.Utils
                         {
                             transform = "{0}";
                         }
-                        retVal.Add(parm.ModelName, transform.Split(',').Select(tx => String.Format(tx, qvalue)));
+                        retVal.Add(parm.ModelName, transform.Split(',').Select(tx => String.Format(tx, qvalue.Replace("*","%"))));
                         break;
 
                     case "date":

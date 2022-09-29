@@ -18,6 +18,7 @@
  * User: fyfej
  * Date: 2022-5-30
  */
+using Newtonsoft.Json;
 using NHapi.Base.Model;
 using NHapi.Base.Parser;
 using NHapi.Model.V25.Message;
@@ -47,6 +48,7 @@ using System.Reflection;
 using System.Security;
 using System.Security.Authentication;
 using System.Security.Principal;
+using System.Xml;
 
 namespace SanteDB.Messaging.HL7.Messages
 {
@@ -362,44 +364,50 @@ namespace SanteDB.Messaging.HL7.Messages
                 rootCause = rootCause.InnerException;
 
             IMessage retVal = null;
-            if (rootCause is DomainStateException)
+            switch(rootCause)
+            {
+                case DomainStateException dse:
                 retVal = this.CreateACK(nackType, request, "AR", "Domain Error");
-            else if (rootCause is PolicyViolationException || rootCause is SecurityException)
-            {
-                retVal = this.CreateACK(nackType, request, "AR", "Security Error");
-            }
-            else if (rootCause is AuthenticationException || rootCause is UnauthorizedAccessException)
-            {
-                retVal = this.CreateACK(nackType, request, "AR", "Unauthorized");
-            }
-            else if (rootCause is Newtonsoft.Json.JsonException ||
-                rootCause is System.Xml.XmlException)
+                    break;
+                case PolicyViolationException pve:
+                case SecurityException se:
+                    retVal = this.CreateACK(nackType, request, "AR", "Security Error");
+                    break;
+                case AuthenticationException ae:
+                case UnauthorizedAccessException uae:
+                    retVal = this.CreateACK(nackType, request, "AR", "Unauthorized");
+                    break;
+                case JsonException je:
+                case XmlException xe:
                 retVal = this.CreateACK(nackType, request, "AR", "Messaging Error");
-            else if (rootCause is DuplicateNameException)
-                retVal = this.CreateACK(nackType, request, "CR", "Duplicate Data");
-            else if (rootCause is FileNotFoundException || rootCause is KeyNotFoundException)
-                retVal = this.CreateACK(nackType, request, "CE", "Data not found");
-            else if (rootCause is DetectedIssueException)
-                retVal = this.CreateACK(nackType, request, "CR", "Business Rule Violation");
-            else if (rootCause is DataPersistenceException)
-            {
-                // Data persistence failed because of D/I/E
-                if (error.InnerException is DetectedIssueException)
-                {
-                    error = error.InnerException;
-                    retVal = this.CreateACK(nackType, request, "CE", "Business Rule Violation");
-                }
-                else
+                    break;
+                case DuplicateNameException dne:
+                    retVal = this.CreateACK(nackType, request, "CR", "Duplicate Data");
+                    break;
+                case FileNotFoundException fnfe:
+                case KeyNotFoundException knfe:
+                    retVal = this.CreateACK(nackType, request, "CE", "Data not found");
+                    break;
+                case DetectedIssueException die:
+                    retVal = this.CreateACK(nackType, request, "CR", "Business Rule Violation");
+                    break;
+                case DataPersistenceException dpe:
                     retVal = this.CreateACK(nackType, request, "CE", "Error committing data");
+                    break;
+                case NotImplementedException nie:
+                    retVal = this.CreateACK(nackType, request, "AR", "Not Implemented");
+                    break;
+                case NotSupportedException nse:
+                    retVal = this.CreateACK(nackType, request, "AR", "Not Supported");
+                    break;
+                case HL7ProcessingException hlpe:
+                case HL7DatatypeProcessingException hdpe:
+                    retVal = this.CreateACK(nackType, request, "AE", "Invalid Message");
+                    break;
+                default:
+                    retVal = this.CreateACK(nackType, request, "AR", "General Error");
+                    break;
             }
-            else if (rootCause is NotImplementedException)
-                retVal = this.CreateACK(nackType, request, "AR", "Not Implemented");
-            else if (rootCause is NotSupportedException)
-                retVal = this.CreateACK(nackType, request, "AR", "Not Supported");
-            else if (rootCause is HL7ProcessingException || error is HL7DatatypeProcessingException)
-                retVal = this.CreateACK(nackType, request, "AE", "Invalid Message");
-            else
-                retVal = this.CreateACK(nackType, request, "AR", "General Error");
 
             var msa = retVal.GetStructure("MSA") as MSA;
             msa.ErrorCondition.Identifier.Value = this.MapErrCode(error);

@@ -18,6 +18,8 @@
  * User: fyfej
  * Date: 2022-5-30
  */
+using SanteDB.Core;
+using SanteDB.Core.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,7 +51,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 }
             }).Where(t => typeof(ISegmentHandler).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface))
             {
-                var instance = Activator.CreateInstance(t) as ISegmentHandler;
+                var instance = ApplicationServiceContext.Current.GetService<IServiceManager>().CreateInjected(t) as ISegmentHandler;
                 s_segmentHandlers.Add(instance.Name, instance);
             }
         }
