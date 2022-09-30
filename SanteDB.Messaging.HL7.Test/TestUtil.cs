@@ -39,9 +39,11 @@ namespace SanteDB.Messaging.HL7.Test
         public static IMessage GetMessage(String messageName)
         {
             string originalVersion = null;
-            using (var s = typeof(TestUtil).Assembly.GetManifestResourceStream($"SanteDB.Messaging.HL7.Test.Resources.{messageName}.txt")) 
+            using (var s = typeof(TestUtil).Assembly.GetManifestResourceStream($"SanteDB.Messaging.HL7.Test.Resources.{messageName}.txt"))
             using (var sw = new StreamReader(s))
+            {
                 return MessageUtils.ParseMessage(sw.ReadToEnd(), out originalVersion);
+            }
         }
 
         /// <summary>

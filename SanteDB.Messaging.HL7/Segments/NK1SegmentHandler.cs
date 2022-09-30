@@ -70,7 +70,10 @@ namespace SanteDB.Messaging.HL7.Segments
             get
             {
                 if (this.m_nextOfKinRelationshipTypes == null)
+                {
                     this.m_nextOfKinRelationshipTypes = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptSetMembers("FamilyMember").Select(c => c.Key.Value).ToArray();
+                }
+
                 return this.m_nextOfKinRelationshipTypes;
             }
         }
@@ -104,9 +107,12 @@ namespace SanteDB.Messaging.HL7.Segments
             {
                 var nk1 = context.GetStructure("NK1", context.GetAll("NK1").Length) as NK1;
                 var person = rel.LoadProperty(o => o.TargetEntity).ResolveManagedTarget() as Person;
-                
+
                 // HACK: This needs to be fixed on sync
-                if (person == null) continue;
+                if (person == null)
+                {
+                    continue;
+                }
 
                 nk1.Relationship.FromModel(rel.LoadProperty(o => o.RelationshipType), RelationshipCodeSystem, false);
 
@@ -119,16 +125,24 @@ namespace SanteDB.Messaging.HL7.Segments
 
                 // Map alternate identifiers
                 foreach (var id in person.LoadCollection<EntityIdentifier>(nameof(Entity.Identifiers)))
+                {
                     if (exportDomains == null || exportDomains.Any(e => e.Key == id.IdentityDomainKey) == true)
+                    {
                         nk1.GetNextOfKinAssociatedPartySIdentifiers(nk1.NextOfKinAssociatedPartySIdentifiersRepetitionsUsed).FromModel(id);
+                    }
+                }
 
                 // Addresses
                 foreach (var addr in person.LoadCollection<EntityAddress>(nameof(Entity.Addresses)))
+                {
                     nk1.GetAddress(nk1.AddressRepetitionsUsed).FromModel(addr);
+                }
 
                 // Names
                 foreach (var en in person.LoadCollection<EntityName>(nameof(Entity.Names)))
+                {
                     nk1.GetName(nk1.NameRepetitionsUsed).FromModel(en);
+                }
 
                 // Date of birth
                 if (person.DateOfBirth.HasValue)
@@ -156,9 +170,13 @@ namespace SanteDB.Messaging.HL7.Segments
                 foreach (var tel in person.LoadCollection<EntityTelecomAddress>(nameof(Entity.Telecoms)))
                 {
                     if (tel.AddressUseKey.GetValueOrDefault() == AddressUseKeys.WorkPlace)
+                    {
                         nk1.GetBusinessPhoneNumber(nk1.BusinessPhoneNumberRepetitionsUsed).FromModel(tel);
+                    }
                     else
+                    {
                         nk1.GetPhoneNumber(nk1.PhoneNumberRepetitionsUsed).FromModel(tel);
+                    }
                 }
 
                 // Contact extension
@@ -183,13 +201,19 @@ namespace SanteDB.Messaging.HL7.Segments
                 // Language of communication
                 var lang = person.LoadCollection(o => o.LanguageCommunication).FirstOrDefault(o => o.IsPreferred);
                 if (lang != null)
+                {
                     nk1.PrimaryLanguage.Identifier.Value = lang.LanguageCode;
+                }
 
                 // Protected?
                 if (ApplicationServiceContext.Current.GetService<IPolicyInformationService>().GetPolicyInstance(person, DataPolicyIdentifiers.RestrictedInformation) != null)
+                {
                     nk1.ProtectionIndicator.Value = "Y";
+                }
                 else
+                {
                     nk1.ProtectionIndicator.Value = "N";
+                }
 
                 retVal.Add(nk1);
             }
@@ -243,15 +267,17 @@ namespace SanteDB.Messaging.HL7.Segments
                         throw new HL7ProcessingException(e.Message, "NK1", nk1Segment.SetIDNK1.Value, 33, 3, e);
                     }
                     Guid idguid = Guid.Empty;
-                    int tr = 0;
                     Person found = null;
-                    if (authority.Key == this.m_configuration.LocalAuthority.Key || 
+                    if (authority.Key == this.m_configuration.LocalAuthority.Key ||
                         authority.DomainName == this.m_configuration.LocalAuthority.DomainName)
                     {
                         found = personService.Get(Guid.Parse(id.IDNumber.Value), null, AuthenticationContext.SystemPrincipal);
                     }
                     else if (authority?.IsUnique == true)
+                    {
                         found = personService.Query(o => o.Identifiers.Any(i => i.Value == idnumber && i.IdentityDomain.Key == authority.Key), AuthenticationContext.SystemPrincipal).AsResultSet().Take(1).FirstOrDefault();
+                    }
+
                     if (found != null)
                     {
                         retVal = found;
@@ -262,14 +288,16 @@ namespace SanteDB.Messaging.HL7.Segments
                     }
                 }
 
-               
+
                 // Relationship type
                 fieldNo = 3;
                 if (!nk1Segment.Relationship.IsEmpty())
+                {
                     retValRelation.RelationshipTypeKey = nk1Segment.Relationship.ToModel(RelationshipCodeSystem)?.Key;
+                }
 
                 // Some relationships only allow one person, we should update them
-                var existingNokRel = patient.LoadProperty(o=>o.Relationships).FirstOrDefault(o => o.RelationshipTypeKey == retValRelation.RelationshipTypeKey);
+                var existingNokRel = patient.LoadProperty(o => o.Relationships).FirstOrDefault(o => o.RelationshipTypeKey == retValRelation.RelationshipTypeKey);
                 if (existingNokRel != null)
                 {
                     retValRelation = existingNokRel;
@@ -288,35 +316,49 @@ namespace SanteDB.Messaging.HL7.Segments
 
                         // IF the person is a PATIENT and not a PERSON we will not update them - too dangerous - ignore the NOK entry
                         if (retVal is Patient && !foundByKey)
+                        {
                             return new IdentifiedData[0];
+                        }
                     }
                 }
 
                 fieldNo = 2;
                 // Names
                 if (nk1Segment.NameRepetitionsUsed > 0)
+                {
                     foreach (var itm in nk1Segment.GetName())
                     {
                         var model = itm.ToModel();
-                        var existing = retVal.LoadProperty(o=>o.Names).FirstOrDefault(o => o.NameUseKey == model.NameUseKey);
+                        var existing = retVal.LoadProperty(o => o.Names).FirstOrDefault(o => o.NameUseKey == model.NameUseKey);
                         if (existing == null)
+                        {
                             retVal.Names.Add(model);
+                        }
                         else
+                        {
                             existing.CopyObjectData(model);
+                        }
                     }
+                }
 
                 // Address
                 fieldNo = 4;
                 if (nk1Segment.AddressRepetitionsUsed > 0)
+                {
                     foreach (var itm in nk1Segment.GetAddress())
                     {
                         var model = itm.ToModel();
-                        var existing = retVal.LoadProperty(o=>o.Addresses).FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
+                        var existing = retVal.LoadProperty(o => o.Addresses).FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
                         if (existing == null)
+                        {
                             retVal.Addresses.Add(model);
+                        }
                         else
+                        {
                             existing.CopyObjectData(model);
+                        }
                     }
+                }
 
                 // Phone numbers
                 fieldNo = 5;
@@ -324,16 +366,22 @@ namespace SanteDB.Messaging.HL7.Segments
                 foreach (var itm in telecoms)
                 {
                     var model = itm.ToModel();
-                    var existing = retVal.LoadProperty(o=>o.Telecoms).FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
+                    var existing = retVal.LoadProperty(o => o.Telecoms).FirstOrDefault(o => o.AddressUseKey == model.AddressUseKey);
                     if (existing == null)
+                    {
                         retVal.Telecoms.Add(model);
+                    }
                     else
+                    {
                         existing.CopyObjectData(model);
+                    }
                 }
 
                 fieldNo = 15;
                 if (!nk1Segment.AdministrativeSex.IsEmpty())
+                {
                     retVal.GenderConcept = nk1Segment.AdministrativeSex.ToConcept(AdministrativeGenderCodeSystem);
+                }
 
                 // Organization
                 fieldNo = 13;
@@ -354,7 +402,7 @@ namespace SanteDB.Messaging.HL7.Segments
                                     Identifiers = new List<EntityIdentifier>() { id },
                                     Names = new List<EntityName>() { new EntityName(NameUseKeys.Assigned, xon.OrganizationName.Value) }
                                 };
-                                retVal.LoadProperty(o=>o.Relationships).Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization)
+                                retVal.LoadProperty(o => o.Relationships).Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization)
                                 {
                                     ClassificationKey = RelationshipClassKeys.ContainedObjectLink
                                 });
@@ -384,7 +432,9 @@ namespace SanteDB.Messaging.HL7.Segments
                         });
                     }
                     else
+                    {
                         existingConRole.RelationshipRole = nk1Segment.ContactRole.ToModel(ContactRoleRelationship, true);
+                    }
                 }
 
                 fieldNo = 16;
@@ -421,10 +471,12 @@ namespace SanteDB.Messaging.HL7.Segments
 
                 fieldNo = 20;
                 if (!nk1Segment.PrimaryLanguage.IsEmpty())
+                {
                     retVal.LanguageCommunication = new List<PersonLanguageCommunication>()
                     {
                         new PersonLanguageCommunication(nk1Segment.PrimaryLanguage.Identifier.Value.ToLower(), true)
                     };
+                }
 
                 // Privacy code
                 fieldNo = 23;
@@ -432,9 +484,13 @@ namespace SanteDB.Messaging.HL7.Segments
                 {
                     var pip = ApplicationServiceContext.Current.GetService<IDataPersistenceService<SecurityPolicy>>();
                     if (nk1Segment.ProtectionIndicator.Value == "Y")
+                    {
                         retVal.AddPolicy(DataPolicyIdentifiers.RestrictedInformation);
+                    }
                     else if (nk1Segment.ProtectionIndicator.Value == "N")
+                    {
                         retVal.Policies.Clear();
+                    }
                     else
                     {
                         this.m_tracer.TraceError($"Protection indicator {nk1Segment.ProtectionIndicator.Value} is invalid");
@@ -460,9 +516,13 @@ namespace SanteDB.Messaging.HL7.Segments
                 }
 
                 if (!context.Contains(retVal))
+                {
                     return new IdentifiedData[] { retVal };
+                }
                 else
+                {
                     return new IdentifiedData[0];
+                }
             }
             catch (HL7ProcessingException) // Just re-throw
             {

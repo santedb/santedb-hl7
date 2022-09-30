@@ -20,10 +20,8 @@
  */
 using NHapi.Base.Model;
 using NHapi.Model.V25.Segment;
-using SanteDB.Core.Model.Query;
 using SanteDB.Messaging.HL7.ParameterMap;
 using SanteDB.Messaging.HL7.TransportProtocol;
-using System;
 using System.Collections;
 using System.Collections.Specialized;
 using System.Linq.Expressions;

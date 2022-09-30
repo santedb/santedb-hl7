@@ -106,7 +106,9 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                 catch (Exception e)
                 {
                     if (this.m_run)
+                    {
                         this.m_traceSource.TraceEvent(EventLevel.Error, "Error on HL7 worker {0} - {1}", this.m_listener.LocalEndpoint, e);
+                    }
                 }
             }
         }
@@ -136,7 +138,9 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                         // Read LLP head byte
                         int llpByte = stream.ReadByte();
                         if (llpByte != START_TX) // first byte must be HT
+                        {
                             throw new InvalidOperationException("Invalid LLP First Byte");
+                        }
 
                         // Standard stream stuff, read until the stream is exhausted
                         StringBuilder messageData = new StringBuilder();
@@ -146,7 +150,9 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                         while (!receivedEOF)
                         {
                             if (DateTime.Now.Subtract(lastReceive) > this.m_timeout)
+                            {
                                 throw new TimeoutException("Data not received in the specified amount of time. Increase the timeout or check the network connection");
+                            }
 
                             if (!stream.DataAvailable)
                             {
@@ -159,19 +165,27 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 
                             // Need to check for CR?
                             if (scanForCr)
+                            {
                                 receivedEOF = buffer[0] == END_TXNL;
+                            }
                             else
                             {
                                 // Look for FS
                                 int fsPos = Array.IndexOf(buffer, (byte)END_TX);
 
                                 if (fsPos == -1) // not found
+                                {
                                     continue;
+                                }
                                 else if (fsPos < buffer.Length - 1) // more room to read
+                                {
                                     receivedEOF = buffer[fsPos + 1] == END_TXNL;
+                                }
                                 else
+                                {
                                     scanForCr = true; // Cannot check the end of message for CR because there is no more room in the message buffer
-                                                      // so need to check on the next loop
+                                }
+                                // so need to check on the next loop
                             }
                         }
 
@@ -185,9 +199,12 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                         Uri localEndpoint = new Uri(String.Format("llp://{0}:{1}", localEp.Address, localEp.Port));
                         Uri remoteEndpoint = new Uri(String.Format("llp://{0}:{1}", remoteEp.Address, remoteEp.Port));
 
-                        foreach (var messagePart in messageData.ToString().Split((char) END_TX))
+                        foreach (var messagePart in messageData.ToString().Split((char)END_TX))
                         {
-                            if (messagePart == "\r") continue;
+                            if (messagePart == "\r")
+                            {
+                                continue;
+                            }
 
                             try
                             {
@@ -250,7 +267,9 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                         }
 
                         if (!stream.DataAvailable)
+                        {
                             return;
+                        }
                     }
                 }
                 catch (Exception e)
@@ -269,11 +288,13 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         /// <summary>
         /// Message received
         /// </summary>
-        /// <param name="message"></param>
+        /// <param name="messageArgs">The received message arguments</param>
         protected void OnMessageReceived(Hl7MessageReceivedEventArgs messageArgs)
         {
             if (this.MessageReceived != null)
+            {
                 this.MessageReceived(this, messageArgs);
+            }
         }
 
         /// <summary>

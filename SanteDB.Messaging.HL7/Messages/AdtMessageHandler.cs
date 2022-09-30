@@ -21,8 +21,6 @@
 using NHapi.Base.Model;
 using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
-using SanteDB.Core;
-using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Audit;
 using SanteDB.Core.Model.Collection;
@@ -32,7 +30,6 @@ using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -145,7 +142,9 @@ namespace SanteDB.Messaging.HL7.Messages
                     throw new ArgumentNullException(nameof(updateBundle), this.m_localizationService.GetString("error.type.ArgumentNullException.missingPatient"));
                 }
                 else if (!patient.Key.HasValue)
+                {
                     throw new InvalidOperationException("Update can only be performed on existing patients. Ensure that a unique identifier exists on the update record");
+                }
 
                 updateBundle = this.m_bundleService.Save(updateBundle);
 

@@ -214,7 +214,7 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 IPrincipal certificatePrincipal = ApplicationServiceContext.Current.GetService<ICertificateIdentityProvider>()?.Authenticate(auth.AuthorizationToken);
 
-                if(certificatePrincipal == null)
+                if (certificatePrincipal == null)
                 {
                     throw new InvalidOperationException("In order to use node authentication with X509 certificates - there must be a CertificateIdentityProvider configured");
                 }
@@ -306,7 +306,10 @@ namespace SanteDB.Messaging.HL7.Messages
 
             // Pricipal
             if (principal != null)
+            {
                 return AuthenticationContext.EnterContext(principal);
+            }
+
             return AuthenticationContext.EnterContext(AuthenticationContext.AnonymousPrincipal);
         }
 
@@ -321,29 +324,50 @@ namespace SanteDB.Messaging.HL7.Messages
             while (e != null)
             {
                 if (e is ConstraintException)
+                {
                     errCode = "101";
+                }
                 else if (e is HL7DatatypeProcessingException)
+                {
                     errCode = "102";
+                }
                 else if (e is HL7ProcessingException)
+                {
                     errCode = "199";
+                }
                 else if (e is DuplicateNameException)
+                {
                     errCode = "205";
+                }
                 else if (e is DataException || e is DetectedIssueException)
+                {
                     errCode = "207";
+                }
                 else if (e is VersionNotFoundException)
+                {
                     errCode = "203";
+                }
                 else if (e is NotImplementedException)
+                {
                     errCode = "200";
+                }
                 else if (e is KeyNotFoundException || e is FileNotFoundException)
+                {
                     errCode = "204";
+                }
                 else if (e is SecurityException)
+                {
                     errCode = "901";
+                }
 
                 e = e.InnerException;
             }
 
             if (String.IsNullOrEmpty(errCode))
+            {
                 errCode = "207";
+            }
+
             return errCode;
         }
 
@@ -357,17 +381,21 @@ namespace SanteDB.Messaging.HL7.Messages
         {
             // Extract TIE into real cause
             while (error is TargetInvocationException)
+            {
                 error = error.InnerException;
+            }
 
             var rootCause = error;
             while (rootCause.InnerException != null)
+            {
                 rootCause = rootCause.InnerException;
+            }
 
             IMessage retVal = null;
-            switch(rootCause)
+            switch (rootCause)
             {
                 case DomainStateException dse:
-                retVal = this.CreateACK(nackType, request, "AR", "Domain Error");
+                    retVal = this.CreateACK(nackType, request, "AR", "Domain Error");
                     break;
                 case PolicyViolationException pve:
                 case SecurityException se:
@@ -379,7 +407,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     break;
                 case JsonException je:
                 case XmlException xe:
-                retVal = this.CreateACK(nackType, request, "AR", "Messaging Error");
+                    retVal = this.CreateACK(nackType, request, "AR", "Messaging Error");
                     break;
                 case DuplicateNameException dne:
                     retVal = this.CreateACK(nackType, request, "CR", "Duplicate Data");
@@ -421,7 +449,9 @@ namespace SanteDB.Messaging.HL7.Messages
                 {
                     var err = retVal.GetStructure("ERR", erc) as ERR;
                     if (retVal.IsRepeating("ERR"))
+                    {
                         erc++;
+                    }
 
                     err.HL7ErrorCode.Identifier.Value = "207";
                     err.Severity.Value = itm.Priority == Core.BusinessRules.DetectedIssuePriorityType.Error ? "E" : itm.Priority == Core.BusinessRules.DetectedIssuePriorityType.Warning ? "W" : "I";
@@ -435,7 +465,9 @@ namespace SanteDB.Messaging.HL7.Messages
                 {
                     var err = retVal.GetStructure("ERR", erc) as ERR;
                     if (retVal.IsRepeating("ERR"))
+                    {
                         erc++;
+                    }
 
                     err.HL7ErrorCode.Identifier.Value = this.MapErrCode(ex);
                     err.Severity.Value = "E";
@@ -451,7 +483,9 @@ namespace SanteDB.Messaging.HL7.Messages
 
                         var ihle = (hle.InnerException as HL7DatatypeProcessingException)?.InnerException as HL7DatatypeProcessingException; // Nested DTE
                         if (ihle != null)
+                        {
                             erl.SubComponentNumber.Value = ihle.Component.ToString();
+                        }
                     }
 
                     ex = ex.InnerException;
@@ -462,8 +496,8 @@ namespace SanteDB.Messaging.HL7.Messages
             var ocomps = PipeParser.Encode(retVal.GetStructure("MSH") as MSH, new EncodingCharacters('|', "^~\\&")).Split('|');
 
             AuditUtil.AuditNetworkRequestFailure(error, receiveData.ReceiveEndpoint,
-                Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => icomps[o-1]),
-                Enumerable.Range(1, ocomps.Length).ToDictionary(o => $"MSA-{o}", o => ocomps[o-1]));
+                Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => icomps[o - 1]),
+                Enumerable.Range(1, ocomps.Length).ToDictionary(o => $"MSA-{o}", o => ocomps[o - 1]));
 
             return retVal;
         }
@@ -480,7 +514,10 @@ namespace SanteDB.Messaging.HL7.Messages
             var retVal = Activator.CreateInstance(ackType) as IMessage;
             (retVal.GetStructure("MSH") as MSH).SetDefault(request.GetStructure("MSH") as MSH);
             if ((request.GetStructure("MSH") as MSH).VersionID.VersionID.Value == "2.5")
+            {
                 (retVal.GetStructure("SFT") as SFT).SetDefault();
+            }
+
             var msa = retVal.GetStructure("MSA") as MSA;
             msa.MessageControlID.Value = (request.GetStructure("MSH") as MSH).MessageControlID.Value;
             msa.AcknowledgmentCode.Value = ackCode;

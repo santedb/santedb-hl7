@@ -26,7 +26,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
 
 namespace SanteDB.Messaging.HL7.Configuration.Feature
 {
@@ -96,7 +95,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
         public FeatureInstallState QueryState(SanteDBConfiguration configuration)
         {
             var hl7Config = this.m_configuration = configuration.GetSection<Hl7ConfigurationSection>();
-            if(this.m_configuration == null)
+            if (this.m_configuration == null)
             {
                 this.m_configuration = new Hl7ConfigurationSection()
                 {
@@ -176,7 +175,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
             }
 
             // Application configuration section
-            var appSection = configuration.GetSection<ApplicationServiceContextConfigurationSection>().ServiceProviders.Any(s=>s.Type == typeof(HL7MessageHandler));
+            var appSection = configuration.GetSection<ApplicationServiceContextConfigurationSection>().ServiceProviders.Any(s => s.Type == typeof(HL7MessageHandler));
             return appSection && hl7Config != null ? FeatureInstallState.Installed : hl7Config == null || !appSection ? FeatureInstallState.PartiallyInstalled : FeatureInstallState.NotInstalled;
         }
     }
@@ -205,9 +204,9 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
         /// </summary>
         public string Description => "Removes the HL7 message handler, and registers the HL7 message endpoints configured in the panel.";
 
-           /// <summary>
-           /// Gets the feature that hosts this task
-           /// </summary>
+        /// <summary>
+        /// Gets the feature that hosts this task
+        /// </summary>
         public IFeature Feature { get; }
 
         /// <summary>
@@ -240,7 +239,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
                 configuration.AddSection(this.m_configuration);
             }
             var services = configuration.GetSection<ApplicationServiceContextConfigurationSection>().ServiceProviders;
-            if(!services.Any(o=>o.Type == typeof(HL7MessageHandler)))
+            if (!services.Any(o => o.Type == typeof(HL7MessageHandler)))
             {
                 services.Add(new TypeReferenceConfiguration(typeof(HL7MessageHandler)));
             }
@@ -302,7 +301,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
 
             // Register the HL7 messaging service
             var services = configuration.GetSection<ApplicationServiceContextConfigurationSection>().ServiceProviders;
-            if(!services.Any(s=>s.Type == typeof(HL7MessageHandler)))
+            if (!services.Any(s => s.Type == typeof(HL7MessageHandler)))
             {
                 services.Add(new TypeReferenceConfiguration(typeof(HL7MessageHandler)));
             }

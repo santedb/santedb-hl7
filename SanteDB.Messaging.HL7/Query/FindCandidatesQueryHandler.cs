@@ -24,12 +24,11 @@ using NHapi.Model.V25.Datatype;
 using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
-using SanteDB.Core.Model.DataTypes;
-using SanteDB.Core.Model.Query;
-using SanteDB.Core.Model.Roles;
-using SanteDB.Core.Security;
-using SanteDB.Core.Services;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Matching;
+using SanteDB.Core.Model.DataTypes;
+using SanteDB.Core.Model.Roles;
+using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Messaging.HL7.ParameterMap;
@@ -39,10 +38,9 @@ using SanteDB.Messaging.HL7.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Linq.Expressions;
-using SanteDB.Core.Diagnostics;
-using System.Collections.Specialized;
 
 namespace SanteDB.Messaging.HL7.Query
 {
@@ -79,7 +77,11 @@ namespace SanteDB.Messaging.HL7.Query
         public virtual IMessage AppendQueryResult(IEnumerable results, Expression queryDefinition, IMessage currentResponse, Hl7MessageReceivedEventArgs evt, int offset = 0)
         {
             var patients = results.OfType<Patient>();
-            if (patients.Count() == 0) return currentResponse;
+            if (patients.Count() == 0)
+            {
+                return currentResponse;
+            }
+
             var retVal = currentResponse as RSP_K21;
 
             var pidHandler = SegmentHandlers.GetSegmentHandler("PID");
@@ -100,7 +102,9 @@ namespace SanteDB.Messaging.HL7.Query
                 returnDomains.Add(authority);
             }
             if (returnDomains.Count == 0)
+            {
                 returnDomains = null;
+            }
 
             // Process results
             int i = offset + 1;
@@ -169,6 +173,7 @@ namespace SanteDB.Messaging.HL7.Query
             // Query parameters
             var queryElementParsed = MessageUtils.ParseQueryElement(qpd.GetField(3).OfType<Varies>(), map, algorithm, strength);
             foreach (var itm in queryElementParsed.AllKeys)
+            {
                 try
                 {
                     Array.ForEach(queryElementParsed.GetValues(itm), o => retVal.Add(itm, o));
@@ -181,6 +186,7 @@ namespace SanteDB.Messaging.HL7.Query
                         param = "query parameter"
                     }), "QPD", "1", 3, 0, e);
                 }
+            }
 
             // Return domains
             foreach (var rt in qpd.GetField(8).OfType<Varies>())
@@ -192,9 +198,13 @@ namespace SanteDB.Messaging.HL7.Query
                     var authority = rid.AssigningAuthority.ToModel();
 
                     if (authority.Key == this.m_configuration.LocalAuthority.Key)
+                    {
                         retVal.Add("_id", rid.IDNumber.Value);
+                    }
                     else
+                    {
                         retVal.Add($"identifier[{authority.DomainName}]", "!null");
+                    }
                 }
                 catch (Exception e)
                 {

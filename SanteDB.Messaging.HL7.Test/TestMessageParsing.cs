@@ -23,12 +23,12 @@ using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
 using NUnit.Framework;
 using SanteDB.Core;
-using SanteDB.Core.Model;
 using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.Entities;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Model.Security;
 using SanteDB.Core.Security;
+using SanteDB.Core.Security.Services;
 using SanteDB.Core.Services;
 using SanteDB.Core.TestFramework;
 using SanteDB.Messaging.HL7.Messages;
@@ -36,11 +36,6 @@ using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using NHapi.Model.V25.Message;
-using SanteDB.Core.Model;
-using SanteDB.Core.Model.Entities;
-using NUnit.Framework;
-using SanteDB.Core.Security.Services;
 
 namespace SanteDB.Messaging.HL7.Test
 {
@@ -58,7 +53,7 @@ namespace SanteDB.Messaging.HL7.Test
         public void Initialize()
         {
             // Force load of the DLL
-            var p = FirebirdSql.Data.FirebirdClient.FbCharset.Ascii;
+            FirebirdSql.Data.FirebirdClient.FbCharset.Ascii.ToString();
             TestApplicationContext.TestAssembly = typeof(TestMessageParsing).Assembly;
             TestApplicationContext.Initialize(TestContext.CurrentContext.TestDirectory);
 
@@ -73,7 +68,7 @@ namespace SanteDB.Messaging.HL7.Test
             AuthenticationContext.EnterSystemContext();
 
             // Create good health hospital if it does not already exist
-            if(!placeService.Find(o => o.Names.Any(n => n.Component.Any(c => c.Value == "Good Health Hospital"))).Any())
+            if (!placeService.Find(o => o.Names.Any(n => n.Component.Any(c => c.Value == "Good Health Hospital"))).Any())
             {
                 placeService.Insert(new Place()
                 {
@@ -119,7 +114,7 @@ namespace SanteDB.Messaging.HL7.Test
                 {
                     new Core.Model.DataTypes.AssigningAuthority()
                     {
-                        AssigningApplicationKey = app.Key, 
+                        AssigningApplicationKey = app.Key,
                         Reliability = Core.Model.DataTypes.IdentifierReliability.Authoritative
                     }
                 }

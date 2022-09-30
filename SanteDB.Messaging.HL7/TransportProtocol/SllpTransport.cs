@@ -20,10 +20,6 @@
  */
 using SanteDB.Core;
 using SanteDB.Core.Model.Audit;
-using SanteDB.Core.Configuration;
-using SanteDB.Core.Diagnostics;
-using SanteDB.Core.Security;
-using SanteDB.Core.Security.Audit;
 using SanteDB.Core.Security.Configuration;
 using SanteDB.Core.Services;
 using System;
@@ -45,326 +41,350 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
     /// Secure LLP transport
     /// </summary>
     [Description("ER7 over Secure LLP")]
-	public class SllpTransport : LlpTransport
-	{
-		/// <summary>
-		/// SLLP configuration object
-		/// </summary>
+    public class SllpTransport : LlpTransport
+    {
+        /// <summary>
+        /// SLLP configuration object
+        /// </summary>
         [XmlType(nameof(SllpConfigurationObject), Namespace = "http://santedb.org/configuration")]
-		public class SllpConfigurationObject
-		{
+        public class SllpConfigurationObject
+        {
 
-			// Require client certs
-			private bool m_requireClientCert;
+            // Require client certs
+            private bool m_requireClientCert;
 
             /// <summary>
             /// Check CRL
             /// </summary>
             public SllpConfigurationObject()
-			{
-				this.CheckCrl = true;
-				this.ServerCertificate = new X509ConfigurationElement();
-			}
+            {
+                this.CheckCrl = true;
+                this.ServerCertificate = new X509ConfigurationElement();
+            }
 
             /// <summary>
             /// Gets the server certificate
             /// </summary>
             [XmlElement("serverCertificate")]
-			[DisplayName("Server Certificate")]
-			[TypeConverter(typeof(ExpandableObjectConverter))]
-			public X509ConfigurationElement ServerCertificate { get; set; }
+            [DisplayName("Server Certificate")]
+            [TypeConverter(typeof(ExpandableObjectConverter))]
+            public X509ConfigurationElement ServerCertificate { get; set; }
 
             /// <summary>
             /// Gets the server certificate
             /// </summary>
             [XmlElement("clientAuthorityCertificate")]
-			[DisplayName("Client CA Certificate")]
-			[TypeConverter(typeof(ExpandableObjectConverter))]
-			public X509ConfigurationElement ClientCaCertificate { get; set; }
+            [DisplayName("Client CA Certificate")]
+            [TypeConverter(typeof(ExpandableObjectConverter))]
+            public X509ConfigurationElement ClientCaCertificate { get; set; }
 
             /// <summary>
             /// Check revocation status
             /// </summary>
             [XmlAttribute("checkCrl")]
-			[DisplayName("Check CRL")]
-			public bool CheckCrl { get; set; }
+            [DisplayName("Check CRL")]
+            public bool CheckCrl { get; set; }
 
-			/// <summary>
-			/// Enabling of the client cert negotiate
-			/// </summary>
-			[Description("Client Authentication")]
-			[XmlAttribute("requireClientCert")]
-			public bool EnableClientCertNegotiation
-			{
-				get => this.m_requireClientCert;
-				set
-				{
-					this.m_requireClientCert = value;
-					if(value && this.ClientCaCertificate == null)
+            /// <summary>
+            /// Enabling of the client cert negotiate
+            /// </summary>
+            [Description("Client Authentication")]
+            [XmlAttribute("requireClientCert")]
+            public bool EnableClientCertNegotiation
+            {
+                get => this.m_requireClientCert;
+                set
+                {
+                    this.m_requireClientCert = value;
+                    if (value && this.ClientCaCertificate == null)
                     {
-						this.ClientCaCertificate = new X509ConfigurationElement();
-						this.ClientCaCertificate.ValidationOnly = true;
+                        this.ClientCaCertificate = new X509ConfigurationElement();
+                        this.ClientCaCertificate.ValidationOnly = true;
                     }
-				}
-			}
-		}
+                }
+            }
+        }
 
-		// SLLP configuration object
-		private SllpConfigurationObject m_configuration = new SllpConfigurationObject();
+        // SLLP configuration object
+        private SllpConfigurationObject m_configuration = new SllpConfigurationObject();
 
-		/// <summary>
-		/// Protocol name
-		/// </summary>
-		public override string ProtocolName
-		{
-			get
-			{
-				return "sllp";
-			}
-		}
+        /// <summary>
+        /// Protocol name
+        /// </summary>
+        public override string ProtocolName
+        {
+            get
+            {
+                return "sllp";
+            }
+        }
 
-		/// <summary>
-		/// Start the transport
-		/// </summary>
-		public override void Start(IPEndPoint bind, ServiceHandler handler)
-		{
-			this.m_timeout = new TimeSpan(0,0,0,0, handler.Definition.ReceiveTimeout);
-			this.m_listener = new TcpListener(bind);
-			this.m_listener.Start();
-			this.m_traceSource.TraceInfo("SLLP Transport bound to {0}", bind);
+        /// <summary>
+        /// Start the transport
+        /// </summary>
+        public override void Start(IPEndPoint bind, ServiceHandler handler)
+        {
+            this.m_timeout = new TimeSpan(0, 0, 0, 0, handler.Definition.ReceiveTimeout);
+            this.m_listener = new TcpListener(bind);
+            this.m_listener.Start();
+            this.m_traceSource.TraceInfo("SLLP Transport bound to {0}", bind);
 
             // Setup certificate
             this.m_configuration = handler.Definition.Configuration as SllpConfigurationObject;
-			if (this.m_configuration.ServerCertificate == null)
-				throw new InvalidOperationException("Cannot start the secure LLP listener without a server certificate");
+            if (this.m_configuration.ServerCertificate == null)
+            {
+                throw new InvalidOperationException("Cannot start the secure LLP listener without a server certificate");
+            }
 
-			while (m_run) // run the service
-			{
-				var client = this.m_listener.AcceptTcpClient();
+            while (m_run) // run the service
+            {
+                var client = this.m_listener.AcceptTcpClient();
                 ApplicationServiceContext.Current.GetService<IThreadPoolService>().QueueUserWorkItem(OnReceiveMessage, client);
 
             }
         }
 
-		/// <summary>
-		/// Validation for certificates
-		/// </summary>
-		private bool RemoteCertificateValidation(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-		{
-			// First Validate the chain
+        /// <summary>
+        /// Validation for certificates
+        /// </summary>
+        private bool RemoteCertificateValidation(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            // First Validate the chain
 #if DEBUG
-			if (certificate != null)
-				this.m_traceSource.TraceInfo("Received client certificate with subject {0}", certificate.Subject);
-			if (chain != null)
-			{
-				this.m_traceSource.TraceInfo("Client certificate is chained with {0}", chain.ChainElements.Count);
+            if (certificate != null)
+            {
+                this.m_traceSource.TraceInfo("Received client certificate with subject {0}", certificate.Subject);
+            }
 
-				foreach (var el in chain.ChainElements)
-					this.m_traceSource.TraceInfo("\tChain Element : {0}", el.Certificate.Subject);
-			}
-			else
-			{
-				this.m_traceSource.TraceEvent(EventLevel.Warning, "Didn't get a chain, so I'm making my own");
-				chain = new X509Chain(true);
-				X509Certificate2 cert2 = new X509Certificate2(certificate.GetRawCertData());
-				chain.Build(cert2);
-			}
-			if (sslPolicyErrors != SslPolicyErrors.None)
-			{
-				this.m_traceSource.TraceEvent(EventLevel.Error,  "SSL Policy Error : {0}", sslPolicyErrors);
-			}
+            if (chain != null)
+            {
+                this.m_traceSource.TraceInfo("Client certificate is chained with {0}", chain.ChainElements.Count);
+
+                foreach (var el in chain.ChainElements)
+                {
+                    this.m_traceSource.TraceInfo("\tChain Element : {0}", el.Certificate.Subject);
+                }
+            }
+            else
+            {
+                this.m_traceSource.TraceEvent(EventLevel.Warning, "Didn't get a chain, so I'm making my own");
+                chain = new X509Chain(true);
+                X509Certificate2 cert2 = new X509Certificate2(certificate.GetRawCertData());
+                chain.Build(cert2);
+            }
+            if (sslPolicyErrors != SslPolicyErrors.None)
+            {
+                this.m_traceSource.TraceEvent(EventLevel.Error, "SSL Policy Error : {0}", sslPolicyErrors);
+            }
 
 #endif
 
-			if (certificate == null || chain == null)
-				return !this.m_configuration.EnableClientCertNegotiation;
-			else
-			{
-				bool isValid = false;
-				foreach (var cer in chain.ChainElements)
-				{
-					if (cer.Certificate.Thumbprint == this.m_configuration.ClientCaCertificate.Certificate.Thumbprint)
-						isValid = true;
-				}
-				if (!isValid)
-					this.m_traceSource.TraceEvent(EventLevel.Error,  "Certification authority from the supplied certificate doesn't match the expected thumbprint of the CA");
-				foreach (var stat in chain.ChainStatus)
-					this.m_traceSource.TraceEvent(EventLevel.Warning, "Certificate chain validation error: {0}", stat.StatusInformation);
-				//isValid &= chain.ChainStatus.Length == 0;
-				return isValid;
-			}
-		}
+            if (certificate == null || chain == null)
+            {
+                return !this.m_configuration.EnableClientCertNegotiation;
+            }
+            else
+            {
+                bool isValid = false;
+                foreach (var cer in chain.ChainElements)
+                {
+                    if (cer.Certificate.Thumbprint == this.m_configuration.ClientCaCertificate.Certificate.Thumbprint)
+                    {
+                        isValid = true;
+                    }
+                }
+                if (!isValid)
+                {
+                    this.m_traceSource.TraceEvent(EventLevel.Error, "Certification authority from the supplied certificate doesn't match the expected thumbprint of the CA");
+                }
 
-		/// <summary>
-		/// Receive a message
-		/// </summary>
-		protected override void OnReceiveMessage(object client)
-		{
-			TcpClient tcpClient = client as TcpClient;
-			SslStream stream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(RemoteCertificateValidation));
-			try
-			{
-				// Setup local and remote receive endpoint data for auditing
-				var localEp = tcpClient.Client.LocalEndPoint as IPEndPoint;
-				var remoteEp = tcpClient.Client.RemoteEndPoint as IPEndPoint;
-				Uri localEndpoint = new Uri(String.Format("sllp://{0}:{1}", localEp.Address, localEp.Port));
-				Uri remoteEndpoint = new Uri(String.Format("sllp://{0}:{1}", remoteEp.Address, remoteEp.Port));
-				this.m_traceSource.TraceInfo("Accepted TCP connection from {0} > {1}", remoteEndpoint, localEndpoint);
+                foreach (var stat in chain.ChainStatus)
+                {
+                    this.m_traceSource.TraceEvent(EventLevel.Warning, "Certificate chain validation error: {0}", stat.StatusInformation);
+                }
+                //isValid &= chain.ChainStatus.Length == 0;
+                return isValid;
+            }
+        }
 
-				stream.AuthenticateAsServer(this.m_configuration.ServerCertificate.Certificate, this.m_configuration.EnableClientCertNegotiation, System.Security.Authentication.SslProtocols.Tls, this.m_configuration.CheckCrl);
+        /// <summary>
+        /// Receive a message
+        /// </summary>
+        protected override void OnReceiveMessage(object client)
+        {
+            TcpClient tcpClient = client as TcpClient;
+            SslStream stream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(RemoteCertificateValidation));
+            try
+            {
+                // Setup local and remote receive endpoint data for auditing
+                var localEp = tcpClient.Client.LocalEndPoint as IPEndPoint;
+                var remoteEp = tcpClient.Client.RemoteEndPoint as IPEndPoint;
+                Uri localEndpoint = new Uri(String.Format("sllp://{0}:{1}", localEp.Address, localEp.Port));
+                Uri remoteEndpoint = new Uri(String.Format("sllp://{0}:{1}", remoteEp.Address, remoteEp.Port));
+                this.m_traceSource.TraceInfo("Accepted TCP connection from {0} > {1}", remoteEndpoint, localEndpoint);
 
-				// Now read to a string
-				NHapi.Base.Parser.PipeParser parser = new NHapi.Base.Parser.PipeParser();
+                stream.AuthenticateAsServer(this.m_configuration.ServerCertificate.Certificate, this.m_configuration.EnableClientCertNegotiation, System.Security.Authentication.SslProtocols.Tls, this.m_configuration.CheckCrl);
 
-				DateTime lastReceive = DateTime.Now;
+                // Now read to a string
+                NHapi.Base.Parser.PipeParser parser = new NHapi.Base.Parser.PipeParser();
 
-				while (DateTime.Now.Subtract(lastReceive) < this.m_timeout)
-				{
-					int llpByte = 0;
-					// Read LLP head byte
-					try
-					{
-						llpByte = stream.ReadByte();
-					}
-					catch (SocketException)
-					{
-						break;
-					}
+                DateTime lastReceive = DateTime.Now;
 
-					if (llpByte != START_TX) // first byte must be HT
-					{
-						this.m_traceSource.TraceEvent(EventLevel.Warning, "Invalid LLP First Byte expected 0x{0:x} got 0x{1:x} from {2}", START_TX, llpByte, remoteEndpoint);
-						break;
-					}
-					//                        throw new InvalidOperationException("Invalid LLP First Byte");
+                while (DateTime.Now.Subtract(lastReceive) < this.m_timeout)
+                {
+                    int llpByte = 0;
+                    // Read LLP head byte
+                    try
+                    {
+                        llpByte = stream.ReadByte();
+                    }
+                    catch (SocketException)
+                    {
+                        break;
+                    }
 
-					// Standard stream stuff, read until the stream is exhausted
-					StringBuilder messageData = new StringBuilder();
-					byte[] buffer = new byte[1024];
-					bool receivedEOF = false, scanForCr = false;
+                    if (llpByte != START_TX) // first byte must be HT
+                    {
+                        this.m_traceSource.TraceEvent(EventLevel.Warning, "Invalid LLP First Byte expected 0x{0:x} got 0x{1:x} from {2}", START_TX, llpByte, remoteEndpoint);
+                        break;
+                    }
+                    //                        throw new InvalidOperationException("Invalid LLP First Byte");
 
-					while (!receivedEOF)
-					{
-						int br = stream.Read(buffer, 0, 1024);
-						messageData.Append(System.Text.Encoding.UTF8.GetString(buffer, 0, br));
+                    // Standard stream stuff, read until the stream is exhausted
+                    StringBuilder messageData = new StringBuilder();
+                    byte[] buffer = new byte[1024];
+                    bool receivedEOF = false, scanForCr = false;
 
-						// Need to check for CR?
-						if (scanForCr)
-							receivedEOF = buffer[0] == END_TXNL;
-						else
-						{
-							// Look for FS
-							int fsPos = Array.IndexOf(buffer, END_TX);
+                    while (!receivedEOF)
+                    {
+                        int br = stream.Read(buffer, 0, 1024);
+                        messageData.Append(System.Text.Encoding.UTF8.GetString(buffer, 0, br));
 
-							if (fsPos == -1) // not found
-								continue;
-							else if (fsPos < buffer.Length - 1) // more room to read
-								receivedEOF = buffer[fsPos + 1] == END_TXNL;
-							else
-								scanForCr = true; // Cannot check the end of message for CR because there is no more room in the message buffer
-												  // so need to check on the next loop
-						}
+                        // Need to check for CR?
+                        if (scanForCr)
+                        {
+                            receivedEOF = buffer[0] == END_TXNL;
+                        }
+                        else
+                        {
+                            // Look for FS
+                            int fsPos = Array.IndexOf(buffer, END_TX);
 
-						// TODO: Timeout for this
-					}
+                            if (fsPos == -1) // not found
+                            {
+                                continue;
+                            }
+                            else if (fsPos < buffer.Length - 1) // more room to read
+                            {
+                                receivedEOF = buffer[fsPos + 1] == END_TXNL;
+                            }
+                            else
+                            {
+                                scanForCr = true; // Cannot check the end of message for CR because there is no more room in the message buffer
+                            }
+                            // so need to check on the next loop
+                        }
 
-					// Use the nHAPI parser to process the data
-					Hl7MessageReceivedEventArgs messageArgs = null;
-					try
-					{
-						var message = parser.Parse(messageData.ToString());
+                        // TODO: Timeout for this
+                    }
 
-						this.m_traceSource.TraceInfo("Received message from sllp://{0} : {1}", tcpClient.Client.RemoteEndPoint, messageData.ToString());
+                    // Use the nHAPI parser to process the data
+                    Hl7MessageReceivedEventArgs messageArgs = null;
+                    try
+                    {
+                        var message = parser.Parse(messageData.ToString());
 
-						messageArgs = new AuthenticatedHl7MessageReceivedEventArgs(message, localEndpoint, remoteEndpoint, DateTime.Now, new X509Certificate2(stream.RemoteCertificate.GetPublicKey()));
+                        this.m_traceSource.TraceInfo("Received message from sllp://{0} : {1}", tcpClient.Client.RemoteEndPoint, messageData.ToString());
+
+                        messageArgs = new AuthenticatedHl7MessageReceivedEventArgs(message, localEndpoint, remoteEndpoint, DateTime.Now, new X509Certificate2(stream.RemoteCertificate.GetPublicKey()));
 
                         HL7OperationContext.Current = new HL7OperationContext(messageArgs);
 
-						// Call any bound event handlers that there is a message available
-						OnMessageReceived(messageArgs);
+                        // Call any bound event handlers that there is a message available
+                        OnMessageReceived(messageArgs);
 
                     }
                     finally
-					{
-						// Send the response back
-						using (MemoryStream memoryWriter = new MemoryStream())
-						{
-							using (StreamWriter streamWriter = new StreamWriter(memoryWriter))
-							{
-								memoryWriter.Write(new byte[] { START_TX }, 0, 1); // header
-								if (messageArgs != null && messageArgs.Response != null)
-								{
-									var strMessage = parser.Encode(messageArgs.Response);
-									this.m_traceSource.TraceInfo("Sending message to sllp://{0} : {1}", tcpClient.Client.RemoteEndPoint, strMessage);
-									// Since nHAPI only emits a string we just send that along the stream
-									streamWriter.Write(strMessage);
-									streamWriter.Flush();
-								}
-								memoryWriter.Write(new byte[] { END_TX, END_TXNL }, 0, 2); // Finish the stream with FSCR
-								stream.Write(memoryWriter.ToArray(), 0, (int)memoryWriter.Position);
-								stream.Flush();
-							}
-						}
+                    {
+                        // Send the response back
+                        using (MemoryStream memoryWriter = new MemoryStream())
+                        {
+                            using (StreamWriter streamWriter = new StreamWriter(memoryWriter))
+                            {
+                                memoryWriter.Write(new byte[] { START_TX }, 0, 1); // header
+                                if (messageArgs != null && messageArgs.Response != null)
+                                {
+                                    var strMessage = parser.Encode(messageArgs.Response);
+                                    this.m_traceSource.TraceInfo("Sending message to sllp://{0} : {1}", tcpClient.Client.RemoteEndPoint, strMessage);
+                                    // Since nHAPI only emits a string we just send that along the stream
+                                    streamWriter.Write(strMessage);
+                                    streamWriter.Flush();
+                                }
+                                memoryWriter.Write(new byte[] { END_TX, END_TXNL }, 0, 2); // Finish the stream with FSCR
+                                stream.Write(memoryWriter.ToArray(), 0, (int)memoryWriter.Position);
+                                stream.Flush();
+                            }
+                        }
 
-						lastReceive = DateTime.Now; // Update the last receive time so the timeout function works
+                        lastReceive = DateTime.Now; // Update the last receive time so the timeout function works
 
                     }
 
 
-				}
-			}
-			catch (AuthenticationException e)
-			{
-				// Trace authentication error
-				AuditEventData ad = new AuditEventData(
-					DateTime.Now,
-					ActionType.Execute,
-					OutcomeIndicator.MinorFail,
-					EventIdentifierType.ApplicationActivity,
-					new AuditCode("110113", "DCM") { DisplayName = "Security Alert" }
-				);
-				ad.Actors = new List<AuditActorData>() {
-					new AuditActorData()
-					{
-						NetworkAccessPointId = Dns.GetHostName(),
-						NetworkAccessPointType = NetworkAccessPointType.MachineName,
-						UserName = Environment.UserName,
-						UserIsRequestor = false
-					},
-					new AuditActorData()
-					{
-						NetworkAccessPointId = String.Format("sllp://{0}", tcpClient.Client.RemoteEndPoint.ToString()),
-						NetworkAccessPointType = NetworkAccessPointType.MachineName,
-						UserIsRequestor = true
-					}
-				};
-				ad.AuditableObjects = new List<AuditableObject>()
-				{
-					new AuditableObject() {
-						Type = AuditableObjectType.SystemObject,
-						Role = AuditableObjectRole.SecurityResource,
-						IDTypeCode = AuditableObjectIdType.Uri,
-						ObjectId = String.Format("sllp://{0}", this.m_listener.LocalEndpoint)
-					}
-				};
+                }
+            }
+            catch (AuthenticationException e)
+            {
+                // Trace authentication error
+                AuditEventData ad = new AuditEventData(
+                    DateTime.Now,
+                    ActionType.Execute,
+                    OutcomeIndicator.MinorFail,
+                    EventIdentifierType.ApplicationActivity,
+                    new AuditCode("110113", "DCM") { DisplayName = "Security Alert" }
+                );
+                ad.Actors = new List<AuditActorData>() {
+                    new AuditActorData()
+                    {
+                        NetworkAccessPointId = Dns.GetHostName(),
+                        NetworkAccessPointType = NetworkAccessPointType.MachineName,
+                        UserName = Environment.UserName,
+                        UserIsRequestor = false
+                    },
+                    new AuditActorData()
+                    {
+                        NetworkAccessPointId = String.Format("sllp://{0}", tcpClient.Client.RemoteEndPoint.ToString()),
+                        NetworkAccessPointType = NetworkAccessPointType.MachineName,
+                        UserIsRequestor = true
+                    }
+                };
+                ad.AuditableObjects = new List<AuditableObject>()
+                {
+                    new AuditableObject() {
+                        Type = AuditableObjectType.SystemObject,
+                        Role = AuditableObjectRole.SecurityResource,
+                        IDTypeCode = AuditableObjectIdType.Uri,
+                        ObjectId = String.Format("sllp://{0}", this.m_listener.LocalEndpoint)
+                    }
+                };
 
                 ApplicationServiceContext.Current.GetService<IRepositoryService<AuditEventData>>()?.Insert(ad);
                 ApplicationServiceContext.Current.GetService<IAuditDispatchService>()?.SendAudit(ad);
-				this.m_traceSource.TraceEvent(EventLevel.Error,  e.ToString());
-			}
-			catch (Exception e)
-			{
-				this.m_traceSource.TraceEvent(EventLevel.Error,  e.ToString());
-				// TODO: NACK
-			}
-			finally
-			{
-				stream.Close();
-				tcpClient.Close();
+                this.m_traceSource.TraceEvent(EventLevel.Error, e.ToString());
+            }
+            catch (Exception e)
+            {
+                this.m_traceSource.TraceEvent(EventLevel.Error, e.ToString());
+                // TODO: NACK
+            }
+            finally
+            {
+                stream.Close();
+                tcpClient.Close();
                 HL7OperationContext.Current = null;
 
             }
         }
-        
-	}
+
+    }
 }

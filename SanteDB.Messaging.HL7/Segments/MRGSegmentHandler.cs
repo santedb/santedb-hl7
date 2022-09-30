@@ -19,20 +19,19 @@
  * Date: 2022-5-30
  */
 using NHapi.Base.Model;
+using NHapi.Model.V25.Segment;
 using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Model;
+using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.DataTypes;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Services;
+using SanteDB.Messaging.HL7.Configuration;
+using SanteDB.Messaging.HL7.Exceptions;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using NHapi.Model.V25.Segment;
-using SanteDB.Messaging.HL7.Exceptions;
-using SanteDB.Messaging.HL7.Configuration;
 using System.Linq;
-using SanteDB.Core.Diagnostics;
-using SanteDB.Core.Model.Constants;
 
 namespace SanteDB.Messaging.HL7.Segments
 {
@@ -152,7 +151,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 patient.Relationships.Add(new Core.Model.Entities.EntityRelationship(EntityRelationshipTypeKeys.Replaces, found.Key));
                 return new IdentifiedData[] { found };
             }
-            catch (HL7ProcessingException e) // Just re-throw
+            catch (HL7ProcessingException) // Just re-throw
             {
                 throw;
             }

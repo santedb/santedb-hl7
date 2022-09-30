@@ -19,16 +19,15 @@
  * Date: 2022-5-30
  */
 using SanteDB.Core;
-using SanteDB.Core.Security;
 using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Interop;
 using SanteDB.Core.Model.Entities;
+using SanteDB.Core.Security;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
@@ -78,7 +77,10 @@ namespace SanteDB.Messaging.HL7
         /// <returns></returns>
         public RemoteEndpointInfo GetRemoteEndpointInfo()
         {
-            if (HL7OperationContext.Current == null) return null;
+            if (HL7OperationContext.Current == null)
+            {
+                return null;
+            }
             else
             {
                 return new RemoteEndpointInfo()
@@ -192,9 +194,14 @@ namespace SanteDB.Messaging.HL7
             {
                 var retVal = ServiceEndpointCapabilities.None;
                 if (this.m_listenerThreads.Any(o => o.Definition.Configuration is SllpTransport.SllpConfigurationObject))
+                {
                     retVal |= ServiceEndpointCapabilities.CertificateAuth;
+                }
                 else if (this.m_configuration.Security == AuthenticationMethod.Msh8)
+                {
                     retVal |= ServiceEndpointCapabilities.BearerAuth;
+                }
+
                 return retVal;
             }
         }

@@ -23,19 +23,19 @@ using SanteDB.Messaging.HL7.TransportProtocol;
 
 namespace SanteDB.Messaging.HL7
 {
-	/// <summary>
-	/// Handler for HL7 message
-	/// </summary>
-	public interface IHL7MessageHandler
-	{
-		/// <summary>
-		/// Handle a message
-		/// </summary>
-		IMessage HandleMessage(Hl7MessageReceivedEventArgs e);
+    /// <summary>
+    /// Handler for HL7 message
+    /// </summary>
+    public interface IHL7MessageHandler
+    {
+        /// <summary>
+        /// Handle a message
+        /// </summary>
+        IMessage HandleMessage(Hl7MessageReceivedEventArgs e);
 
         /// <summary>
         /// The triggers the handler supports
         /// </summary>
         string[] SupportedTriggers { get; }
-	}
+    }
 }
