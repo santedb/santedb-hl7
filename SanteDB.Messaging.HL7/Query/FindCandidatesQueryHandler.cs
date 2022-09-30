@@ -151,7 +151,7 @@ namespace SanteDB.Messaging.HL7.Query
                 else
                 {
                     queryInstance.QRI.CandidateConfidence.Value = "1.0";
-                    queryInstance.QRI.AlgorithmDescriptor.Identifier.Value = "PTNM";
+                    queryInstance.QRI.AlgorithmDescriptor.Identifier.Value = "PTNM"; // TODO: Detect the method of score based on the input message and query parameters
                 }
             }
 

@@ -325,7 +325,7 @@ namespace SanteDB.Messaging.HL7.Utils
                                         break;
 
                                     case "alias":
-                                        transform = $":(alias|{{0}})>={matchStrength ?? 3}";
+                                        transform = $":(alias|{{0}})>={matchStrength ?? 0.75f}";
                                         break;
 
                                     default:
@@ -356,7 +356,7 @@ namespace SanteDB.Messaging.HL7.Utils
                         }
                         else
                         {
-                            retVal.Add(parm.ModelName, qvalue);
+                            retVal.Add(parm.ModelName, qvalue.Insert(4,"-").Insert(7,"-"));
                         }
 
                         break;
