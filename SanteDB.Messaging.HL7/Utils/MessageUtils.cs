@@ -338,7 +338,7 @@ namespace SanteDB.Messaging.HL7.Utils
                         }
                         else
                         {
-                            transform = "{0}";
+                            transform = "~{0}";
                             retVal.Add(parm.ModelName, transform.Split(',').Select(tx => String.Format(tx, qvalue.Replace("*", "%"))));
 
                         }
