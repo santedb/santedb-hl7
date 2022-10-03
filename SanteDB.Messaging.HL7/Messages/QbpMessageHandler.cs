@@ -29,6 +29,7 @@ using SanteDB.Core.Model.Audit;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.Query;
 using SanteDB.Core.Model.Serialization;
+using SanteDB.Core.Security;
 using SanteDB.Core.Security.Audit;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.ParameterMap;
@@ -59,7 +60,8 @@ namespace SanteDB.Messaging.HL7.Messages
         /// DI constructor
         /// </summary>
         /// <param name="localizationService"></param>
-        public QbpMessageHandler(ILocalizationService localizationService) : base(localizationService)
+        /// <param name="auditService"></param>
+        public QbpMessageHandler(ILocalizationService localizationService, IAuditService auditService) : base(localizationService, auditService)
         {
         }
 
@@ -248,7 +250,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// </summary>
         protected virtual void SendAuditQuery(OutcomeIndicator outcome, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditQuery(outcome, PipeParser.Encode(message.GetStructure("QPD") as ISegment, new EncodingCharacters('|', "^~\\&")), results?.OfType<IdentifiedData>().ToArray());
+            _AuditService.Audit().ForQuery(outcome, PipeParser.Encode(message.GetStructure("QPD") as ISegment, new EncodingCharacters('|', "^~\\&")), results?.OfType<IdentifiedData>().ToArray()).Send();
         }
 
         /// <summary>

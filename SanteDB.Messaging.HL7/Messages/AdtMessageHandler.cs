@@ -27,6 +27,7 @@ using SanteDB.Core.Model;
 using SanteDB.Core.Model.Audit;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.Roles;
+using SanteDB.Core.Security;
 using SanteDB.Core.Security.Audit;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Exceptions;
@@ -54,7 +55,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// DI constructor
         /// </summary>
-        public AdtMessageHandler(ILocalizationService localizationService, IRecordMergingService<Patient> mergeService, IRepositoryService<Bundle> bundleService) : base(localizationService)
+        public AdtMessageHandler(ILocalizationService localizationService, IRecordMergingService<Patient> mergeService, IRepositoryService<Bundle> bundleService, IAuditService auditService) : base(localizationService, auditService)
         {
             this.m_mergeService = mergeService;
             this.m_bundleService = bundleService;
@@ -128,7 +129,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// </summary>
         protected virtual void SendAuditAdmit(OutcomeIndicator outcomeIndicator, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditCreate(outcomeIndicator, null, results?.ToArray());
+            _AuditService.Audit().ForCreate(outcomeIndicator, null, results?.ToArray()).Send();
         }
 
         /// <summary>
@@ -166,7 +167,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// </summary>
         protected virtual void SendAuditUpdate(OutcomeIndicator outcome, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditUpdate(outcome, null, results?.ToArray());
+            _AuditService.Audit().ForUpdate(outcome, null, results?.ToArray()).Send();
         }
 
         /// <summary>
@@ -215,12 +216,12 @@ namespace SanteDB.Messaging.HL7.Messages
         {
             if (recordMergeResult != null)
             {
-                AuditUtil.AuditDelete(outcome, "ADT^A40", new Patient() { Key = recordMergeResult.Replaced.First() });
-                AuditUtil.AuditUpdate(outcome, "ADT^A40", new Patient() { Key = recordMergeResult.Survivors.First() });
+                _AuditService.Audit().ForDelete(outcome, "ADT^A40", new Patient() { Key = recordMergeResult.Replaced.First() }).Send();
+                _AuditService.Audit().ForUpdate(outcome, "ADT^A40", new Patient() { Key = recordMergeResult.Survivors.First() }).Send();
             }
             else
             {
-                AuditUtil.AuditUpdate<IdentifiedData>(outcome, "ADT^A40");
+                _AuditService.Audit().ForUpdate<IdentifiedData>(outcome, "ADT^A40").Send();
             }
         }
 
