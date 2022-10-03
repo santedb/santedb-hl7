@@ -18,18 +18,17 @@
  * User: fyfej
  * Date: 2022-5-30
  */
+using NHapi.Base.Util;
+using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
+using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.TransportProtocol;
-using NHapi.Base.Util;
 using System;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
-using System.Diagnostics;
-using SanteDB.Core;
-using SanteDB.Core.Services;
-using SanteDB.Core.Diagnostics;
 
 namespace SanteDB.Messaging.HL7
 {
@@ -70,11 +69,18 @@ namespace SanteDB.Messaging.HL7
             IPAddress address = null;
             int port = this.m_serviceDefinition.Address.Port;
             if (this.m_serviceDefinition.Address.HostNameType == UriHostNameType.Dns)
+            {
                 address = Dns.GetHostAddresses(this.m_serviceDefinition.Address.Host)[0];
+            }
             else
+            {
                 address = IPAddress.Parse(this.m_serviceDefinition.Address.Host);
+            }
+
             if (this.m_serviceDefinition.Address.IsDefaultPort)
+            {
                 port = 1025;
+            }
 
             try
             {
@@ -121,30 +127,43 @@ namespace SanteDB.Messaging.HL7
 
             if (handler != null && handler.Types.Find(o => o.Name == messageType).IsQuery ||
                 defaultHandler != null && defaultHandler.Types.Find(o => o.Name == "*").IsQuery)
+            {
                 messagePersister = null;
+            }
 
             // Have we already processed this message?
             MessageState msgState = MessageState.New;
             if (messagePersister != null)
+            {
                 msgState = messagePersister.GetMessageState(messageId);
+            }
 
             switch (msgState)
             {
                 case MessageState.New:
 
                     if (messagePersister != null)
+                    {
                         messagePersister.PersistMessage(messageId, CreateMessageStream(e.Message));
+                    }
 
                     if (handler == null && defaultHandler == null)
+                    {
                         throw new InvalidOperationException(String.Format("Cannot find message handler for '{0}'", messageType));
+                    }
 
                     e.Response = (handler ?? defaultHandler).Handler.HandleMessage(e);
                     if (e.Response == null)
+                    {
                         throw new InvalidOperationException("Couldn't process message");
+                    }
 
                     msgTerser = new Terser(e.Response);
                     if (messagePersister != null)
+                    {
                         messagePersister.PersistResultMessage(msgTerser.Get("/MSH-10"), messageId, CreateMessageStream(e.Response));
+                    }
+
                     break;
 
                 case MessageState.Active:
@@ -152,7 +171,10 @@ namespace SanteDB.Messaging.HL7
                 case MessageState.Complete:
                     NHapi.Base.Parser.PipeParser pp = new NHapi.Base.Parser.PipeParser();
                     using (var rdr = new StreamReader(messagePersister.GetMessageResponseMessage(messageId)))
+                    {
                         e.Response = pp.Parse(rdr.ReadToEnd());
+                    }
+
                     break;
             }
         }

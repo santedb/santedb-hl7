@@ -61,7 +61,9 @@ namespace SanteDB.Messaging.HL7.ParameterMap
                     myMapping.Parameters.AddRange(itm.Parameters);
                 }
                 else // we just add
+                {
                     this.Map.Add(itm);
+                }
             }
         }
     }

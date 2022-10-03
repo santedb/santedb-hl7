@@ -27,7 +27,7 @@ namespace SanteDB.Messaging.HL7
     /// <summary>
     /// Represents the current operation context for the rest service thread
     /// </summary>
-    public sealed class HL7OperationContext 
+    public sealed class HL7OperationContext
     {
         // Current reference for thread
         [ThreadStatic]

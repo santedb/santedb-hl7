@@ -18,11 +18,9 @@
  * User: fyfej
  * Date: 2022-5-30
  */
-using SanteDB.Core;
 using SanteDB.Core.Configuration;
 using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Security.Configuration;
-using SanteDB.Core.Services;
 using SanteDB.Docker.Core;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.TransportProtocol;
@@ -30,8 +28,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SanteDB.Messaging.HL7.Docker
 {

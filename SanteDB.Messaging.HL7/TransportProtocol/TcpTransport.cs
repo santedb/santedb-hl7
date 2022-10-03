@@ -41,9 +41,7 @@ using SanteDB.Messaging.HL7.Configuration;
  */
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.IO;
 using System.Net;

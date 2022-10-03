@@ -18,13 +18,11 @@
  * User: fyfej
  * Date: 2022-5-30
  */
+using NHapi.Base.Model;
 using SanteDB.Core.Model;
+using SanteDB.Core.Model.DataTypes;
 using System;
 using System.Collections.Generic;
-using NHapi.Model.V25.Datatype;
-using NHapi.Base.Model;
-using NHapi.Model.V25.Segment;
-using SanteDB.Core.Model.DataTypes;
 
 namespace SanteDB.Messaging.HL7.Segments
 {

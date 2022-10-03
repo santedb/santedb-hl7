@@ -35,7 +35,6 @@ using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.ParameterMap;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.Tracing;
@@ -85,8 +84,12 @@ namespace SanteDB.Messaging.HL7.Messages
                 var externMap = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "ParameterMap.Hl7.xml");
 
                 if (File.Exists(externMap))
+                {
                     using (var s = File.OpenRead(externMap))
+                    {
                         OpenMapping(s);
+                    }
+                }
             }
         }
 
@@ -98,7 +101,9 @@ namespace SanteDB.Messaging.HL7.Messages
             XmlSerializer xsz = XmlModelSerializerFactory.Current.CreateSerializer(typeof(Hl7QueryParameterMap));
 
             if (s_map == null)
+            {
                 s_map = xsz.Deserialize(stream) as Hl7QueryParameterMap;
+            }
             else
             {
                 // Merge
@@ -146,7 +151,9 @@ namespace SanteDB.Messaging.HL7.Messages
                 int? count = null, offset = 0;
                 Guid queryId = Guid.NewGuid();
                 if (!String.IsNullOrEmpty(rcp.QuantityLimitedRequest.Quantity.Value))
+                {
                     count = Int32.Parse(rcp.QuantityLimitedRequest.Quantity.Value);
+                }
 
                 // Continuation?
                 var dsc = e.Message.GetStructure("DSC") as DSC;
@@ -164,7 +171,9 @@ namespace SanteDB.Messaging.HL7.Messages
                 {
                     var tag = ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>().GetQueryTag(queryId);
                     if (tag is int)
+                    {
                         offset = (int)tag;
+                    }
                 }
 
                 // Next, we want to get the repository for the bound type
@@ -189,7 +198,7 @@ namespace SanteDB.Messaging.HL7.Messages
 
                     if (result is IdentifiedData iddat)
                     {
-                        results  = new MemoryQueryResultSet(new List<IdentifiedData>() { iddat });
+                        results = new MemoryQueryResultSet(new List<IdentifiedData>() { iddat });
                         totalResults = 1;
                     }
                 }
