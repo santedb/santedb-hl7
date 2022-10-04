@@ -44,6 +44,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
     {
         protected readonly Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
 
+
         /// <summary>
         /// Start transmission
         /// </summary>
@@ -223,6 +224,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                             catch (Exception e)
                             {
                                 this.m_traceSource.TraceError("Error processing HL7 message: {0}", e);
+                                var auditservice = ApplicationServiceContext.Current.GetAuditService();
                                 if (messageArgs != null)
                                 {
                                     var nack = new NHapi.Model.V25.Message.ACK();
@@ -234,11 +236,11 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 
                                     var icomps = PipeParser.Encode(messageArgs.Message.GetStructure("MSH") as NHapi.Base.Model.ISegment, new EncodingCharacters('|', "^~\\&")).Split('|');
                                     var ocomps = PipeParser.Encode(messageArgs.Response.GetStructure("MSH") as NHapi.Base.Model.ISegment, new EncodingCharacters('|', "^~\\&")).Split('|');
-                                    AuditUtil.AuditNetworkRequestFailure(e, messageArgs.ReceiveEndpoint, Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => icomps[o - 1]), Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => ocomps[o - 1]));
+                                    auditservice.Audit().ForNetworkRequestFailure(e, messageArgs.ReceiveEndpoint, Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => icomps[o - 1]), Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => ocomps[o - 1])).Send();
                                 }
                                 else
                                 {
-                                    AuditUtil.AuditNetworkRequestFailure(e, localEndpoint, new System.Collections.Specialized.NameValueCollection(), new System.Collections.Specialized.NameValueCollection());
+                                    auditservice.Audit().ForNetworkRequestFailure(e, localEndpoint, new System.Collections.Specialized.NameValueCollection(), new System.Collections.Specialized.NameValueCollection()).Send();
                                 }
                             }
                             finally

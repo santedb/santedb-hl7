@@ -66,13 +66,16 @@ namespace SanteDB.Messaging.HL7.Messages
         // Localization service
         protected readonly ILocalizationService m_localizationService;
 
+        protected readonly IAuditService _AuditService;
+
         /// <summary>
         /// DI constructor
         /// </summary>
         /// <param name="localizationService"></param>
-        public MessageHandlerBase(ILocalizationService localizationService)
+        public MessageHandlerBase(ILocalizationService localizationService, IAuditService auditService)
         {
             this.m_localizationService = localizationService;
+            _AuditService = auditService;   
         }
 
         /// <summary>
@@ -495,9 +498,9 @@ namespace SanteDB.Messaging.HL7.Messages
             var icomps = PipeParser.Encode(request.GetStructure("MSH") as MSH, new EncodingCharacters('|', "^~\\&")).Split('|');
             var ocomps = PipeParser.Encode(retVal.GetStructure("MSH") as MSH, new EncodingCharacters('|', "^~\\&")).Split('|');
 
-            AuditUtil.AuditNetworkRequestFailure(error, receiveData.ReceiveEndpoint,
+            _AuditService.Audit().ForNetworkRequestFailure(error, receiveData.ReceiveEndpoint,
                 Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => icomps[o - 1]),
-                Enumerable.Range(1, ocomps.Length).ToDictionary(o => $"MSA-{o}", o => ocomps[o - 1]));
+                Enumerable.Range(1, ocomps.Length).ToDictionary(o => $"MSA-{o}", o => ocomps[o - 1])).Send();
 
             return retVal;
         }
