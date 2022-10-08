@@ -425,7 +425,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.GetMotherSIdentifier().Any(o => !o.IsEmpty()))
                 {
                     var personService = ApplicationServiceContext.Current.GetService<IRepositoryService<Person>>();
-                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity).ResolveManagedTarget() as Person;
+                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity).ResolveManagedTarget() as Person; // Will point at MASTER so we want the proper target
                     Person foundMother = null;
 
                     // Attempt to find the existing mother in the database based on ID
@@ -450,8 +450,8 @@ namespace SanteDB.Messaging.HL7.Segments
                         }
                         else if (authority?.IsUnique == true)
                         {
-                            foundMother = personService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.IdentityDomain.Key == authority.Key)).FirstOrDefault() ??
-                                patientService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.IdentityDomain.Key == authority.Key)).FirstOrDefault();
+                            foundMother = patientService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.IdentityDomain.Key == authority.Key)).FirstOrDefault() ??
+                                personService.Find(o => o.Identifiers.Any(i => i.Value == id.IDNumber.Value && i.IdentityDomain.Key == authority.Key)).FirstOrDefault(); // Always use master
                         }
 
                         if (foundMother != null)
