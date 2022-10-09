@@ -21,9 +21,11 @@
 using NHapi.Base.Model;
 using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
+using SanteDB.Core;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Audit;
 using SanteDB.Core.Model.Collection;
+using SanteDB.Core.Model.Entities;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Security;
 using SanteDB.Core.Security.Audit;
@@ -43,6 +45,9 @@ namespace SanteDB.Messaging.HL7.Messages
     [DisplayName("SanteDB ADT Message Handler")]
     public class AdtMessageHandler : MessageHandlerBase
     {
+        // V2 focal object
+        private const string V2_FOCAL = "$v2.pid";
+
         // Merging service
         private readonly IRecordMergingService<Patient> m_mergeService;
 
@@ -100,6 +105,7 @@ namespace SanteDB.Messaging.HL7.Messages
             try
             {
                 var patient = insertBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
+                patient.AddAnnotation(V2_FOCAL);
                 if (patient == null)
                 {
                     this.m_traceSource.TraceError("Message did not contain a patient");
@@ -111,7 +117,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 this.SendAuditAdmit(OutcomeIndicator.Success, e.Message, insertBundle.Item.OfType<IdentifiedData>());
 
                 // Create response message
-                return this.CreateACK(typeof(ACK), e.Message, "CA", $"{patient.Key} created");
+                return this.CreateACK(typeof(ACK), e.Message, "CA", $"{String.Join(",", insertBundle.Item.OfType<Entity>().Select(o=>$"{o.BatchOperation} {o.Type}/{o.Key}"))}");
             }
             catch (Exception ex)
             {
@@ -185,24 +191,36 @@ namespace SanteDB.Messaging.HL7.Messages
                 }
 
                 foreach (var mrgPair in mergePairs)
-                {
+                { 
                     var survivor = mrgPair.Item.OfType<Patient>().FirstOrDefault(o => o.GetTag("$v2.segment") == "PID");
                     var victims = mrgPair.Item.OfType<Patient>().Where(o => o.GetTag("$v2.segment") == "MRG");
-                    if (survivor == null || !victims.Any())
+                    try
                     {
-                        this.m_traceSource.TraceError("Merge requires at least one pair of PID and MRG");
-                        throw new InvalidOperationException(this.m_localizationService.GetString("error.messaging.hl7.messages.mergeMissingPair"));
-                    }
+                        if (survivor == null || !victims.Any())
+                        {
+                            this.m_traceSource.TraceError("Merge requires at least one pair of PID and MRG");
+                            throw new InvalidOperationException(this.m_localizationService.GetString("error.messaging.hl7.messages.mergeMissingPair"));
+                        }
 
-                    // Perform the merge
-                    this.SendAuditMerge(OutcomeIndicator.Success, e.Message, this.m_mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value)));
+                        // Perform the merge
+                        this.SendAuditMerge(OutcomeIndicator.Success, e.Message, this.m_mergeService.Merge(survivor.Key.Value, victims.Select(o => o.Key.Value)));
+                    }
+                    catch (Exception ex)
+                    {
+                        this.SendAuditMerge(OutcomeIndicator.MinorFail, e.Message, new RecordMergeResult(RecordMergeStatus.Aborted, new Guid[] { survivor.Key.Value }, victims.Select(o=>o.Key.Value).ToArray()));
+                        throw new HL7ProcessingException(this.m_localizationService.GetString("error.messaging.hl7.messages.errorPerformingMerge"), null, null, 0, 0, ex);
+                    }
                 }
 
                 return this.CreateACK(typeof(ACK), e.Message, "CA", $"Merge accepted");
             }
+            catch (HL7ProcessingException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                this.SendAuditMerge(OutcomeIndicator.MinorFail, e.Message, null);
+                this.SendAuditMerge(OutcomeIndicator.SeriousFail, e.Message, null);
                 throw new HL7ProcessingException(this.m_localizationService.GetString("error.messaging.hl7.messages.errorPerformingMerge"), null, null, 0, 0, ex);
             }
             throw new NotImplementedException(this.m_localizationService.GetString("error.type.NotImplementedException"));
