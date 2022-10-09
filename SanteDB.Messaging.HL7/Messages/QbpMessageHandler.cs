@@ -212,10 +212,6 @@ namespace SanteDB.Messaging.HL7.Messages
                     results = findMethod.Invoke(repoService, parameters) as IQueryResultSet;
                     totalResults = results.Count();
 
-                    // Order the results 
-                    if (results is IOrderableQueryResultSet orderable) {
-                        results = orderable.OrderByDescending(QueryExpressionParser.BuildPropertySelector(map.QueryTarget, "sequence", false, typeof(Object)));
-                    }
                 }
                 // Save the tag
                 if (queryId != Guid.Empty &&
