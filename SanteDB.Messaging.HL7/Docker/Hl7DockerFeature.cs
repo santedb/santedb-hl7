@@ -100,7 +100,7 @@ namespace SanteDB.Messaging.HL7.Docker
             // first the security
             if (settings.TryGetValue(AuthenticationSetting, out string auth))
             {
-                if (!Enum.TryParse<AuthenticationMethod>(auth, true, out AuthenticationMethod authResult))
+                if (!Enum.TryParse<Hl7AuthenticationMethod>(auth, true, out var authResult))
                 {
                     this.m_tracer.TraceError($"Couldn't understand {auth}, valid values are NONE, MSH8, or SFT4");
                     throw new ArgumentOutOfRangeException($"{auth} not valid setting - valid values are NONE, MSH8, or SFT4");

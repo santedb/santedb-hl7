@@ -59,7 +59,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// </summary>
         [XmlAttribute("security"), JsonProperty("security")]
         [DisplayName("Authentication Mode"), Description("The method of authenticating clients messages. If you're using SLLP then this setting controls the authentication of the MSH-3 (sending application) and the client certificate authenticates the device, if you're using LLP then this authenticates the device and software")]
-        public AuthenticationMethod Security { get; set; }
+        public Hl7AuthenticationMethod Security { get; set; }
 
         /// <summary>
         /// If no security method is being used, the principal of the anonymous user
@@ -223,8 +223,8 @@ namespace SanteDB.Messaging.HL7.Configuration
     /// <summary>
     /// Security methods
     /// </summary>
-    [XmlType(nameof(AuthenticationMethod), Namespace = "http://santedb.org/configuration")]
-    public enum AuthenticationMethod
+    [XmlType(nameof(Hl7AuthenticationMethod), Namespace = "http://santedb.org/configuration")]
+    public enum Hl7AuthenticationMethod
     {
         /// <summary>
         /// No security

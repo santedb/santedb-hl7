@@ -140,7 +140,7 @@ namespace SanteDB.Messaging.HL7.Messages
             var msh = e.Message.GetStructure("MSH") as MSH;
             var sft = e.Message.GetStructure("SFT") as SFT;
 
-            if (string.IsNullOrEmpty(msh.Security.Value) && this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8)
+            if (string.IsNullOrEmpty(msh.Security.Value) && this.m_configuration.Security == Hl7AuthenticationMethod.Msh8)
             {
                 this.m_traceSource.TraceError("Must carry MSH-8 authorization token information");
                 throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authorizationToken"));
@@ -176,7 +176,7 @@ namespace SanteDB.Messaging.HL7.Messages
                         param2 = " device/application"
                     }));
                 }
-                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
+                else if (this.m_configuration.Security == Hl7AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
                 {
                     this.m_traceSource.TraceError("SFT-4 must be provided for authenticating application");
                     throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authenticating", new
@@ -185,7 +185,7 @@ namespace SanteDB.Messaging.HL7.Messages
                         param2 = " application"
                     }));
                 }
-                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
+                else if (this.m_configuration.Security == Hl7AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
                 {
                     this.m_traceSource.TraceError("MSH-8 must be provided for authenticating application");
                     throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authenticating", new
@@ -199,15 +199,15 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 switch (this.m_configuration.Security)
                 {
-                    case Configuration.AuthenticationMethod.None: // No special - authenticate the app using device creds
+                    case Hl7AuthenticationMethod.None: // No special - authenticate the app using device creds
                         applicationSecret = this.m_configuration.NoAuthenticationSecret;
                         break;
 
-                    case Configuration.AuthenticationMethod.Msh8:
+                    case Hl7AuthenticationMethod.Msh8:
                         applicationSecret = msh.Security.Value;
                         break;
 
-                    case Configuration.AuthenticationMethod.Sft4:
+                    case Hl7AuthenticationMethod.Sft4:
                         applicationSecret = sft.SoftwareBinaryID.Value;
                         break;
 
@@ -236,7 +236,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     principal = new SanteDBClaimsPrincipal(new IIdentity[] { certificatePrincipal.Identity, applicationPrincipal?.Identity }.OfType<IClaimsIdentity>());
                 }
             }
-            else if (this.m_configuration.Security != Configuration.AuthenticationMethod.None)
+            else if (this.m_configuration.Security != Hl7AuthenticationMethod.None)
             {
                 // Ensure proper authentication exists
                 if (string.IsNullOrEmpty(msh.SendingFacility.NamespaceID.Value) || string.IsNullOrEmpty(msh.Security.Value))
@@ -253,7 +253,7 @@ namespace SanteDB.Messaging.HL7.Messages
                         param2 = "application"
                     }));
                 }
-                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
+                else if (this.m_configuration.Security == Hl7AuthenticationMethod.Sft4 && string.IsNullOrEmpty(sft.SoftwareBinaryID.Value))
                 {
                     this.m_traceSource.TraceError("SFT-4 must be provided for authenticating application");
                     throw new SecurityException(this.m_localizationService.GetString("error.messaging.h17.authenticating", new
@@ -262,7 +262,7 @@ namespace SanteDB.Messaging.HL7.Messages
                         param2 = "application"
                     }));
                 }
-                else if (this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
+                else if (this.m_configuration.Security == Hl7AuthenticationMethod.Msh8 && string.IsNullOrEmpty(msh.Security.Value))
                 {
                     this.m_traceSource.TraceError("MSH-8 must be provided for authenticating application");
 
@@ -275,8 +275,8 @@ namespace SanteDB.Messaging.HL7.Messages
                 String deviceId = $"{msh.SendingApplication.NamespaceID.Value}|{msh.SendingFacility.NamespaceID.Value}",
                    deviceSecret = msh.Security.Value,
                    applicationId = msh.SendingApplication.NamespaceID.Value,
-                   applicationSecret = this.m_configuration.Security == Configuration.AuthenticationMethod.Sft4 ? sft.SoftwareBinaryID.Value :
-                                            this.m_configuration.Security == Configuration.AuthenticationMethod.Msh8 ? msh.Security.Value : null;
+                   applicationSecret = this.m_configuration.Security == Hl7AuthenticationMethod.Sft4 ? sft.SoftwareBinaryID.Value :
+                                            this.m_configuration.Security == Hl7AuthenticationMethod.Msh8 ? msh.Security.Value : null;
 
                 if (applicationSecret == deviceSecret && applicationSecret.Contains("+")) // Both device and app are using same auth key? Odd, perhaps there is the delimeter
                 {
@@ -288,7 +288,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     applicationSecret = this.m_configuration.NoAuthenticationSecret;
                 }
 
-                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.Services.AuthenticationMethod.Local),
+                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.AuthenticationMethod.Local),
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
 
                 if (applicationPrincipal == null && this.m_configuration.RequireAuthenticatedApplication)

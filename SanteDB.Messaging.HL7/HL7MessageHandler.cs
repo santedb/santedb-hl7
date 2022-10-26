@@ -197,7 +197,7 @@ namespace SanteDB.Messaging.HL7
                 {
                     retVal |= ServiceEndpointCapabilities.CertificateAuth;
                 }
-                else if (this.m_configuration.Security == AuthenticationMethod.Msh8)
+                else if (this.m_configuration.Security == Hl7AuthenticationMethod.Msh8)
                 {
                     retVal |= ServiceEndpointCapabilities.BearerAuth;
                 }

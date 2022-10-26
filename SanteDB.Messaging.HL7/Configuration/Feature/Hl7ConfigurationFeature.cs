@@ -111,7 +111,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
                     SsnAuthority = new Core.Model.DataTypes.IdentityDomain("SSN", "Social Security Number", "2.16.840.1.113883.4.1"),
                     IdentifierReplacementBehavior = IdentifierReplacementMode.Specific,
                     LocalFacility = Guid.Empty,
-                    Security = AuthenticationMethod.Msh8,
+                    Security = Hl7AuthenticationMethod.Msh8,
                     RequireAuthenticatedApplication = true,
                     StrictAssigningAuthorities = true,
                     StrictMetadataMatch = true,
