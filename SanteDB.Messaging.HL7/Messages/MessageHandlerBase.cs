@@ -49,6 +49,7 @@ using System.Security;
 using System.Security.Authentication;
 using System.Security.Principal;
 using System.Xml;
+using AuthenticationMethod = SanteDB.Core.Security.AuthenticationMethod;
 
 namespace SanteDB.Messaging.HL7.Messages
 {
@@ -288,7 +289,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     applicationSecret = this.m_configuration.NoAuthenticationSecret;
                 }
 
-                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, Core.Security.Services.AuthenticationMethod.Local),
+                IPrincipal devicePrincipal = ApplicationServiceContext.Current.GetService<IDeviceIdentityProviderService>().Authenticate(deviceId, deviceSecret, AuthenticationMethod.Local),
                     applicationPrincipal = applicationSecret != null ? ApplicationServiceContext.Current.GetService<IApplicationIdentityProviderService>()?.Authenticate(applicationId, applicationSecret) : null;
 
                 if (applicationPrincipal == null && this.m_configuration.RequireAuthenticatedApplication)
