@@ -49,7 +49,6 @@ using System.Security;
 using System.Security.Authentication;
 using System.Security.Principal;
 using System.Xml;
-using AuthenticationMethod = SanteDB.Core.Security.AuthenticationMethod;
 
 namespace SanteDB.Messaging.HL7.Messages
 {
