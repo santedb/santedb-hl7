@@ -30,6 +30,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Threading;
 
 namespace SanteDB.Messaging.HL7
@@ -64,6 +66,7 @@ namespace SanteDB.Messaging.HL7
 
         // HL7 Trace source name
         private readonly Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
+        private INetworkInformationService m_networkInterfaceInfo;
 
         // Configuration
         private Hl7ConfigurationSection m_configuration;
@@ -97,6 +100,7 @@ namespace SanteDB.Messaging.HL7
         /// </summary>
         public bool Start()
         {
+            this.m_networkInterfaceInfo = ApplicationServiceContext.Current.GetService<INetworkInformationService>();
             this.m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
             this.Starting?.Invoke(this, EventArgs.Empty);
 
