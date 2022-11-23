@@ -162,7 +162,7 @@ namespace SanteDB.Messaging.HL7.Utils
                                 retVal.FocalObjects.AddRange(parsed
                                     .OfType<ITaggable>()
                                     .Where(o => o.GetTag(Hl7Constants.FocalObjectTag) == "true")
-                                    .OfType<IIdentifiedData>()
+                                    .OfType<IAnnotatedResource>()
                                     .Select(o => o.Key.GetValueOrDefault())
                                     .Where(o => Guid.Empty != o)
                                 );
