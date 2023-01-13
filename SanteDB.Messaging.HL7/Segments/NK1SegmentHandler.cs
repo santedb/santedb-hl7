@@ -106,7 +106,7 @@ namespace SanteDB.Messaging.HL7.Segments
             foreach (var rel in patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).Where(o => NextOfKinRelationshipTypes.Contains(o.RelationshipTypeKey.Value)))
             {
                 var nk1 = context.GetStructure("NK1", context.GetAll("NK1").Length) as NK1;
-                var person = rel.LoadProperty(o => o.TargetEntity).ResolveManagedTarget() as Person;
+                var person = rel.LoadProperty(o => o.TargetEntity).ResolveManagedRecord() as Person;
 
                 // HACK: This needs to be fixed on sync
                 if (person == null)

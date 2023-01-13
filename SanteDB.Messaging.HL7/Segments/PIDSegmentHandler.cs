@@ -199,7 +199,7 @@ namespace SanteDB.Messaging.HL7.Segments
             var motherRelation = relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother);
             if (motherRelation != null)
             {
-                var mother = motherRelation.LoadProperty(o => o.TargetEntity).ResolveManagedTarget() as Person;
+                var mother = motherRelation.LoadProperty(o => o.TargetEntity).ResolveManagedRecord() as Person;
                 foreach (var nam in mother.LoadProperty(o => o.Names).Where(n => n.NameUseKey == NameUseKeys.MaidenName))
                 {
                     retVal.GetMotherSMaidenName(retVal.MotherSMaidenNameRepetitionsUsed).FromModel(nam);
@@ -425,7 +425,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (pidSegment.MotherSMaidenNameRepetitionsUsed > 0 || pidSegment.GetMotherSIdentifier().Any(o => !o.IsEmpty()))
                 {
                     var personService = ApplicationServiceContext.Current.GetService<IRepositoryService<Person>>();
-                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity).ResolveManagedTarget() as Person; // Will point at MASTER so we want the proper target
+                    Person existingMother = retVal.Relationships.FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother)?.LoadProperty(o => o.TargetEntity).ResolveManagedRecord() as Person; // Will point at MASTER so we want the proper target
                     Person foundMother = null;
 
                     // Attempt to find the existing mother in the database based on ID
