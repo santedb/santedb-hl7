@@ -54,7 +54,7 @@ namespace SanteDB.Messaging.HL7.Segments
             EntityClassKeys.ServiceDeliveryLocation,
             EntityClassKeys.CityOrTown,
             EntityClassKeys.CountyOrParish,
-            EntityClassKeys.State,
+            EntityClassKeys.StateOrProvince,
             EntityClassKeys.Country,
             EntityClassKeys.Place
         };

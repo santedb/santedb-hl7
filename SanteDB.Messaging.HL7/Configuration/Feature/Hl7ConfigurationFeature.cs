@@ -101,7 +101,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
                 {
                     BirthplaceClassKeys = new List<Guid>()
                     {
-                        EntityClassKeys.State,
+                        EntityClassKeys.StateOrProvince,
                         EntityClassKeys.PrecinctOrBorough,
                         EntityClassKeys.CityOrTown,
                         EntityClassKeys.ServiceDeliveryLocation,
