@@ -1,24 +1,23 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you
- * may not use this file except in compliance with the License. You may
- * obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you 
+ * may not use this file except in compliance with the License. You may 
+ * obtain a copy of the License at 
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0 
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
+ * License for the specific language governing permissions and limitations under 
  * the License.
- *
+ * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
-
 using NHapi.Base.Model;
 using NHapi.Base.Parser;
 using NHapi.Base.Util;
@@ -26,20 +25,18 @@ using NHapi.Model.V25.Segment;
 using SanteDB.Core;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.Interfaces;
-using SanteDB.Core.Model.Query;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.ParameterMap;
 using SanteDB.Messaging.HL7.Segments;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace SanteDB.Messaging.HL7.Utils
 {
@@ -68,7 +65,11 @@ namespace SanteDB.Messaging.HL7.Utils
         /// </summary>
         public static void SetDefault(this SFT sftSegment)
         {
-            if (Assembly.GetEntryAssembly() == null) return;
+            if (Assembly.GetEntryAssembly() == null)
+            {
+                return;
+            }
+
             sftSegment.SoftwareVendorOrganization.OrganizationName.Value = Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyCompanyAttribute>()?.Company;
             sftSegment.SoftwareVendorOrganization.OrganizationNameTypeCode.Value = "D";
             sftSegment.SoftwareCertifiedVersionOrReleaseNumber.Value = Assembly.GetEntryAssembly().GetName().Version.ToString();
@@ -81,11 +82,15 @@ namespace SanteDB.Messaging.HL7.Utils
                 {
                     using (var md5 = MD5.Create())
                     using (var stream = File.OpenRead(Assembly.GetEntryAssembly().Location))
+                    {
                         s_entryAsmHash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "");
+                    }
                 }
 
                 if (s_installDate == DateTime.MinValue)
+                {
                     s_installDate = new FileInfo(Assembly.GetEntryAssembly().Location).LastWriteTime;
+                }
 
                 sftSegment.SoftwareBinaryID.Value = s_entryAsmHash;
                 sftSegment.SoftwareInstallDate.Time.SetLongDate(s_installDate);
@@ -93,10 +98,12 @@ namespace SanteDB.Messaging.HL7.Utils
         }
 
         /// <summary>
-        /// Update the MSH on the specified MSH segment
+        /// Update the MSH header on <paramref name="msh"/> with the default information
         /// </summary>
         /// <param name="msh">The message header to be updated</param>
-        /// <param name="inbound">The inbound message</param>
+        /// <param name="receivingApplication">The application information that received the message</param>
+        /// <param name="receivingFacility">The facility which received the message</param>
+        /// <param name="security">The security value which should be sent back to the sender</param>
         public static void SetDefault(this MSH msh, String receivingApplication, String receivingFacility, String security)
         {
             var config = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
@@ -111,18 +118,21 @@ namespace SanteDB.Messaging.HL7.Utils
         }
 
         /// <summary>
-        /// Represents a message parser to a bundle
+        /// Parse an HL7 group (message, segment group, etc.) to a SanteDB Bundle
         /// </summary>
-        internal static Bundle Parse(IGroup message)
+        /// <param name="group">The group to be parsed</param>
+        /// <returns>The parsed bundle with instructions for the perssitence layer</returns>
+        internal static Bundle Parse(IGroup group)
         {
             Bundle retVal = new Bundle();
-            var finder = new SegmentFinder(message);
+            var finder = new SegmentFinder(group);
             while (finder.HasNextChild())
             {
                 finder.NextChild();
                 foreach (var current in finder.CurrentChildReps)
                 {
                     if (current is AbstractGroupItem)
+                    {
                         foreach (var s in (current as AbstractGroupItem)?.Structures.OfType<IGroup>())
                         {
                             var parsed = Parse(s);
@@ -134,11 +144,15 @@ namespace SanteDB.Messaging.HL7.Utils
                             }));
                             retVal.FocalObjects.AddRange(parsed.FocalObjects);
                         }
+                    }
                     else if (current is AbstractSegment)
                     {
                         // Empty, don't parse
                         if (PipeParser.Encode(current as AbstractSegment, new EncodingCharacters('|', "^~\\&")).Length == 3)
+                        {
                             continue;
+                        }
+
                         var handler = SegmentHandlers.GetSegmentHandler(current.GetStructureName());
                         if (handler != null)
                         {
@@ -148,7 +162,7 @@ namespace SanteDB.Messaging.HL7.Utils
                                 retVal.FocalObjects.AddRange(parsed
                                     .OfType<ITaggable>()
                                     .Where(o => o.GetTag(Hl7Constants.FocalObjectTag) == "true")
-                                    .OfType<IIdentifiedEntity>()
+                                    .OfType<IAnnotatedResource>()
                                     .Select(o => o.Key.GetValueOrDefault())
                                     .Where(o => Guid.Empty != o)
                                 );
@@ -184,7 +198,7 @@ namespace SanteDB.Messaging.HL7.Utils
         {
             var config = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
             msh.MessageControlID.Value = Guid.NewGuid().ToString();
-            msh.SendingApplication.NamespaceID.Value = ApplicationServiceContext.Current.GetService<INetworkInformationService>()?.GetMachineName();
+            msh.SendingApplication.NamespaceID.Value = ApplicationServiceContext.Current.ApplicationName; // Assembly.GetEntryAssembly().GetName().Name; // ApplicationServiceContext.Current.GetService<INetworkInformationService>()?.GetMachineName();
             msh.SendingFacility.NamespaceID.Value = config.LocalFacility.ToString();
             msh.ReceivingApplication.NamespaceID.Value = inbound.SendingApplication.NamespaceID.Value;
             msh.ReceivingFacility.NamespaceID.Value = inbound.SendingFacility.NamespaceID.Value;
@@ -199,7 +213,9 @@ namespace SanteDB.Messaging.HL7.Utils
             Regex versionRegex = new Regex(@"^MSH\|\^\~\\\&\|(?:.*?\|){9}(.*?)[\|\r\n].*$", RegexOptions.Multiline);
             var match = versionRegex.Match(messageData);
             if (!match.Success)
+            {
                 throw new InvalidOperationException("Message appears to be invalid");
+            }
             else
             {
                 originalVersion = match.Groups[1].Value;
@@ -242,7 +258,9 @@ namespace SanteDB.Messaging.HL7.Utils
                 // Attempt to find the query parameter and map
                 var parm = map.Parameters.Where(o => o.Hl7Name == qfield || o.Hl7Name == qfield + ".1" || o.Hl7Name == qfield + ".1.1").OrderBy(o => o.Hl7Name.Length - qfield.Length).FirstOrDefault();
                 if (parm == null)
+                {
                     throw new ArgumentOutOfRangeException($"{qfield} not mapped to query parameter");
+                }
 
                 switch (parm.ParameterType)
                 {
@@ -254,81 +272,108 @@ namespace SanteDB.Messaging.HL7.Utils
                         String transform = null;
                         if (parm.AllowFuzzy)
                         {
-                            switch ((matchAlgorithm ?? "pattern").ToLower())
+                            (matchAlgorithm ?? "pattern").Split(' ').ToList().ForEach(o =>
                             {
-                                case "approx":
-                                    transform = ":(approx|{0})";
-                                    break;
+                                switch (o.ToLower())
+                                {
+                                    case "approx":
+                                        transform = ":(approx|{0})";
+                                        break;
 
-                                case "exact":
-                                    transform = "{0}";
-                                    break;
+                                    case "exact":
+                                        transform = "{0}";
+                                        break;
 
-                                case "pattern":
-                                    transform = "~*{0}*";
-                                    break;
+                                    case "pattern":
+                                        transform = "~{0}";
+                                        break;
 
-                                case "soundex":
-                                    if (matchStrength.HasValue)
-                                        transform = ":(soundex){0}";
-                                    else
-                                        transform = $":(phonetic_diff|{{0}},soundex)<={matchStrength * qvalue.Length}";
-                                    break;
+                                    case "soundex":
+                                        if (matchStrength.HasValue)
+                                        {
+                                            transform = ":(soundex){0}";
+                                        }
+                                        else
+                                        {
+                                            transform = $":(phonetic_diff|{{0}},soundex)<={matchStrength * qvalue.Length}";
+                                        }
 
-                                case "metaphone":
-                                    if (matchStrength.HasValue)
-                                        transform = ":(metaphone){0}";
-                                    else
-                                        transform = $":(phonetic_diff|{{0}},metaphone)<={matchStrength * qvalue.Length}";
-                                    break;
+                                        break;
 
-                                case "dmetaphone":
-                                    if (matchStrength.HasValue)
-                                        transform = ":(dmetaphone){0}";
-                                    else
-                                        transform = $":(phonetic_diff|{{0}},dmetaphone)<={matchStrength * qvalue.Length}";
-                                    break;
+                                    case "metaphone":
+                                        if (matchStrength.HasValue)
+                                        {
+                                            transform = ":(metaphone){0}";
+                                        }
+                                        else
+                                        {
+                                            transform = $":(phonetic_diff|{{0}},metaphone)<={matchStrength * qvalue.Length}";
+                                        }
 
-                                case "alias":
-                                    transform = $":(alias|{{0}})>={matchStrength ?? 3}";
-                                    break;
+                                        break;
 
-                                default:
-                                    transform = "~{0}";
-                                    break;
-                            }
+                                    case "dmetaphone":
+                                        if (matchStrength.HasValue)
+                                        {
+                                            transform = ":(dmetaphone){0}";
+                                        }
+                                        else
+                                        {
+                                            transform = $":(phonetic_diff|{{0}},dmetaphone)<={matchStrength * qvalue.Length}";
+                                        }
+
+                                        break;
+
+                                    case "alias":
+                                        transform = $":(alias|{{0}})>={matchStrength ?? 0.75f}";
+                                        break;
+
+                                    default:
+                                        transform = "~{0}";
+                                        break;
+                                }
+                                retVal.Add(parm.ModelName, transform.Split(',').Select(tx => String.Format(tx, qvalue.Replace("*", "%"))));
+
+                            });
                         }
                         else
                         {
-                            transform = "{0}";
+                            transform = "~{0}";
+                            retVal.Add(parm.ModelName, transform.Split(',').Select(tx => String.Format(tx, qvalue.Replace("*", "%"))));
+
                         }
-                        retVal.Add(parm.ModelName, transform.Split(',').Select(tx => String.Format(tx, qvalue)).ToList());
                         break;
 
                     case "date":
 
                         if (qvalue.Length == 4) // partial date
+                        {
                             retVal.Add(parm.ModelName, $"~{qvalue}");
+                        }
                         else if (qvalue.Length == 6) // partial to month
+                        {
                             retVal.Add(parm.ModelName, $"~{qvalue.Insert(4, "-")}");
+                        }
                         else
-                            retVal.Add(parm.ModelName, qvalue);
+                        {
+                            retVal.Add(parm.ModelName, qvalue.Insert(4,"-").Insert(7,"-"));
+                        }
+
                         break;
 
                     default:
                         var txv = parm.ValueTransform ?? "{0}";
-                        retVal.Add(parm.ModelName, txv.Split(',').Select(tx => String.Format(tx, qvalue)).ToList());
+                        retVal.Add(parm.ModelName, txv.Split(',').Select(tx => String.Format(tx, qvalue)));
                         break;
                 }
             }
 
             // HACK: Are they asking for the @PID.3.4.1 of our local auth?
-            List<String> localId = null;
-            if (retVal.TryGetValue("identifier.authority.domainName", out localId) &&
+            if (retVal.TryGetValue("identifier.authority.domainName", out var localId) &&
                 localId.Contains(config.LocalAuthority.DomainName))
             {
                 retVal.Remove("identifier.authority.domainName");
-                localId = retVal["identifier.value"];
+                localId = retVal.GetValues("identifier.value");
                 retVal.Remove("identifier.value");
                 retVal.Add("_id", localId);
             }
@@ -344,9 +389,9 @@ namespace SanteDB.Messaging.HL7.Utils
             // Rewrite back to original version
             (response.GetStructure("MSH") as MSH).VersionID.VersionID.Value = originalVersion.Trim();
             var pp = new PipeParser();
-            
+
             return pp.Encode(response);
-            
+
         }
     }
 }

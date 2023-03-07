@@ -1,40 +1,40 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you
- * may not use this file except in compliance with the License. You may
- * obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you 
+ * may not use this file except in compliance with the License. You may 
+ * obtain a copy of the License at 
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0 
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
+ * License for the specific language governing permissions and limitations under 
  * the License.
- *
+ * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
-
 using NHapi.Base.Model;
 using NHapi.Base.Parser;
 using NHapi.Base.Util;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
-using SanteDB.Core.Auditing;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Model;
+using SanteDB.Core.Model.Audit;
 using SanteDB.Core.Model.Collection;
 using SanteDB.Core.Model.Query;
 using SanteDB.Core.Model.Serialization;
 using SanteDB.Core.Security.Audit;
+using SanteDB.Core.Security.Services;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.ParameterMap;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.Tracing;
@@ -59,9 +59,13 @@ namespace SanteDB.Messaging.HL7.Messages
         /// DI constructor
         /// </summary>
         /// <param name="localizationService"></param>
-        public QbpMessageHandler(ILocalizationService localizationService) : base(localizationService)
+        /// <param name="auditService"></param>
+        public QbpMessageHandler(ILocalizationService localizationService, IAuditService auditService) : base(localizationService, auditService)
         {
         }
+
+        // Tracer
+        public static readonly Tracer m_tracer = Tracer.GetTracer(typeof(QbpMessageHandler));
 
         /// <summary>
         /// Gets the supported triggers
@@ -80,8 +84,12 @@ namespace SanteDB.Messaging.HL7.Messages
                 var externMap = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "ParameterMap.Hl7.xml");
 
                 if (File.Exists(externMap))
+                {
                     using (var s = File.OpenRead(externMap))
+                    {
                         OpenMapping(s);
+                    }
+                }
             }
         }
 
@@ -93,7 +101,9 @@ namespace SanteDB.Messaging.HL7.Messages
             XmlSerializer xsz = XmlModelSerializerFactory.Current.CreateSerializer(typeof(Hl7QueryParameterMap));
 
             if (s_map == null)
+            {
                 s_map = xsz.Deserialize(stream) as Hl7QueryParameterMap;
+            }
             else
             {
                 // Merge
@@ -141,7 +151,9 @@ namespace SanteDB.Messaging.HL7.Messages
                 int? count = null, offset = 0;
                 Guid queryId = Guid.NewGuid();
                 if (!String.IsNullOrEmpty(rcp.QuantityLimitedRequest.Quantity.Value))
+                {
                     count = Int32.Parse(rcp.QuantityLimitedRequest.Quantity.Value);
+                }
 
                 // Continuation?
                 var dsc = e.Message.GetStructure("DSC") as DSC;
@@ -159,7 +171,9 @@ namespace SanteDB.Messaging.HL7.Messages
                 {
                     var tag = ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>().GetQueryTag(queryId);
                     if (tag is int)
+                    {
                         offset = (int)tag;
+                    }
                 }
 
                 // Next, we want to get the repository for the bound type
@@ -167,55 +181,57 @@ namespace SanteDB.Messaging.HL7.Messages
                 if (repoService == null)
                 {
                     m_traceSource.TraceError($"Cannot find repository service for {map.QueryTargetXml}");
-                    throw new InvalidOperationException(m_localizationService.FormatString("error.messaging.hl7.repositoryService", new
+                    throw new InvalidOperationException(m_localizationService.GetString("error.messaging.hl7.repositoryService", new
                     {
                         param = map.QueryTargetXml
                     }));
                 }
                 // Build query
                 int totalResults = 0;
-                IEnumerable results = null;
+                IQueryResultSet results = null;
                 Expression filterQuery = null;
 
-                if (query.ContainsKey("_id"))
+                if (query.TryGetValue("_id", out var _))
                 {
-                    Guid id = Guid.Parse(query["_id"][0]);
-                    object result = repoService.GetType().GetMethod("Get", new Type[] { typeof(Guid) }).Invoke(repoService, new object[] { id });
-                    results = new List<IdentifiedData>();
+                    Guid id = Guid.Parse(query["_id"]);
+                    var result = repoService.GetType().GetMethod("Get", new Type[] { typeof(Guid) }).Invoke(repoService, new object[] { id });
 
-                    if (result != null)
+                    if (result is IdentifiedData iddat)
                     {
-                        (results as IList).Add(result);
+                        results = new MemoryQueryResultSet(new List<IdentifiedData>() { iddat });
                         totalResults = 1;
                     }
                 }
                 else
                 {
-                    var queryMethod = typeof(QueryExpressionParser).GetGenericMethod(nameof(QueryExpressionParser.BuildLinqExpression),
-                        new Type[] { map.QueryTarget },
-                        new Type[] { typeof(NameValueCollection) });
-                    filterQuery = queryMethod.Invoke(null, new object[] { query }) as Expression;
+                    filterQuery = QueryExpressionParser.BuildLinqExpression(map.QueryTarget, query);
 
                     // Now we want to query
-                    object[] parameters = { filterQuery, offset.Value, (int?)count ?? 100, null, queryId, null };
-                    var findMethod = repoService.GetType().GetMethod("Find", new Type[] { filterQuery.GetType(), typeof(int), typeof(int?), typeof(int).MakeByRefType(), typeof(Guid), typeof(ModelSort<>).MakeGenericType(map.QueryTarget).MakeArrayType() });
-                    results = findMethod.Invoke(repoService, parameters) as IEnumerable;
-                    totalResults = (int)parameters[3];
+                    object[] parameters = { filterQuery };
+                    var findMethod = repoService.GetType().GetMethod("Find", new Type[] { filterQuery.GetType() });
+                    results = findMethod.Invoke(repoService, parameters) as IQueryResultSet;
+                    totalResults = results.Count();
+
                 }
                 // Save the tag
-                if (dsc.ContinuationPointer.Value != queryId.ToString() &&
-                    offset.Value + count.GetValueOrDefault() < totalResults)
+                if (queryId != Guid.Empty &&
+                    count.HasValue &&
+                    offset.Value + count < totalResults)
+                {
+                    results = results.AsStateful(queryId);
                     ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>()?.SetQueryTag(queryId, count);
+                }
 
-                this.SendAuditQuery(Core.Auditing.OutcomeIndicator.Success, e.Message, results.OfType<IdentifiedData>().ToArray());
+                var resultArray = results.OfType<IdentifiedData>().ToArray();
+                this.SendAuditQuery(OutcomeIndicator.Success, e.Message, resultArray);
 
                 // Query basics
-                return this.CreateQueryResponse(e, filterQuery, map, results, queryId, offset.GetValueOrDefault(), count ?? 100, totalResults);
+                return this.CreateQueryResponse(e, filterQuery, map, resultArray, queryId, offset.GetValueOrDefault(), count ?? 100, totalResults);
             }
             catch (Exception ex)
             {
                 this.m_traceSource.TraceEvent(EventLevel.Error, "Error executing query: {0}", ex);
-                this.SendAuditQuery(Core.Auditing.OutcomeIndicator.MinorFail, e.Message, null);
+                this.SendAuditQuery(OutcomeIndicator.MinorFail, e.Message, null);
 
                 // Now we construct the response
                 return this.CreateNACK(map.ResponseType, e.Message, ex, e);
@@ -242,9 +258,9 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// Send audit for querying
         /// </summary>
-        protected virtual void SendAuditQuery(OutcomeIndicator success, IMessage message, IEnumerable<IdentifiedData> results)
+        protected virtual void SendAuditQuery(OutcomeIndicator outcome, IMessage message, IEnumerable<IdentifiedData> results)
         {
-            AuditUtil.AuditQuery(Core.Auditing.OutcomeIndicator.Success, PipeParser.Encode(message.GetStructure("QPD") as ISegment, new EncodingCharacters('|', "^~\\&")), results?.OfType<IdentifiedData>().ToArray());
+            _AuditService.Audit().ForQuery(outcome, PipeParser.Encode(message.GetStructure("QPD") as ISegment, new EncodingCharacters('|', "^~\\&")), results?.OfType<IdentifiedData>().ToArray()).Send();
         }
 
         /// <summary>
@@ -257,7 +273,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <param name="offset">The offset to the first result</param>
         /// <param name="queryId">The unique query identifier used</param>
         /// <returns>The constructed result message</returns>
-        protected virtual IMessage CreateQueryResponse(Hl7MessageReceivedEventArgs request, Expression filter, Hl7QueryParameterType map, IEnumerable results, Guid queryId, int offset, int count, int totalResults)
+        protected virtual IMessage CreateQueryResponse(Hl7MessageReceivedEventArgs request, Expression filter, Hl7QueryParameterType map, Array results, Guid queryId, int offset, int count, int totalResults)
         {
             var retVal = this.CreateACK(map.ResponseType, request.Message, "AA", "Query Success");
             var omsh = retVal.GetStructure("MSH") as MSH;
@@ -273,7 +289,7 @@ namespace SanteDB.Messaging.HL7.Messages
             qak.HitCount.Value = totalResults.ToString();
             qak.HitsRemaining.Value = (totalResults - offset - count > 0 ? totalResults - offset - count : 0).ToString();
             qak.QueryResponseStatus.Value = totalResults == 0 ? "NF" : "OK";
-            qak.ThisPayload.Value = results.OfType<Object>().Count().ToString();
+            qak.ThisPayload.Value = results.Length.ToString();
 
             if (ApplicationServiceContext.Current.GetService<Core.Services.IQueryPersistenceService>() != null &&
                 Int32.Parse(qak.HitsRemaining.Value) > 0)
@@ -300,7 +316,7 @@ namespace SanteDB.Messaging.HL7.Messages
             if (!s_map.Map.Any(m => m.Trigger == trigger))
             {
                 m_traceSource.TraceError($"{trigger} not understood or mapped");
-                throw new NotSupportedException(m_localizationService.FormatString("error.messaging.hl7.notUnderstood", new
+                throw new NotSupportedException(m_localizationService.GetString("error.messaging.hl7.notUnderstood", new
                 {
                     param = trigger
                 }));

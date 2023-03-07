@@ -1,36 +1,34 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you
- * may not use this file except in compliance with the License. You may
- * obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you 
+ * may not use this file except in compliance with the License. You may 
+ * obtain a copy of the License at 
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0 
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
+ * License for the specific language governing permissions and limitations under 
  * the License.
- *
+ * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
-
 using NHapi.Base.Model;
 using NHapi.Base.Util;
 using NHapi.Model.V25.Datatype;
 using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
-using SanteDB.Core.Model.DataTypes;
-using SanteDB.Core.Model.Query;
-using SanteDB.Core.Model.Roles;
-using SanteDB.Core.Security;
-using SanteDB.Core.Services;
+using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Matching;
+using SanteDB.Core.Model.DataTypes;
+using SanteDB.Core.Model.Roles;
+using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Messaging.HL7.ParameterMap;
@@ -40,9 +38,9 @@ using SanteDB.Messaging.HL7.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Linq.Expressions;
-using SanteDB.Core.Diagnostics;
 
 namespace SanteDB.Messaging.HL7.Query
 {
@@ -79,7 +77,11 @@ namespace SanteDB.Messaging.HL7.Query
         public virtual IMessage AppendQueryResult(IEnumerable results, Expression queryDefinition, IMessage currentResponse, Hl7MessageReceivedEventArgs evt, int offset = 0)
         {
             var patients = results.OfType<Patient>();
-            if (patients.Count() == 0) return currentResponse;
+            if (patients.Count() == 0)
+            {
+                return currentResponse;
+            }
+
             var retVal = currentResponse as RSP_K21;
 
             var pidHandler = SegmentHandlers.GetSegmentHandler("PID");
@@ -91,7 +93,7 @@ namespace SanteDB.Messaging.HL7.Query
 
             // Return domains
             var rqo = evt.Message as QBP_Q21;
-            List<AssigningAuthority> returnDomains = new List<AssigningAuthority>();
+            List<IdentityDomain> returnDomains = new List<IdentityDomain>();
             foreach (var rt in rqo.QPD.GetField(8).OfType<Varies>())
             {
                 var rid = new CX(rqo.Message);
@@ -100,7 +102,9 @@ namespace SanteDB.Messaging.HL7.Query
                 returnDomains.Add(authority);
             }
             if (returnDomains.Count == 0)
+            {
                 returnDomains = null;
+            }
 
             // Process results
             int i = offset + 1;
@@ -147,7 +151,7 @@ namespace SanteDB.Messaging.HL7.Query
                 else
                 {
                     queryInstance.QRI.CandidateConfidence.Value = "1.0";
-                    queryInstance.QRI.AlgorithmDescriptor.Identifier.Value = "PTNM";
+                    queryInstance.QRI.AlgorithmDescriptor.Identifier.Value = "PTNM"; // TODO: Detect the method of score based on the input message and query parameters
                 }
             }
 
@@ -167,19 +171,22 @@ namespace SanteDB.Messaging.HL7.Query
             Double? strength = String.IsNullOrEmpty(strStrength) ? null : (double?)Double.Parse(strStrength);
 
             // Query parameters
-            foreach (var itm in MessageUtils.ParseQueryElement(qpd.GetField(3).OfType<Varies>(), map, algorithm, strength))
+            var queryElementParsed = MessageUtils.ParseQueryElement(qpd.GetField(3).OfType<Varies>(), map, algorithm, strength);
+            foreach (var itm in queryElementParsed.AllKeys)
+            {
                 try
                 {
-                    retVal.Add(itm.Key, itm.Value);
+                    Array.ForEach(queryElementParsed.GetValues(itm), o => retVal.Add(itm, o));
                 }
                 catch (Exception e)
                 {
                     this.m_tracer.TraceError("Error processing query parameter", "QPD", "1", 3, 0, e);
-                    throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                    throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                     {
                         param = "query parameter"
                     }), "QPD", "1", 3, 0, e);
                 }
+            }
 
             // Return domains
             foreach (var rt in qpd.GetField(8).OfType<Varies>())
@@ -191,14 +198,18 @@ namespace SanteDB.Messaging.HL7.Query
                     var authority = rid.AssigningAuthority.ToModel();
 
                     if (authority.Key == this.m_configuration.LocalAuthority.Key)
+                    {
                         retVal.Add("_id", rid.IDNumber.Value);
+                    }
                     else
+                    {
                         retVal.Add($"identifier[{authority.DomainName}]", "!null");
+                    }
                 }
                 catch (Exception e)
                 {
                     this.m_tracer.TraceError("Error processing return domains", "QPD", "1", 8, 0, e);
-                    throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                    throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                     {
                         param = "return domains"
                     }), "QPD", "1", 8, 0, e);

@@ -1,24 +1,23 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you
- * may not use this file except in compliance with the License. You may
- * obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you 
+ * may not use this file except in compliance with the License. You may 
+ * obtain a copy of the License at 
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0 
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
+ * License for the specific language governing permissions and limitations under 
  * the License.
- *
+ * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
-
 using Newtonsoft.Json;
 using SanteDB.Core;
 using SanteDB.Core.Configuration;
@@ -53,14 +52,14 @@ namespace SanteDB.Messaging.HL7.Configuration
         [XmlElement("localAuthority"), JsonProperty("localAuthority")]
         [DisplayName("Local Domain"), Description("The local identity domain. When this identity domain appears in the CX.4 of a message, it will be assumed to be an internal key")]
         [TypeConverter(typeof(ExpandableObjectConverter))]
-        public AssigningAuthority LocalAuthority { get; set; }
+        public IdentityDomain LocalAuthority { get; set; }
 
         /// <summary>
         /// Security method
         /// </summary>
         [XmlAttribute("security"), JsonProperty("security")]
         [DisplayName("Authentication Mode"), Description("The method of authenticating clients messages. If you're using SLLP then this setting controls the authentication of the MSH-3 (sending application) and the client certificate authenticates the device, if you're using LLP then this authenticates the device and software")]
-        public AuthenticationMethod Security { get; set; }
+        public Hl7AuthenticationMethod Security { get; set; }
 
         /// <summary>
         /// If no security method is being used, the principal of the anonymous user
@@ -90,7 +89,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         [XmlElement("ssnAuthority"), JsonProperty("ssnAuthority")]
         [TypeConverter(typeof(ExpandableObjectConverter))]
         [DisplayName("SSN Authority"), Description("The assigning authority which should be used when PID-19 (SSN) is provided")]
-        public AssigningAuthority SsnAuthority { get; set; }
+        public IdentityDomain SsnAuthority { get; set; }
 
         /// <summary>
         /// Birthplace class keys
@@ -224,8 +223,8 @@ namespace SanteDB.Messaging.HL7.Configuration
     /// <summary>
     /// Security methods
     /// </summary>
-    [XmlType(nameof(AuthenticationMethod), Namespace = "http://santedb.org/configuration")]
-    public enum AuthenticationMethod
+    [XmlType(nameof(Hl7AuthenticationMethod), Namespace = "http://santedb.org/configuration")]
+    public enum Hl7AuthenticationMethod
     {
         /// <summary>
         /// No security

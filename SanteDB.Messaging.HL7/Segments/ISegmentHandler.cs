@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
@@ -16,15 +16,13 @@
  * the License.
  * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
+using NHapi.Base.Model;
 using SanteDB.Core.Model;
+using SanteDB.Core.Model.DataTypes;
 using System;
 using System.Collections.Generic;
-using NHapi.Model.V25.Datatype;
-using NHapi.Base.Model;
-using NHapi.Model.V25.Segment;
-using SanteDB.Core.Model.DataTypes;
 
 namespace SanteDB.Messaging.HL7.Segments
 {
@@ -52,7 +50,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// <param name="data">The data to be translated into segment(s)</param>
         /// <param name="context">The message in which the segment is created</param>
         /// <returns>The necessary segments to be added to the message</returns>
-        IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, AssigningAuthority[] exportDomains);
+        IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, IdentityDomain[] exportDomains);
 
     }
 }

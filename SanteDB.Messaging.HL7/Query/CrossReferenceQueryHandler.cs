@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
@@ -16,7 +16,7 @@
  * the License.
  * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
 using NHapi.Base.Model;
 using NHapi.Base.Util;
@@ -24,25 +24,21 @@ using NHapi.Model.V25.Datatype;
 using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
+using SanteDB.Core.Diagnostics;
+using SanteDB.Core.Matching;
 using SanteDB.Core.Model.DataTypes;
-using SanteDB.Core.Model.Query;
 using SanteDB.Core.Model.Roles;
-using SanteDB.Core.Security;
 using SanteDB.Core.Services;
+using SanteDB.Messaging.HL7.Configuration;
+using SanteDB.Messaging.HL7.Exceptions;
 using SanteDB.Messaging.HL7.ParameterMap;
-using SanteDB.Messaging.HL7.Segments;
 using SanteDB.Messaging.HL7.TransportProtocol;
-using SanteDB.Messaging.HL7.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Linq.Expressions;
-using SanteDB.Core.Model;
-using SanteDB.Messaging.HL7.Configuration;
-using SanteDB.Messaging.HL7.Exceptions;
-using SanteDB.Core.Matching;
-using SanteDB.Core.Diagnostics;
 
 namespace SanteDB.Messaging.HL7.Query
 {
@@ -77,12 +73,16 @@ namespace SanteDB.Messaging.HL7.Query
         public virtual IMessage AppendQueryResult(IEnumerable results, Expression queryDefinition, IMessage currentResponse, Hl7MessageReceivedEventArgs evt, int offset = 0)
         {
             var patients = results.OfType<Patient>();
-            if (patients.Count() == 0) return currentResponse;
+            if (patients.Count() == 0)
+            {
+                return currentResponse;
+            }
+
             var retVal = currentResponse as RSP_K23;
             var rqo = evt.Message as QBP_Q21;
 
             // Return domains
-            List<AssigningAuthority> returnDomains = new List<AssigningAuthority>();
+            List<IdentityDomain> returnDomains = new List<IdentityDomain>();
             foreach (var rt in rqo.QPD.GetField(4).OfType<Varies>())
             {
                 var rid = new CX(rqo.Message);
@@ -108,8 +108,12 @@ namespace SanteDB.Messaging.HL7.Query
                 }
 
                 foreach (var id in itm.LoadCollection<EntityIdentifier>("Identifiers"))
-                    if (returnDomains.Count == 0 || returnDomains.Any(o => o.Key == id.AuthorityKey))
+                {
+                    if (returnDomains.Count == 0 || returnDomains.Any(o => o.Key == id.IdentityDomainKey))
+                    {
                         queryInstance.PID.GetPatientIdentifierList(queryInstance.PID.PatientIdentifierListRepetitionsUsed).FromModel(id);
+                    }
+                }
 
                 if (returnDomains.Any(rid => rid.Key == this.m_configuration.LocalAuthority.Key))
                 {
@@ -159,18 +163,22 @@ namespace SanteDB.Messaging.HL7.Query
                     var authority = rid.AssigningAuthority.ToModel();
 
                     if (authority.Key == m_configuration.LocalAuthority.Key)
+                    {
                         retVal.Add("_id", rid.IDNumber.Value);
+                    }
                     else
+                    {
                         retVal.Add($"identifier[{authority.DomainName}].value", rid.IDNumber.Value);
+                    }
                 }
                 catch (Exception e)
                 {
                     this.m_tracer.TraceError("Error processing patient identity", "QPD", "1", 3, 4, e);
-                    throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new 
-                    { 
-                      param = "patient identity"
+                    throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
+                    {
+                        param = "patient identity"
                     }), "QPD", "1", 3, 4, e);
-                    
+
                 }
             }
 
@@ -188,11 +196,11 @@ namespace SanteDB.Messaging.HL7.Query
                 catch (Exception e)
                 {
                     this.m_tracer.TraceError("Error processing what domains returned", "QPD", "1", 4, 4, e);
-                    throw new HL7ProcessingException(this.m_localizationService.FormatString("error.type.HL7ProcessingException", new
+                    throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                     {
                         param = "what domains returned"
                     }), "QPD", "1", 4, 4, e);
-                    
+
                 }
             }
 

@@ -1,5 +1,5 @@
 ﻿<!--
- - Copyright 2021-2021 SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ - Copyright 2021-2022 SanteSuite Contributors (See NOTICE.md for full copyright notices)
  - Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  - Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  - 
@@ -16,13 +16,13 @@
  - the License.
  - 
  - User: fyfej
- - Date: 2021-8-5
+ - Date: 2022-5-30
  -->
 <Hl7QueryParameterMap xmlns="http://santedb.org/model/hl7">
   <messageType trigger="Q22" name="Find Candidates Query" response="RSP_K21" responseTrigger="K22" queryTarget="Patient"
-               queryHandler="SanteDB.Messaging.HL7.Query.FindCandidatesQueryHandler, SanteDB.Messaging.HL7, Version=1.0.0.0"
+               queryHandler="SanteDB.Messaging.HL7.Query.FindCandidatesQueryHandler, SanteDB.Messaging.HL7"
                >
-    <parameter hl7="@PID.5.1.1" model="name.component[Family].value" type="string" fuzzy="true" />
+    <parameter hl7="@PID.5.1.1" model="name.component[Family].value" type="string"  />
     <parameter hl7="@PID.5.2.1" model="name.component[Given].value"  type="string" fuzzy="true" />
     <parameter hl7="@PID.6.1.1" model="relationship[Mother].target.name.component[Family].value"  type="string"/>
     <parameter hl7="@PID.6.2.1" model="relationship[Mother].target.name.component[Given].value"  type="string"/>
@@ -31,8 +31,8 @@
     <parameter hl7="@PID.13.4.1" model="telecom.value" type="concept"/>
     <parameter hl7="@PID.13.12.1" model="telecom[MobileContact|EmergencyContact].value" type="concept"/>
     <parameter hl7="@PID.3.1.1" model="identifier.value"/>
-    <parameter hl7="@PID.3.4.1" model="identifier.authority.domainName"/>
-    <parameter hl7="@PID.3.4.2" model="identifier.authority.oid"/>
+    <parameter hl7="@PID.3.4.1" model="identifier.domain.domainName"/>
+    <parameter hl7="@PID.3.4.2" model="identifier.domain.oid"/>
     <parameter hl7="@PID.3.1.1" model="id" />
     <parameter hl7="@PID.11.4.1" model="address.component[State].value"/>
     <parameter hl7="@PID.11.3.1" model="address.component[City].value"/>
@@ -52,7 +52,7 @@
 
   </messageType>
   <messageType trigger="Q23" name="Cross Reference Identifiers" response="RSP_K23" responseTrigger="K23" queryTarget="Patient"
-               queryHandler="SanteDB.Messaging.HL7.Query.CrossReferenceQueryHandler, SanteDB.Messaging.HL7, Version=1.0.0.0"
+               queryHandler="SanteDB.Messaging.HL7.Query.CrossReferenceQueryHandler, SanteDB.Messaging.HL7"
                matchConfiguration="default">
   </messageType>
 </Hl7QueryParameterMap>

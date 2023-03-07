@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
@@ -16,13 +16,12 @@
  * the License.
  * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
 using Newtonsoft.Json;
 using SanteDB.Messaging.HL7.Client;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Xml.Serialization;
@@ -45,13 +44,13 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// </summary>
         [XmlAttribute("address"), JsonProperty("address")]
         [DisplayName("Endpoint"), Description("The endpoint address in the format of a URL such as [s]llp://[host]:[port]")]
-        public String AddressXml 
+        public String AddressXml
         {
             get => this.m_addressXml;
             set
             {
                 this.m_addressXml = value;
-                if(value?.StartsWith("sllp") == true && this.Configuration == null)
+                if (value?.StartsWith("sllp") == true && this.Configuration == null)
                 {
                     this.Configuration = new SllpTransport.SllpConfigurationObject();
                 }
@@ -79,7 +78,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         [DisplayName("Receive Timeout (ms)"), Description("The maximum amount of time to wait on the socket to receive data")]
         public int ReceiveTimeout { get; set; }
 
-        
+
     }
 
     /// <summary>
@@ -117,8 +116,11 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// <returns></returns>
         public MllpMessageSender GetSender()
         {
-            if(this.m_sender == null)
+            if (this.m_sender == null)
+            {
                 this.m_sender = new MllpMessageSender(this.Address, (this.Configuration as SllpTransport.SllpConfigurationObject)?.ClientCaCertificate?.Certificate, (this.Configuration as SllpTransport.SllpConfigurationObject)?.ServerCertificate?.Certificate);
+            }
+
             return this.m_sender;
         }
 

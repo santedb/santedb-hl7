@@ -1,29 +1,26 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you
- * may not use this file except in compliance with the License. You may
- * obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you 
+ * may not use this file except in compliance with the License. You may 
+ * obtain a copy of the License at 
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0 
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
+ * License for the specific language governing permissions and limitations under 
  * the License.
- *
+ * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
-
-using SanteDB.Core;
 using SanteDB.Core.Configuration;
 using SanteDB.Core.Diagnostics;
 using SanteDB.Core.Security.Configuration;
-using SanteDB.Core.Services;
 using SanteDB.Docker.Core;
 using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.TransportProtocol;
@@ -31,8 +28,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SanteDB.Messaging.HL7.Docker
 {
@@ -105,7 +100,7 @@ namespace SanteDB.Messaging.HL7.Docker
             // first the security
             if (settings.TryGetValue(AuthenticationSetting, out string auth))
             {
-                if (!Enum.TryParse<AuthenticationMethod>(auth, true, out AuthenticationMethod authResult))
+                if (!Enum.TryParse<Hl7AuthenticationMethod>(auth, true, out var authResult))
                 {
                     this.m_tracer.TraceError($"Couldn't understand {auth}, valid values are NONE, MSH8, or SFT4");
                     throw new ArgumentOutOfRangeException($"{auth} not valid setting - valid values are NONE, MSH8, or SFT4");
@@ -116,13 +111,13 @@ namespace SanteDB.Messaging.HL7.Docker
             // Next, local domain
             if (settings.TryGetValue(LocalAuthoritySetting, out string localAuth))
             {
-                hl7Configuration.LocalAuthority = new Core.Model.DataTypes.AssigningAuthority(localAuth, localAuth, null);
+                hl7Configuration.LocalAuthority = new Core.Model.DataTypes.IdentityDomain(localAuth, localAuth, null);
             }
 
             // Next the SSN domain
             if (settings.TryGetValue(SsnAuthoritySetting, out string ssnAuth))
             {
-                hl7Configuration.SsnAuthority = new Core.Model.DataTypes.AssigningAuthority(ssnAuth, ssnAuth, null);
+                hl7Configuration.SsnAuthority = new Core.Model.DataTypes.IdentityDomain(ssnAuth, ssnAuth, null);
             }
 
             // Next listen address

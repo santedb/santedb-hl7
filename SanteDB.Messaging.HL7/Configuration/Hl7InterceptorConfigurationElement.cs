@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
@@ -16,7 +16,7 @@
  * the License.
  * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
 using Newtonsoft.Json;
 using SanteDB.Core.Model.DataTypes;
@@ -63,7 +63,7 @@ namespace SanteDB.Messaging.HL7.Configuration
         /// Gets or sets the identity domains to notify the remote target of
         /// </summary>
         [XmlArray("domains"), XmlArrayItem("add"), JsonProperty("domains")]
-        public List<AssigningAuthority> ExportDomains { get; set; }
+        public List<IdentityDomain> ExportDomains { get; set; }
 
         /// <summary>
         /// Sets the version

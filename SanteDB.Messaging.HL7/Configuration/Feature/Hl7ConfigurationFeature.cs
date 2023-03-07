@@ -1,4 +1,24 @@
-﻿using SanteDB.Core.Configuration;
+﻿/*
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
+ * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you 
+ * may not use this file except in compliance with the License. You may 
+ * obtain a copy of the License at 
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0 
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
+ * License for the specific language governing permissions and limitations under 
+ * the License.
+ * 
+ * User: fyfej
+ * Date: 2022-5-30
+ */
+using SanteDB.Core.Configuration;
 using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Messages;
@@ -6,7 +26,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
 
 namespace SanteDB.Messaging.HL7.Configuration.Feature
 {
@@ -76,23 +95,23 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
         public FeatureInstallState QueryState(SanteDBConfiguration configuration)
         {
             var hl7Config = this.m_configuration = configuration.GetSection<Hl7ConfigurationSection>();
-            if(this.m_configuration == null)
+            if (this.m_configuration == null)
             {
                 this.m_configuration = new Hl7ConfigurationSection()
                 {
                     BirthplaceClassKeys = new List<Guid>()
                     {
-                        EntityClassKeys.State,
+                        EntityClassKeys.StateOrProvince,
                         EntityClassKeys.PrecinctOrBorough,
                         EntityClassKeys.CityOrTown,
                         EntityClassKeys.ServiceDeliveryLocation,
                         EntityClassKeys.Country
                     },
-                    LocalAuthority = new Core.Model.DataTypes.AssigningAuthority("YOUR_LOCAL_V2_AUTHORITY", "Local Authority", $"2.25.{BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0)}"),
-                    SsnAuthority = new Core.Model.DataTypes.AssigningAuthority("SSN", "Social Security Number", "2.16.840.1.113883.4.1"),
+                    LocalAuthority = new Core.Model.DataTypes.IdentityDomain("YOUR_LOCAL_V2_AUTHORITY", "Local Authority", $"2.25.{BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0)}"),
+                    SsnAuthority = new Core.Model.DataTypes.IdentityDomain("SSN", "Social Security Number", "2.16.840.1.113883.4.1"),
                     IdentifierReplacementBehavior = IdentifierReplacementMode.Specific,
                     LocalFacility = Guid.Empty,
-                    Security = AuthenticationMethod.Msh8,
+                    Security = Hl7AuthenticationMethod.Msh8,
                     RequireAuthenticatedApplication = true,
                     StrictAssigningAuthorities = true,
                     StrictMetadataMatch = true,
@@ -156,7 +175,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
             }
 
             // Application configuration section
-            var appSection = configuration.GetSection<ApplicationServiceContextConfigurationSection>().ServiceProviders.Any(s=>s.Type == typeof(HL7MessageHandler));
+            var appSection = configuration.GetSection<ApplicationServiceContextConfigurationSection>().ServiceProviders.Any(s => s.Type == typeof(HL7MessageHandler));
             return appSection && hl7Config != null ? FeatureInstallState.Installed : hl7Config == null || !appSection ? FeatureInstallState.PartiallyInstalled : FeatureInstallState.NotInstalled;
         }
     }
@@ -185,9 +204,9 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
         /// </summary>
         public string Description => "Removes the HL7 message handler, and registers the HL7 message endpoints configured in the panel.";
 
-           /// <summary>
-           /// Gets the feature that hosts this task
-           /// </summary>
+        /// <summary>
+        /// Gets the feature that hosts this task
+        /// </summary>
         public IFeature Feature { get; }
 
         /// <summary>
@@ -220,7 +239,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
                 configuration.AddSection(this.m_configuration);
             }
             var services = configuration.GetSection<ApplicationServiceContextConfigurationSection>().ServiceProviders;
-            if(!services.Any(o=>o.Type == typeof(HL7MessageHandler)))
+            if (!services.Any(o => o.Type == typeof(HL7MessageHandler)))
             {
                 services.Add(new TypeReferenceConfiguration(typeof(HL7MessageHandler)));
             }
@@ -282,7 +301,7 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
 
             // Register the HL7 messaging service
             var services = configuration.GetSection<ApplicationServiceContextConfigurationSection>().ServiceProviders;
-            if(!services.Any(s=>s.Type == typeof(HL7MessageHandler)))
+            if (!services.Any(s => s.Type == typeof(HL7MessageHandler)))
             {
                 services.Add(new TypeReferenceConfiguration(typeof(HL7MessageHandler)));
             }

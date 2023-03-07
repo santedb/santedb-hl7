@@ -1,24 +1,23 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you
- * may not use this file except in compliance with the License. You may
- * obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you 
+ * may not use this file except in compliance with the License. You may 
+ * obtain a copy of the License at 
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0 
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
+ * License for the specific language governing permissions and limitations under 
  * the License.
- *
+ * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
-
 using NHapi.Base.Parser;
 using SanteDB.Core;
 using SanteDB.Core.Diagnostics;
@@ -43,7 +42,8 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
     [Description("ER7 over LLP")]
     public class LlpTransport : ITransportProtocol
     {
-        protected Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
+        protected readonly Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
+
 
         /// <summary>
         /// Start transmission
@@ -107,7 +107,9 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                 catch (Exception e)
                 {
                     if (this.m_run)
+                    {
                         this.m_traceSource.TraceEvent(EventLevel.Error, "Error on HL7 worker {0} - {1}", this.m_listener.LocalEndpoint, e);
+                    }
                 }
             }
         }
@@ -137,7 +139,9 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                         // Read LLP head byte
                         int llpByte = stream.ReadByte();
                         if (llpByte != START_TX) // first byte must be HT
+                        {
                             throw new InvalidOperationException("Invalid LLP First Byte");
+                        }
 
                         // Standard stream stuff, read until the stream is exhausted
                         StringBuilder messageData = new StringBuilder();
@@ -147,7 +151,9 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                         while (!receivedEOF)
                         {
                             if (DateTime.Now.Subtract(lastReceive) > this.m_timeout)
+                            {
                                 throw new TimeoutException("Data not received in the specified amount of time. Increase the timeout or check the network connection");
+                            }
 
                             if (!stream.DataAvailable)
                             {
@@ -160,19 +166,27 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 
                             // Need to check for CR?
                             if (scanForCr)
+                            {
                                 receivedEOF = buffer[0] == END_TXNL;
+                            }
                             else
                             {
                                 // Look for FS
                                 int fsPos = Array.IndexOf(buffer, (byte)END_TX);
 
                                 if (fsPos == -1) // not found
+                                {
                                     continue;
+                                }
                                 else if (fsPos < buffer.Length - 1) // more room to read
+                                {
                                     receivedEOF = buffer[fsPos + 1] == END_TXNL;
+                                }
                                 else
+                                {
                                     scanForCr = true; // Cannot check the end of message for CR because there is no more room in the message buffer
-                                                      // so need to check on the next loop
+                                }
+                                // so need to check on the next loop
                             }
                         }
 
@@ -186,9 +200,12 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                         Uri localEndpoint = new Uri(String.Format("llp://{0}:{1}", localEp.Address, localEp.Port));
                         Uri remoteEndpoint = new Uri(String.Format("llp://{0}:{1}", remoteEp.Address, remoteEp.Port));
 
-                        foreach (var messagePart in messageData.ToString().Split((char) END_TX))
+                        foreach (var messagePart in messageData.ToString().Split((char)END_TX))
                         {
-                            if (messagePart == "\r") continue;
+                            if (messagePart == "\r")
+                            {
+                                continue;
+                            }
 
                             try
                             {
@@ -207,6 +224,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                             catch (Exception e)
                             {
                                 this.m_traceSource.TraceError("Error processing HL7 message: {0}", e);
+                                var auditservice = ApplicationServiceContext.Current.GetAuditService();
                                 if (messageArgs != null)
                                 {
                                     var nack = new NHapi.Model.V25.Message.ACK();
@@ -218,11 +236,11 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 
                                     var icomps = PipeParser.Encode(messageArgs.Message.GetStructure("MSH") as NHapi.Base.Model.ISegment, new EncodingCharacters('|', "^~\\&")).Split('|');
                                     var ocomps = PipeParser.Encode(messageArgs.Response.GetStructure("MSH") as NHapi.Base.Model.ISegment, new EncodingCharacters('|', "^~\\&")).Split('|');
-                                    AuditUtil.AuditNetworkRequestFailure(e, messageArgs.ReceiveEndpoint, Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => icomps[o - 1]), Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => ocomps[o - 1]));
+                                    auditservice.Audit().ForNetworkRequestFailure(e, messageArgs.ReceiveEndpoint, Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => icomps[o - 1]), Enumerable.Range(1, icomps.Length).ToDictionary(o => $"MSH-{o}", o => ocomps[o - 1])).Send();
                                 }
                                 else
                                 {
-                                    AuditUtil.AuditNetworkRequestFailure(e, localEndpoint, new System.Collections.Specialized.NameValueCollection(), new System.Collections.Specialized.NameValueCollection());
+                                    auditservice.Audit().ForNetworkRequestFailure(e, localEndpoint, new System.Collections.Specialized.NameValueCollection(), new System.Collections.Specialized.NameValueCollection()).Send();
                                 }
                             }
                             finally
@@ -251,7 +269,9 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                         }
 
                         if (!stream.DataAvailable)
+                        {
                             return;
+                        }
                     }
                 }
                 catch (Exception e)
@@ -270,11 +290,13 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         /// <summary>
         /// Message received
         /// </summary>
-        /// <param name="message"></param>
+        /// <param name="messageArgs">The received message arguments</param>
         protected void OnMessageReceived(Hl7MessageReceivedEventArgs messageArgs)
         {
             if (this.MessageReceived != null)
+            {
                 this.MessageReceived(this, messageArgs);
+            }
         }
 
         /// <summary>

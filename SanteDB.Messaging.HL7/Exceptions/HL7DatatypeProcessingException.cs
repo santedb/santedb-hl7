@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
@@ -16,13 +16,9 @@
  * the License.
  * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SanteDB.Messaging.HL7.Exceptions
 {
@@ -31,16 +27,16 @@ namespace SanteDB.Messaging.HL7.Exceptions
     /// </summary>
     public class HL7DatatypeProcessingException : Exception
     {
-      
+
         /// <summary>
         /// Gets the component
         /// </summary>
         public Int32 Component { get; }
-        
+
         /// <summary>
         /// Creates a new HL7 processing exception
         /// </summary>
-        public HL7DatatypeProcessingException(String message,  Int32 component) : this(message, component, null)
+        public HL7DatatypeProcessingException(String message, Int32 component) : this(message, component, null)
         {
             this.Component = component;
         }

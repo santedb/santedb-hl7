@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <dataset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" id="HL7v2 Gender Codes" xmlns="http://santedb.org/data">
-  <insert skipIfExists="true">
+  <update insertIfNotExists="true">
     <CodeSystem xmlns="http://santedb.org/model">
       <id>f0b9dce2-300b-4ad3-b144-732f672027ac</id>
       <authority>V2AdministrativeGender</authority>
@@ -8,8 +8,8 @@
       <url>http://terminology.hl7.org/CodeSystem/v2-0001</url>
       <description>HL7 Version 2 Administrative Gender Codes</description>
     </CodeSystem>
-  </insert>
-  <insert skipIfError="false" skipIfExists="true">
+  </update>
+  <update insertIfNotExists="true">
     <ReferenceTerm xmlns="http://santedb.org/model">
       <id>4bb85fd5-2a9a-4844-a130-8fbd09596ba6</id>
       <mnemonic>M</mnemonic>
@@ -20,15 +20,15 @@
         <phoneticAlgorithm xsi:nil="true" />
       </name>
     </ReferenceTerm>
-  </insert>
-  <insert skipIfError="false" skipIfExists="true">
+  </update>
+  <update insertIfNotExists="true">
     <ConceptReferenceTerm xmlns="http://santedb.org/model">
       <source>F4E3A6BB-612E-46B2-9F77-FF844D971198</source>
       <term>4bb85fd5-2a9a-4844-a130-8fbd09596ba6</term>
       <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
     </ConceptReferenceTerm>
-  </insert>
-  <insert skipIfError="false" skipIfExists="true">
+  </update>
+  <update insertIfNotExists="true">
     <ReferenceTerm xmlns="http://santedb.org/model">
       <id>f0a67c20-e1b5-467d-aeaf-4e0e2b55fa14</id>
       <mnemonic>F</mnemonic>
@@ -39,15 +39,15 @@
         <phoneticAlgorithm xsi:nil="true" />
       </name>
     </ReferenceTerm>
-  </insert>
-  <insert skipIfError="false" skipIfExists="true">
+  </update>
+  <update insertIfNotExists="true">
     <ConceptReferenceTerm xmlns="http://santedb.org/model">
       <source>094941E9-A3DB-48B5-862C-BC289BD7F86C</source>
       <term>f0a67c20-e1b5-467d-aeaf-4e0e2b55fa14</term>
       <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
     </ConceptReferenceTerm>
-  </insert>
-  <insert skipIfError="false" skipIfExists="true">
+  </update>
+  <update insertIfNotExists="true">
     <ReferenceTerm xmlns="http://santedb.org/model">
       <id>20d8527a-53ba-46ba-90b8-6493cf5ef3ee</id>
       <mnemonic>O</mnemonic>
@@ -58,15 +58,15 @@
         <phoneticAlgorithm xsi:nil="true" />
       </name>
     </ReferenceTerm>
-  </insert>
-  <insert skipIfError="false" skipIfExists="true">
+  </update>
+  <update insertIfNotExists="true">
     <ConceptReferenceTerm xmlns="http://santedb.org/model">
       <source>091F27E8-E592-4E81-B5D7-338B7749D8B8</source>
       <term>20d8527a-53ba-46ba-90b8-6493cf5ef3ee</term>
       <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
     </ConceptReferenceTerm>
-  </insert>
-  <insert skipIfError="false" skipIfExists="true">
+  </update>
+  <update insertIfNotExists="true">
     <ReferenceTerm xmlns="http://santedb.org/model">
       <id>b760d785-2bd0-4f71-90c3-0a568e022428</id>
       <mnemonic>U</mnemonic>
@@ -77,15 +77,15 @@
         <phoneticAlgorithm xsi:nil="true" />
       </name>
     </ReferenceTerm>
-  </insert>
-  <insert skipIfError="false" skipIfExists="true">
+  </update>
+  <update insertIfNotExists="true">
     <ConceptReferenceTerm xmlns="http://santedb.org/model">
       <source>43BA2EA1-93DF-4E06-8BF9-1E65C4A46A3F</source>
       <term>b760d785-2bd0-4f71-90c3-0a568e022428</term>
       <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
     </ConceptReferenceTerm>
-  </insert>
-  <insert skipIfError="false" skipIfExists="true">
+  </update>
+  <update insertIfNotExists="true">
     <ReferenceTerm xmlns="http://santedb.org/model">
       <id>81571571-4aa5-4b8d-9f84-2148715cfc8d</id>
       <mnemonic>A</mnemonic>
@@ -96,12 +96,12 @@
         <phoneticAlgorithm xsi:nil="true" />
       </name>
     </ReferenceTerm>
-  </insert>
-  <insert skipIfError="false" skipIfExists="true">
+  </update>
+  <update insertIfNotExists="true">
     <ConceptReferenceTerm xmlns="http://santedb.org/model">
       <source>AE94A782-1485-4241-9BCA-5B09DB2156BF</source>
       <term>81571571-4aa5-4b8d-9f84-2148715cfc8d</term>
       <relationshipType>2c4dafc2-566a-41ae-9ebc-3097d7d22f4a</relationshipType>
     </ConceptReferenceTerm>
-  </insert>
+  </update>
 </dataset>

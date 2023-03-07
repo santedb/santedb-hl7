@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
@@ -16,19 +16,18 @@
  * the License.
  * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
+using NHapi.Base.Model;
+using NHapi.Model.V25.Segment;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Acts;
 using SanteDB.Core.Model.Constants;
+using SanteDB.Core.Model.DataTypes;
+using SanteDB.Core.Model.Entities;
 using System;
 using System.Collections.Generic;
-using NHapi.Model.V25.Datatype;
-using NHapi.Base.Model;
-using NHapi.Model.V25.Segment;
-using SanteDB.Core.Model.Entities;
 using System.Linq;
-using SanteDB.Core.Model.DataTypes;
 
 namespace SanteDB.Messaging.HL7.Segments
 {
@@ -49,14 +48,18 @@ namespace SanteDB.Messaging.HL7.Segments
         /// <summary>
         /// Create the event data
         /// </summary>
-        public IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, AssigningAuthority[] exportDomains)
+        public IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, IdentityDomain[] exportDomains)
         {
             if (data is Entity)
+            {
                 data = (data as Entity).LoadProperty<Act>("CreationAct");
+            }
 
             // Data is null?
             if (data == null)
+            {
                 return new ISegment[0];
+            }
 
             // Set event properties
             var evn = context.GetStructure("EVN") as EVN;
@@ -64,18 +67,22 @@ namespace SanteDB.Messaging.HL7.Segments
             evn.RecordedDateTime.Time.SetLongDateWithFractionOfSecond(act.CreationTime.DateTime);
 
             // Is there a participation for location
-            var location = act.LoadCollection<ActParticipation>("Participations").FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKey.Location)?.PlayerEntityKey;
+            var location = act.LoadCollection<ActParticipation>("Participations").FirstOrDefault(o => o.ParticipationRoleKey == ActParticipationKeys.Location)?.PlayerEntityKey;
             if (location.HasValue)
             {
                 evn.EventFacility.UniversalID.Value = location.Value.ToString();
                 evn.EventFacility.UniversalIDType.Value = "GUID";
             }
 
-            /// Planned event time
-            if(act.MoodConceptKey == ActMoodKeys.Eventoccurrence)
-                evn.EventOccurred.Time.SetLongDateWithFractionOfSecond(act.ActTime.DateTime);
-            else if(act.MoodConceptKey == ActMoodKeys.Intent)
-                evn.DateTimePlannedEvent.Time.SetLongDateWithFractionOfSecond(act.ActTime.DateTime);
+            // Planned event time
+            if (act.MoodConceptKey == ActMoodKeys.Eventoccurrence)
+            {
+                evn.EventOccurred.Time.SetLongDateWithFractionOfSecond(act.ActTime.GetValueOrDefault().DateTime);
+            }
+            else if (act.MoodConceptKey == ActMoodKeys.Intent)
+            {
+                evn.DateTimePlannedEvent.Time.SetLongDateWithFractionOfSecond(act.ActTime.GetValueOrDefault().DateTime);
+            }
 
             evn.EventReasonCode.FromModel(act.LoadProperty<Concept>("ReasonConcept"), EventReasonCodeSystem);
             evn.EventTypeCode.FromModel(act.LoadProperty<Concept>("TypeConcept"), EventTriggerCodeSystem);
@@ -93,8 +100,10 @@ namespace SanteDB.Messaging.HL7.Segments
             var retVal = new ControlAct() { Key = Guid.NewGuid(), MoodConceptKey = ActMoodKeys.Eventoccurrence, ActTime = DateTimeOffset.Now };
 
             // Message trigger
-            if(!mshData.MessageType.TriggerEvent.IsEmpty())
+            if (!mshData.MessageType.TriggerEvent.IsEmpty())
+            {
                 retVal.TypeConcept = mshData.MessageType.TriggerEvent.ToConcept(EventTriggerCodeSystem);
+            }
 
             // Recorded event time
             if (!evnSegment.RecordedDateTime.IsEmpty())
@@ -111,23 +120,34 @@ namespace SanteDB.Messaging.HL7.Segments
             }
 
             // Reason code
-            if(!evnSegment.EventReasonCode.IsEmpty())
+            if (!evnSegment.EventReasonCode.IsEmpty())
+            {
                 retVal.ReasonConcept = evnSegment.EventReasonCode.ToConcept(EventReasonCodeSystem);
+            }
 
             // Operator ID - I.E. the author of this event - XCN to be extracted and created as author
             if (evnSegment.OperatorIDRepetitionsUsed > 0)
+            {
                 foreach (var op in evnSegment.GetOperatorID())
+                {
                     ;
+                }
+            }
 
-            if (!evnSegment.EventOccurred.IsEmpty()) {
+            if (!evnSegment.EventOccurred.IsEmpty())
+            {
                 retVal.ActTime = (DateTimeOffset)evnSegment.EventOccurred.ToModel();
                 retVal.MoodConceptKey = ActMoodKeys.Eventoccurrence;
             }
 
             // Facility ID  - TODO: Fetch facility identifier
             if (!evnSegment.EventFacility.IsEmpty())
+            {
                 ;
+            }
 
+            // Set the creation time for the act if applicable
+            context.OfType<Entity>().ToList().ForEach(o => o.CreationActKey = retVal.Key);
             return new IdentifiedData[] { retVal };
         }
     }

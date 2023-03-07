@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
@@ -16,7 +16,7 @@
  * the License.
  * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
 namespace SanteDB.Messaging.HL7
 {
@@ -30,5 +30,21 @@ namespace SanteDB.Messaging.HL7
 
         // Focal object
         public const string FocalObjectTag = "$hl7.focal";
+
+        /// <summary>
+        /// Localization string like "Local identifiers must be UUIDs"
+        /// </summary>
+        public const string ERR_LOCAL_UUID = "error.messaging.hl7.localUuid";
+
+        /// <summary>
+        /// Localization string like "Facility {id} not found"
+        /// </summary>
+        public const string ERR_FACILITY_NOT_FOUND = "error.messaging.hl7.facilityId";
+
+        /// <summary>
+        /// Localization string like: "Error processing HL7 message contents"
+        /// </summary>
+        public const string ERR_GENERAL_PROCESSING = "error.messaging.hl7.general";
+
     }
 }

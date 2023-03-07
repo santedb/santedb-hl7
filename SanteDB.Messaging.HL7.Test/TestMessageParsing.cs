@@ -1,14 +1,34 @@
-﻿using NHapi.Base.Model;
+﻿/*
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
+ * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You may
+ * obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ * User: fyfej
+ * Date: 2022-5-30
+ */
+using NHapi.Base.Model;
 using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
 using NUnit.Framework;
 using SanteDB.Core;
-using SanteDB.Core.Model;
 using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.Entities;
 using SanteDB.Core.Model.Roles;
 using SanteDB.Core.Model.Security;
 using SanteDB.Core.Security;
+using SanteDB.Core.Security.Services;
 using SanteDB.Core.Services;
 using SanteDB.Core.TestFramework;
 using SanteDB.Messaging.HL7.Messages;
@@ -33,17 +53,34 @@ namespace SanteDB.Messaging.HL7.Test
         public void Initialize()
         {
             // Force load of the DLL
-            var p = FirebirdSql.Data.FirebirdClient.FbCharset.Ascii;
+            FirebirdSql.Data.FirebirdClient.FbCharset.Ascii.ToString();
             TestApplicationContext.TestAssembly = typeof(TestMessageParsing).Assembly;
             TestApplicationContext.Initialize(TestContext.CurrentContext.TestDirectory);
 
             // Create the test harness device / application
             var securityDevService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityDevice>>();
             var securityAppService = ApplicationServiceContext.Current.GetService<IRepositoryService<SecurityApplication>>();
-            var metadataService = ApplicationServiceContext.Current.GetService<IAssigningAuthorityRepositoryService>();
+            var pipService = ApplicationServiceContext.Current.GetService<IPolicyInformationService>();
+            var metadataService = ApplicationServiceContext.Current.GetService<IIdentityDomainRepositoryService>();
+            var placeService = ApplicationServiceContext.Current.GetService<IRepositoryService<Place>>();
             this.m_serviceManager = ApplicationServiceContext.Current.GetService<IServiceManager>();
 
             AuthenticationContext.EnterSystemContext();
+
+            // Create good health hospital if it does not already exist
+            if (!placeService.Find(o => o.Names.Any(n => n.Component.Any(c => c.Value == "Good Health Hospital"))).Any())
+            {
+                placeService.Insert(new Place()
+                {
+                    Key = Guid.Parse("fd0d2a08-8e94-402b-84b6-cb3bc0a576a9"),
+                    ClassConceptKey = EntityClassKeys.ServiceDeliveryLocation,
+                    DeterminerConceptKey = DeterminerKeys.Specific,
+                    Names = new System.Collections.Generic.List<EntityName>()
+                    {
+                        new EntityName(NameUseKeys.OfficialRecord, "Good Health Hospital")
+                    }
+                });
+            }
 
             // Create device
             var dev = new SecurityDevice()
@@ -51,9 +88,8 @@ namespace SanteDB.Messaging.HL7.Test
                 DeviceSecret = "DEVICESECRET",
                 Name = "TEST_HARNESS|TEST"
             };
-
-            dev.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
-            securityDevService.Insert(dev);
+            dev = securityDevService.Insert(dev);
+            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, PermissionPolicyIdentifiers.UnrestrictedClinicalData, PermissionPolicyIdentifiers.ReadMetadata);
 
             // Create device
             dev = new SecurityDevice()
@@ -61,32 +97,29 @@ namespace SanteDB.Messaging.HL7.Test
                 DeviceSecret = "DEVICESECRET",
                 Name = "TEST_HARNESS|MASTER"
             };
-            dev.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
-            dev.AddPolicy("1.3.6.1.4.1.33349.3.1.5.9.2.6");
-            securityDevService.Insert(dev);
+            dev = securityDevService.Insert(dev);
+            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.UnrestrictedAll, "1.3.6.1.4.1.33349.3.1.5.9.2.6");
 
             var app = new SecurityApplication()
             {
                 Name = "TEST_HARNESS",
                 ApplicationSecret = "APPLICATIONSECRET"
             };
-
-            app.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
-            app.AddPolicy(PermissionPolicyIdentifiers.UnrestrictedClinicalData);
-            app.AddPolicy(PermissionPolicyIdentifiers.ReadMetadata);
             app = securityAppService.Insert(app);
-            metadataService.Insert(new Core.Model.DataTypes.AssigningAuthority("TEST", "TEST", "1.2.3.4.5.6.7")
+            pipService.AddPolicies(app, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, PermissionPolicyIdentifiers.UnrestrictedClinicalData, PermissionPolicyIdentifiers.ReadMetadata);
+            metadataService.Insert(new Core.Model.DataTypes.IdentityDomain("TEST", "TEST", "1.2.3.4.5.6.7")
             {
                 IsUnique = true,
-                AssigningApplicationKey = app.Key
+                AssigningAuthority = new System.Collections.Generic.List<Core.Model.DataTypes.AssigningAuthority>()
+                {
+                    new Core.Model.DataTypes.AssigningAuthority()
+                    {
+                        AssigningApplicationKey = app.Key,
+                        Reliability = Core.Model.DataTypes.IdentifierReliability.Authoritative
+                    }
+                }
             });
 
-            metadataService.Insert(new Core.Model.DataTypes.AssigningAuthority("SSN", "US Social Security Number", "2.16.840.1.113883.4.1")
-            {
-                IsUnique = false,
-                Url = "http://hl7.org/fhir/sid/us-ssn",
-                AssigningApplicationKey = app.Key
-            });
 
             // Add another application for security checks
             dev = new SecurityDevice()
@@ -94,20 +127,16 @@ namespace SanteDB.Messaging.HL7.Test
                 DeviceSecret = "DEVICESECRET2",
                 Name = "TEST_HARNESS2|TEST"
             };
-
-            dev.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
-            securityDevService.Insert(dev);
+            dev = securityDevService.Insert(dev);
+            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService);
 
             app = new SecurityApplication()
             {
                 Name = "TEST_HARNESS2",
                 ApplicationSecret = "APPLICATIONSECRET2"
             };
-
-            app.AddPolicy(PermissionPolicyIdentifiers.LoginAsService);
-            app.AddPolicy(PermissionPolicyIdentifiers.UnrestrictedClinicalData);
-            app.AddPolicy(PermissionPolicyIdentifiers.ReadMetadata);
-            securityAppService.Insert(app);
+            app = securityAppService.Insert(app);
+            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService);
         }
 
         /// <summary>
@@ -145,7 +174,7 @@ namespace SanteDB.Messaging.HL7.Test
                 var message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
 
-                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
+                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, messageStr);
 
                 var patientOriginal = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
 
@@ -155,7 +184,7 @@ namespace SanteDB.Messaging.HL7.Test
                 message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 messageStr = TestUtil.ToString(message);
 
-                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
+                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, messageStr);
 
                 // Ensure that the patient actually was persisted
                 var patientNew = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
@@ -178,7 +207,7 @@ namespace SanteDB.Messaging.HL7.Test
                 var msg = TestUtil.GetMessage("ADT_PD1");
                 var message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
-                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
+                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, messageStr);
 
                 // Ensure that the patient actually was persisted
                 var patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-2"), AuthenticationContext.Current.Principal).SingleOrDefault();
@@ -225,12 +254,10 @@ namespace SanteDB.Messaging.HL7.Test
             using (AuthenticationContext.EnterSystemContext())
             {
                 var msg = TestUtil.GetMessage("QBP_COMPLEX_PRE");
-                this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                var response = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
+                Assert.AreEqual("CA", (response.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, TestUtil.ToString(response));
                 var patient = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-9")).SingleOrDefault();
                 Assert.IsNotNull(patient);
-                // Just diagnosing an update bug
-                this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
-                patient = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-9")).SingleOrDefault();
                 Assert.AreEqual(9, patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).Count());
                 Assert.IsNotNull(patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother));
                 msg = TestUtil.GetMessage("QBP_COMPLEX");
@@ -311,7 +338,7 @@ namespace SanteDB.Messaging.HL7.Test
             {
                 var msg = TestUtil.GetMessage("QBP_XREF_PRE");
                 var result = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
-                Assert.AreEqual("CA", (result.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
+                Assert.AreEqual("CA", (result.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, TestUtil.ToString(result));
                 var patient = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-4")).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 msg = TestUtil.GetMessage("QBP_XREF");
@@ -364,13 +391,13 @@ namespace SanteDB.Messaging.HL7.Test
                 msg = TestUtil.GetMessage("ADT_MRG");
                 result = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 resultStr = TestUtil.ToString(result);
-                Assert.IsTrue(resultStr.Contains("|CA"));
+                Assert.IsTrue(resultStr.Contains("|CA"), resultStr);
 
                 // Validate QBP appropriately redirects as described in 3.6.2.1.2
                 msg = TestUtil.GetMessage("ADT_MRG_POST");
                 result = this.m_serviceManager.CreateInjected<QbpMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 resultStr = TestUtil.ToString(result);
-                Assert.IsTrue(resultStr.Contains("|AA"));
+                Assert.IsTrue(resultStr.Contains("|AA"), resultStr);
                 Assert.IsTrue(resultStr.Contains("RJ-439"), "Missing Patient A identifier");
                 Assert.IsTrue(resultStr.Contains("RJ-999"), "Missing Patient B identifier");
                 Assert.IsTrue(resultStr.Contains(patientA.Key.ToString()), "Missing Master Key for Patient A");
@@ -386,7 +413,7 @@ namespace SanteDB.Messaging.HL7.Test
                 Assert.AreEqual(patientA.Key, afterMergeB.Key); // Patient B => Patient A
                 var oldMaster = entityRepository.Get(patientB.Key.Value);
                 oldMaster.LoadProperty(o => o.StatusConcept);
-                Assert.AreEqual(StatusKeys.Inactive, oldMaster.StatusConceptKey); // Old Master is obsolete
+                Assert.IsNotNull(oldMaster.ObsoletionTime);
             }
         }
     }

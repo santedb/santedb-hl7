@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
@@ -16,9 +16,10 @@
  * the License.
  * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
-
+using SanteDB.Core;
+using SanteDB.Core.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,19 +39,9 @@ namespace SanteDB.Messaging.HL7.Segments
         /// </summary>
         static SegmentHandlers()
         {
-            foreach (var t in AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic).SelectMany(a =>
+            foreach (var t in AppDomain.CurrentDomain.GetAllTypes().Where(t => typeof(ISegmentHandler).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface))
             {
-                try
-                {
-                    return a.ExportedTypes;
-                }
-                catch
-                {
-                    return Type.EmptyTypes;
-                }
-            }).Where(t => typeof(ISegmentHandler).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface))
-            {
-                var instance = Activator.CreateInstance(t) as ISegmentHandler;
+                var instance = ApplicationServiceContext.Current.GetService<IServiceManager>().CreateInjected(t) as ISegmentHandler;
                 s_segmentHandlers.Add(instance.Name, instance);
             }
         }

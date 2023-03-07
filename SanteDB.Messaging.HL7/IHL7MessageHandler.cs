@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2021 - 2021, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2022, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
@@ -16,26 +16,26 @@
  * the License.
  * 
  * User: fyfej
- * Date: 2021-8-5
+ * Date: 2022-5-30
  */
 using NHapi.Base.Model;
 using SanteDB.Messaging.HL7.TransportProtocol;
 
 namespace SanteDB.Messaging.HL7
 {
-	/// <summary>
-	/// Handler for HL7 message
-	/// </summary>
-	public interface IHL7MessageHandler
-	{
-		/// <summary>
-		/// Handle a message
-		/// </summary>
-		IMessage HandleMessage(Hl7MessageReceivedEventArgs e);
+    /// <summary>
+    /// Handler for HL7 message
+    /// </summary>
+    public interface IHL7MessageHandler
+    {
+        /// <summary>
+        /// Handle a message
+        /// </summary>
+        IMessage HandleMessage(Hl7MessageReceivedEventArgs e);
 
         /// <summary>
         /// The triggers the handler supports
         /// </summary>
         string[] SupportedTriggers { get; }
-	}
+    }
 }
