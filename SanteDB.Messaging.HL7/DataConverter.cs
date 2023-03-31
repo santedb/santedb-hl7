@@ -278,6 +278,7 @@ namespace SanteDB.Messaging.HL7
         /// </summary>
         /// <param name="names">The names to be converted</param>
         /// <returns>The converted list of names</returns>
+        /// <param name="nameUseKey">The name use key to set</param>
 		public static IEnumerable<EntityName> ToModel(this XPN[] names, Guid? nameUseKey = null)
         {
             var entityNames = new List<EntityName>();

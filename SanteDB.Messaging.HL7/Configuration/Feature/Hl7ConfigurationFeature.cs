@@ -213,11 +213,13 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
         /// Gets the name of this feature
         /// </summary>
         public string Name => "Remove HL7 Messaging";
+#pragma warning disable CS0067
 
         /// <summary>
         /// Progress has changed
         /// </summary>
         public event EventHandler<ProgressChangedEventArgs> ProgressChanged;
+#pragma warning restore
 
         /// <summary>
         /// Execute the removal feature
@@ -286,10 +288,12 @@ namespace SanteDB.Messaging.HL7.Configuration.Feature
         /// </summary>
         public string Name => "Install HL7 Messaging";
 
+#pragma warning disable CS0067
         /// <summary>
         /// Progress has changed
         /// </summary>
         public event EventHandler<ProgressChangedEventArgs> ProgressChanged;
+#pragma warning restore
 
         /// <summary>
         /// Execute the installation 

@@ -43,6 +43,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Xml.Serialization;
+#pragma warning disable CS0612
 
 namespace SanteDB.Messaging.HL7.Messages
 {
@@ -326,3 +327,4 @@ namespace SanteDB.Messaging.HL7.Messages
         }
     }
 }
+#pragma warning restore

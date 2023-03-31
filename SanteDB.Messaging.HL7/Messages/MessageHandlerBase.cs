@@ -49,6 +49,7 @@ using System.Security;
 using System.Security.Authentication;
 using System.Security.Principal;
 using System.Xml;
+#pragma warning disable CS0612
 
 namespace SanteDB.Messaging.HL7.Messages
 {
@@ -71,7 +72,6 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <summary>
         /// DI constructor
         /// </summary>
-        /// <param name="localizationService"></param>
         public MessageHandlerBase(ILocalizationService localizationService, IAuditService auditService)
         {
             this.m_localizationService = localizationService;
@@ -93,6 +93,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// </summary>
         /// <param name="e">The message receive event args</param>
         /// <returns>The resulting message</returns>
+        /// <param name="parsed">The parsed bundle</param>
         protected abstract IMessage HandleMessageInternal(Hl7MessageReceivedEventArgs e, Bundle parsed);
 
         /// <summary>
@@ -511,7 +512,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <param name="request">The request which triggered this</param>
         /// <param name="ackCode">The acknowledgemode code</param>
         /// <param name="ackMessage">The message to append to the ACK</param>
-        /// <returns></returns>
+        /// <param name="ackType">The acknowledgement type</param>
         protected virtual IMessage CreateACK(Type ackType, IMessage request, String ackCode, String ackMessage)
         {
             var retVal = Activator.CreateInstance(ackType) as IMessage;
@@ -537,3 +538,4 @@ namespace SanteDB.Messaging.HL7.Messages
         }
     }
 }
+#pragma warning restore

@@ -37,6 +37,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
+#pragma warning disable CS0612
+
 namespace SanteDB.Messaging.HL7.Messages
 {
     /// <summary>
@@ -253,3 +255,4 @@ namespace SanteDB.Messaging.HL7.Messages
         }
     }
 }
+#pragma warning restore

@@ -33,6 +33,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+#pragma warning disable CS0612
 
 namespace SanteDB.Messaging.HL7.TransportProtocol
 {
@@ -318,3 +319,4 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         #endregion ITransportProtocol Members
     }
 }
+#pragma warning restore

@@ -145,9 +145,6 @@ namespace SanteDB.Messaging.HL7
 
         #endregion IMessageHandlerService Members
 
-        // Host context
-        private IServiceProvider m_context;
-
         /// <summary>
         /// Fired when the service has stopped
         /// </summary>
