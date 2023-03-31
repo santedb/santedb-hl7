@@ -61,12 +61,19 @@ namespace SanteDB.Messaging.HL7.Messages
         // Configuration
         private Hl7ConfigurationSection m_configuration = ApplicationServiceContext.Current?.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
 
-        // Tracer
+        /// <summary>
+        /// The tracing source
+        /// </summary>
         protected readonly Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
 
-        // Localization service
+        /// <summary>
+        /// The localization service injected into the service instance
+        /// </summary>
         protected readonly ILocalizationService m_localizationService;
 
+        /// <summary>
+        /// The auditing building service injected nto the service
+        /// </summary>
         protected readonly IAuditService _AuditService;
 
         /// <summary>
@@ -381,6 +388,8 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <param name="request">The request message</param>
         /// <param name="error">The exception that occurred</param>
         /// <returns>NACK message</returns>
+        /// <param name="nackType">The type of NACK message to construct</param>
+        /// <param name="receiveData">The data which was received (for correlation on the NACL)</param>
         protected virtual IMessage CreateNACK(Type nackType, IMessage request, Exception error, Hl7MessageReceivedEventArgs receiveData)
         {
             // Extract TIE into real cause

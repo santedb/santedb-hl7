@@ -273,6 +273,7 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <param name="count">The number of results that the user requested</param>
         /// <param name="offset">The offset to the first result</param>
         /// <param name="queryId">The unique query identifier used</param>
+        /// <param name="filter">The filter in HDSI format which was provided</param>
         /// <returns>The constructed result message</returns>
         protected virtual IMessage CreateQueryResponse(Hl7MessageReceivedEventArgs request, Expression filter, Hl7QueryParameterType map, Array results, Guid queryId, int offset, int count, int totalResults)
         {
