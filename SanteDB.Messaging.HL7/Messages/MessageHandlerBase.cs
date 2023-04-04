@@ -159,7 +159,7 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 var sessionidentifier = msh.Security.Value.Substring("sid://".Length);
 
-                var session = sessiontokenresolver.GetSessionFromIdToken(sessionidentifier);
+                var session = sessiontokenresolver.GetSessionFromBearerToken(sessionidentifier);
 
                 principal = ApplicationServiceContext.Current.GetService<ISessionIdentityProviderService>().Authenticate(session) as IClaimsPrincipal;
             }
