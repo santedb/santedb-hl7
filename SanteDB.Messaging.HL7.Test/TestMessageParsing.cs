@@ -87,8 +87,11 @@ namespace SanteDB.Messaging.HL7.Test
                 DeviceSecret = "DEVICESECRET",
                 Name = "TEST_HARNESS|TEST"
             };
-            dev = securityDevService.Insert(dev);
-            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, PermissionPolicyIdentifiers.UnrestrictedClinicalData, PermissionPolicyIdentifiers.ReadMetadata);
+            if (!securityDevService.Find(o => o.Name == dev.Name).Any())
+            {
+                dev = securityDevService.Insert(dev);
+                pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, PermissionPolicyIdentifiers.UnrestrictedClinicalData, PermissionPolicyIdentifiers.ReadMetadata);
+            }
 
             // Create device
             dev = new SecurityDevice()
@@ -96,20 +99,25 @@ namespace SanteDB.Messaging.HL7.Test
                 DeviceSecret = "DEVICESECRET",
                 Name = "TEST_HARNESS|MASTER"
             };
-            dev = securityDevService.Insert(dev);
-            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.UnrestrictedAll, "1.3.6.1.4.1.33349.3.1.5.9.2.6");
+            if (!securityDevService.Find(o => o.Name == dev.Name).Any())
+            {
+                dev = securityDevService.Insert(dev);
+                pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.UnrestrictedAll, "1.3.6.1.4.1.33349.3.1.5.9.2.6");
+            }
 
             var app = new SecurityApplication()
             {
                 Name = "TEST_HARNESS",
                 ApplicationSecret = "APPLICATIONSECRET"
             };
-            app = securityAppService.Insert(app);
-            pipService.AddPolicies(app, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, PermissionPolicyIdentifiers.UnrestrictedClinicalData, PermissionPolicyIdentifiers.ReadMetadata);
-            metadataService.Insert(new Core.Model.DataTypes.IdentityDomain("TEST", "TEST", "1.2.3.4.5.6.7")
+            if (!securityAppService.Find(o => o.Name == dev.Name).Any())
             {
-                IsUnique = true,
-                AssigningAuthority = new System.Collections.Generic.List<Core.Model.DataTypes.AssigningAuthority>()
+                app = securityAppService.Insert(app);
+                pipService.AddPolicies(app, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService, PermissionPolicyIdentifiers.UnrestrictedClinicalData, PermissionPolicyIdentifiers.ReadMetadata);
+                metadataService.Insert(new Core.Model.DataTypes.IdentityDomain("TEST", "TEST", "1.2.3.4.5.6.7")
+                {
+                    IsUnique = true,
+                    AssigningAuthority = new System.Collections.Generic.List<Core.Model.DataTypes.AssigningAuthority>()
                 {
                     new Core.Model.DataTypes.AssigningAuthority()
                     {
@@ -117,7 +125,8 @@ namespace SanteDB.Messaging.HL7.Test
                         Reliability = Core.Model.DataTypes.IdentifierReliability.Authoritative
                     }
                 }
-            });
+                });
+            }
 
 
             // Add another application for security checks
@@ -126,16 +135,22 @@ namespace SanteDB.Messaging.HL7.Test
                 DeviceSecret = "DEVICESECRET2",
                 Name = "TEST_HARNESS2|TEST"
             };
-            dev = securityDevService.Insert(dev);
-            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService);
+            if (!securityDevService.Find(o => o.Name == dev.Name).Any())
+            {
+                dev = securityDevService.Insert(dev);
+                pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService);
+            }
 
             app = new SecurityApplication()
             {
                 Name = "TEST_HARNESS2",
                 ApplicationSecret = "APPLICATIONSECRET2"
             };
-            app = securityAppService.Insert(app);
-            pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService);
+            if (!securityAppService.Find(o => o.Name == dev.Name).Any())
+            {
+                app = securityAppService.Insert(app);
+                pipService.AddPolicies(dev, PolicyGrantType.Grant, AuthenticationContext.SystemPrincipal, PermissionPolicyIdentifiers.LoginAsService);
+            }
         }
 
         /// <summary>
