@@ -221,7 +221,8 @@ namespace SanteDB.Messaging.HL7.Utils
                 originalVersion = match.Groups[1].Value;
 
                 // Because NHAPI is really finicky with message types we want to replace the appropriate message type
-                messageData = Regex.Replace(messageData, @"^MSH\|\^\~\\\&\|(?:.*?\|){6}(.*?)(?:\||\r\n|\n|\r).*$", (o) =>
+                
+                messageData = Regex.Replace(messageData, @"^MSH\|\^\~\\\&\|(?:.*?\|){6}([A-Za-z0-9\^_]*?)(?:\||\r\n|\n|\r).*$", (o) =>
                 {
                     var eventRegex = Regex.Match(o.Groups[1].Value, @"^(\w{3}\^\w{3}).*$");
                     if (eventRegex.Success && m_eventMessageMaps.TryGetValue(eventRegex.Groups[1].Value, out string msgType))
@@ -232,7 +233,7 @@ namespace SanteDB.Messaging.HL7.Utils
                     }
                     return o.Value;
                 }, RegexOptions.Multiline);
-
+                
                 PipeParser parser = new PipeParser();
                 return parser.Parse(messageData, "2.5", new ParserOptions() { UnexpectedSegmentBehaviour = UnexpectedSegmentBehaviour.DropToRoot });
             }

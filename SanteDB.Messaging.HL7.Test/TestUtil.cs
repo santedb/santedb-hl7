@@ -19,7 +19,6 @@
  * Date: 2023-3-10
  */
 using NHapi.Base.Model;
-using NHapi.Model.V25.Segment;
 using SanteDB.Messaging.HL7.Utils;
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -43,9 +42,7 @@ namespace SanteDB.Messaging.HL7.Test
             using (var s = typeof(TestUtil).Assembly.GetManifestResourceStream($"SanteDB.Messaging.HL7.Test.Resources.{messageName}.txt"))
             using (var sw = new StreamReader(s))
             {
-                var message = MessageUtils.ParseMessage(sw.ReadToEnd(), out originalVersion);
-                Console.WriteLine((message.GetStructure("SFT") as SFT).SoftwareBinaryID.Value);
-                return message;
+                return MessageUtils.ParseMessage(sw.ReadToEnd(), out originalVersion);
             }
         }
 
