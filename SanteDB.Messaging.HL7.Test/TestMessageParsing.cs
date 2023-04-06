@@ -164,7 +164,7 @@ namespace SanteDB.Messaging.HL7.Test
                 var msg = TestUtil.GetMessage("ADT_SIMPLE");
                 var message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
-                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value);
+                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, "RQ: {0}, RS: {1}", TestUtil.ToString(msg), messageStr);
 
                 // Ensure that the patient actually was persisted
                 var patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
@@ -188,7 +188,7 @@ namespace SanteDB.Messaging.HL7.Test
                 var message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
 
-                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, messageStr);
+                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, "RQ: {0}, RS: {1}", TestUtil.ToString(msg), messageStr);
 
                 var patientOriginal = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
 
@@ -198,7 +198,7 @@ namespace SanteDB.Messaging.HL7.Test
                 message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 messageStr = TestUtil.ToString(message);
 
-                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, messageStr);
+                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, "RQ: {0}, RS: {1}", TestUtil.ToString(msg), messageStr);
 
                 // Ensure that the patient actually was persisted
                 var patientNew = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
@@ -221,7 +221,7 @@ namespace SanteDB.Messaging.HL7.Test
                 var msg = TestUtil.GetMessage("ADT_PD1");
                 var message = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 var messageStr = TestUtil.ToString(message);
-                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, messageStr);
+                Assert.AreEqual("CA", (message.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, "RQ: {0}, RS: {1}", TestUtil.ToString(msg), messageStr);
 
                 // Ensure that the patient actually was persisted
                 var patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-2"), AuthenticationContext.Current.Principal).SingleOrDefault();
@@ -269,7 +269,7 @@ namespace SanteDB.Messaging.HL7.Test
             {
                 var msg = TestUtil.GetMessage("QBP_COMPLEX_PRE");
                 var response = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
-                Assert.AreEqual("CA", (response.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, TestUtil.ToString(response));
+                Assert.AreEqual("CA", (response.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, "RQ: {0}, RS: {1}", TestUtil.ToString(msg), TestUtil.ToString(response));
                 var patient = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-9")).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 Assert.AreEqual(9, patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).Count());
@@ -352,7 +352,7 @@ namespace SanteDB.Messaging.HL7.Test
             {
                 var msg = TestUtil.GetMessage("QBP_XREF_PRE");
                 var result = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
-                Assert.AreEqual("CA", (result.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, TestUtil.ToString(result));
+                Assert.AreEqual("CA", (result.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, "RQ: {0}, RS: {1}", TestUtil.ToString(msg), TestUtil.ToString(result));
                 var patient = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-4")).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 msg = TestUtil.GetMessage("QBP_XREF");
