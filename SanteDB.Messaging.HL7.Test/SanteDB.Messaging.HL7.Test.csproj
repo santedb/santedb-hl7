@@ -37,8 +37,8 @@
           <Name>SanteDB.Persistence.MDM</Name>
         </ProjectReference>
         <ProjectReference Include="..\..\santedb-data\SanteDB.Persistence.Data\SanteDB.Persistence.Data.csproj" />
-        <ProjectReference Include="..\..\santedb-data\SanteDB.Core.TestFramework.FirebirdSQL\SanteDB.Core.TestFramework.FirebirdSQL.csproj" />
-        
+        <ProjectReference Include="..\..\santedb-data\SanteDB.Core.TestFramework.Sqlite\SanteDB.Core.TestFramework.Sqlite.csproj" />
+
       </ItemGroup>
     </When>
     <Otherwise>
@@ -49,6 +49,7 @@
         <PackageReference Include="SanteDB.Rest.Common" Version="$(VersionNumber)" />
         <PackageReference Include="SanteDB.OrmLite" Version="$(VersionNumber)" />
         <PackageReference Include="SanteDB.Core.TestFramework" Version="$(VersionNumber)" />
+        <PackageReference Include="SanteDB.Core.TestFramework.Sqlite" Version="$(VersionNumber)" />
         <PackageReference Include="SanteDB.Caching.Memory" Version="$(VersionNumber)" />
         <PackageReference Include="SanteDB.Persistence.Data" Version="$(VersionNumber)" />
         <PackageReference Include="SanteDB.Persistence.MDM" Version="$(VersionNumber)" />
@@ -57,6 +58,7 @@
   </Choose>
 
   <ItemGroup>
+
 
     <ProjectReference Include="..\SanteDB.Messaging.HL7\SanteDB.Messaging.HL7.csproj">
       <Project>{c1f86ea3-fc84-456f-a9d9-0bf8db0d48d3}</Project>
@@ -67,9 +69,6 @@
     <EmbeddedResource Include="Resources\ADT_SIMPLE.txt" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FirebirdSql.Data.FirebirdClient">
-      <Version>9.1.1</Version>
-    </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.3</Version>
     </PackageReference>
@@ -146,5 +145,8 @@
 
   <!-- Test Framework via Nuget does this automagically -->
   <Import Condition="$(SolutionName.Contains('-ext'))" Project="$(SolutionDir)\santedb-data\SanteDB.Core.TestFramework.FirebirdSQL\SanteDB.Core.TestFramework.FirebirdSQL.targets" />
+  <ItemGroup>
+    <None Remove="C:\Users\fyfej\source\repos\santedb\santedb-server\santedb-data\SanteDB.Core.TestFramework.FirebirdSQL\\firebird\santedb_test.fdb" />
+  </ItemGroup>
 
 </Project>

@@ -53,7 +53,6 @@ namespace SanteDB.Messaging.HL7.Test
         public void Initialize()
         {
             // Force load of the DLL
-            FirebirdSql.Data.FirebirdClient.FbCharset.Ascii.ToString();
             TestApplicationContext.TestAssembly = typeof(TestMessageParsing).Assembly;
             TestApplicationContext.Initialize(TestContext.CurrentContext.TestDirectory);
 
