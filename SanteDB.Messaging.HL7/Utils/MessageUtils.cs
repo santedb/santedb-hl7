@@ -210,7 +210,7 @@ namespace SanteDB.Messaging.HL7.Utils
         /// </summary>
         public static IMessage ParseMessage(String messageData, out string originalVersion)
         {
-            Regex versionRegex = new Regex(@"^MSH\|\^\~\\\&\|(?:.*?\|){9}(.*?)[\|\r\n].*$", RegexOptions.Multiline);
+            Regex versionRegex = new Regex(@"^MSH\|\^\~\\\&\|(?:.*?\|){9}(.*?)[\|\r\n|\n].*$", RegexOptions.Multiline);
             var match = versionRegex.Match(messageData);
             if (!match.Success)
             {
