@@ -23,6 +23,7 @@ using NHapi.Base.Parser;
 using NHapi.Model.V25.Datatype;
 using SanteDB.Core;
 using SanteDB.Core.Diagnostics;
+using SanteDB.Core.i18n;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.DataTypes;
@@ -538,7 +539,11 @@ namespace SanteDB.Messaging.HL7
 
                         if (!String.IsNullOrEmpty(cx.IdentifierTypeCode.Value))
                         {
-                            var idType = ApplicationServiceContext.Current.GetService<IDataPersistenceService<IdentifierType>>().Query(o => o.TypeConcept.ReferenceTerms.Any(r => r.ReferenceTerm.Mnemonic == cx.IdentifierTypeCode.Value && r.ReferenceTerm.CodeSystem.Oid == IdentifierTypeCodeSystem), AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                            var idType = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().FindConceptsByReferenceTerm(cx.IdentifierTypeCode.Value, IdentifierTypeCodeSystem).FirstOrDefault();
+                            if(idType == null)
+                            {
+                                throw new KeyNotFoundException(String.Format(ErrorMessages.TERM_NOT_FOUND, IdentifierTypeCodeSystem, cx.IdentifierTypeCode.Value));
+                            }
                             id.IdentifierTypeKey = idType?.Key;
                         }
 
@@ -608,7 +613,11 @@ namespace SanteDB.Messaging.HL7
 
                         if (!String.IsNullOrEmpty(xon.IdentifierTypeCode.Value))
                         {
-                            var idType = ApplicationServiceContext.Current.GetService<IDataPersistenceService<IdentifierType>>().Query(o => o.TypeConcept.ReferenceTerms.Any(r => r.ReferenceTerm.Mnemonic == xon.IdentifierTypeCode.Value && r.ReferenceTerm.CodeSystem.Oid == IdentifierTypeCodeSystem), AuthenticationContext.SystemPrincipal).FirstOrDefault();
+                            var idType = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().FindConceptsByReferenceTerm(xon.IdentifierTypeCode.Value, IdentifierTypeCodeSystem).FirstOrDefault();
+                            if(idType == null)
+                            {
+                                throw new KeyNotFoundException(String.Format(ErrorMessages.TERM_NOT_FOUND, IdentifierTypeCodeSystem, xon.IdentifierTypeCode.Value));
+                            }
                             id.IdentifierTypeKey = idType?.Key;
                         }
 
@@ -969,9 +978,9 @@ namespace SanteDB.Messaging.HL7
             me.CheckDigitScheme.Value = id.LoadProperty(o => o.IdentityDomain).GetCustomValidator()?.Name;
 
             // Identifier type
-            if (id.IdentifierType?.TypeConceptKey.HasValue == true)
+            if (id.IdentifierTypeKey.HasValue)
             {
-                var refTerm = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptReferenceTerm(id.IdentifierType.TypeConceptKey.Value, IdentifierTypeCodeSystem);
+                var refTerm = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptReferenceTerm(id.IdentifierTypeKey.Value, IdentifierTypeCodeSystem);
                 me.IdentifierTypeCode.Value = refTerm?.Mnemonic;
             }
             else
