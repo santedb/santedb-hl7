@@ -20,6 +20,7 @@
  */
 using SanteDB.Core;
 using SanteDB.Core.Model.Audit;
+using SanteDB.Core.Security.Audit;
 using SanteDB.Core.Security.Configuration;
 using SanteDB.Core.Services;
 using System;
@@ -341,7 +342,7 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
                     ActionType.Execute,
                     OutcomeIndicator.MinorFail,
                     EventIdentifierType.ApplicationActivity,
-                    new AuditCode("110113", "DCM") { DisplayName = "Security Alert" }
+                    ExtendedAuditCodes.EventTypeSecurityAlert
                 );
                 ad.Actors = new List<AuditActorData>() {
                     new AuditActorData()
