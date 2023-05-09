@@ -77,18 +77,57 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
         /// </summary>
         public enum ByteType : byte
         {
+            /// <summary>
+            /// End of transmission
+            /// </summary>
             EOT = 0x04,
+            /// <summary>
+            /// Equiry
+            /// </summary>
             ENQ = 0x05,
+            /// <summary>
+            /// Acknowledge
+            /// </summary>
             ACK = 0x06,
+            /// <summary>
+            /// Bell
+            /// </summary>
             BEL = 0x07,
+            /// <summary>
+            /// Backspace
+            /// </summary>
             BS = 0x08,
+            /// <summary>
+            /// Tab
+            /// </summary>
             TAB = 0x09,
+            /// <summary>
+            /// Line feed
+            /// </summary>
             LF = 0x0a,
+            /// <summary>
+            /// Vertical Tab
+            /// </summary>
             VTAB = 0x0b,
+            /// <summary>
+            /// Carriage return
+            /// </summary>
             CR = (byte)'\r',
+            /// <summary>
+            /// Negative Ack
+            /// </summary>
             NACK = 0x15,
+            /// <summary>
+            /// End of file
+            /// </summary>
             EOF = 0x1a,
+            /// <summary>
+            /// Escape
+            /// </summary>
             ESC = 0x1b,
+            /// <summary>
+            /// File Separator
+            /// </summary>
             FS = 0x1c
         }
 
