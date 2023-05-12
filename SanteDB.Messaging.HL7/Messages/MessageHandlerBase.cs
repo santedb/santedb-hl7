@@ -82,7 +82,7 @@ namespace SanteDB.Messaging.HL7.Messages
         public MessageHandlerBase(ILocalizationService localizationService, IAuditService auditService)
         {
             this.m_localizationService = localizationService;
-            _AuditService = auditService;   
+            _AuditService = auditService;
         }
 
         /// <summary>

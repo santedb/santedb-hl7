@@ -540,7 +540,7 @@ namespace SanteDB.Messaging.HL7
                         if (!String.IsNullOrEmpty(cx.IdentifierTypeCode.Value))
                         {
                             var idType = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().FindConceptsByReferenceTerm(cx.IdentifierTypeCode.Value, IdentifierTypeCodeSystem).FirstOrDefault();
-                            if(idType == null)
+                            if (idType == null)
                             {
                                 throw new KeyNotFoundException(String.Format(ErrorMessages.TERM_NOT_FOUND, IdentifierTypeCodeSystem, cx.IdentifierTypeCode.Value));
                             }
@@ -614,7 +614,7 @@ namespace SanteDB.Messaging.HL7
                         if (!String.IsNullOrEmpty(xon.IdentifierTypeCode.Value))
                         {
                             var idType = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().FindConceptsByReferenceTerm(xon.IdentifierTypeCode.Value, IdentifierTypeCodeSystem).FirstOrDefault();
-                            if(idType == null)
+                            if (idType == null)
                             {
                                 throw new KeyNotFoundException(String.Format(ErrorMessages.TERM_NOT_FOUND, IdentifierTypeCodeSystem, xon.IdentifierTypeCode.Value));
                             }

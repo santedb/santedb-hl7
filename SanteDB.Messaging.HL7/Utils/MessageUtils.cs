@@ -24,7 +24,6 @@ using NHapi.Base.Util;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
 using SanteDB.Core.Model.Collection;
-using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.Interfaces;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
@@ -222,7 +221,7 @@ namespace SanteDB.Messaging.HL7.Utils
                 originalVersion = match.Groups[1].Value;
 
                 // Because NHAPI is really finicky with message types we want to replace the appropriate message type
-                
+
                 messageData = Regex.Replace(messageData, @"^MSH\|\^\~\\\&\|(?:.*?\|){6}([A-Za-z0-9\^_]*?)(?:\||\r\n|\n|\r).*$", (o) =>
                 {
                     var eventRegex = Regex.Match(o.Groups[1].Value, @"^(\w{3}\^\w{3}).*$");
@@ -234,7 +233,7 @@ namespace SanteDB.Messaging.HL7.Utils
                     }
                     return o.Value;
                 }, RegexOptions.Multiline);
-                
+
                 PipeParser parser = new PipeParser();
                 return parser.Parse(messageData, "2.5", new ParserOptions() { UnexpectedSegmentBehaviour = UnexpectedSegmentBehaviour.DropToRoot });
             }
@@ -358,7 +357,7 @@ namespace SanteDB.Messaging.HL7.Utils
                         }
                         else
                         {
-                            retVal.Add(parm.ModelName, qvalue.Insert(4,"-").Insert(7,"-"));
+                            retVal.Add(parm.ModelName, qvalue.Insert(4, "-").Insert(7, "-"));
                         }
 
                         break;

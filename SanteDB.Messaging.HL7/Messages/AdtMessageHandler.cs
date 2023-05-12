@@ -21,7 +21,6 @@
 using NHapi.Base.Model;
 using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
-using SanteDB.Core;
 using SanteDB.Core.Model;
 using SanteDB.Core.Model.Audit;
 using SanteDB.Core.Model.Collection;
@@ -119,7 +118,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 this.SendAuditAdmit(OutcomeIndicator.Success, e.Message, insertBundle.Item.OfType<IdentifiedData>());
 
                 // Create response message
-                return this.CreateACK(typeof(ACK), e.Message, "CA", $"{String.Join(",", insertBundle.Item.OfType<Entity>().Select(o=>$"{o.BatchOperation} {o.Type}/{o.Key}"))}");
+                return this.CreateACK(typeof(ACK), e.Message, "CA", $"{String.Join(",", insertBundle.Item.OfType<Entity>().Select(o => $"{o.BatchOperation} {o.Type}/{o.Key}"))}");
             }
             catch (Exception ex)
             {
@@ -193,7 +192,7 @@ namespace SanteDB.Messaging.HL7.Messages
                 }
 
                 foreach (var mrgPair in mergePairs)
-                { 
+                {
                     var survivor = mrgPair.Item.OfType<Patient>().FirstOrDefault(o => o.GetTag(Hl7Constants.SegmentTag) == "PID");
                     var victims = mrgPair.Item.OfType<Patient>().Where(o => o.GetTag(Hl7Constants.SegmentTag) == "MRG");
                     try
@@ -209,7 +208,7 @@ namespace SanteDB.Messaging.HL7.Messages
                     }
                     catch (Exception ex)
                     {
-                        this.SendAuditMerge(OutcomeIndicator.MinorFail, e.Message, new RecordMergeResult(RecordMergeStatus.Aborted, new Guid[] { survivor.Key.Value }, victims.Select(o=>o.Key.Value).ToArray()));
+                        this.SendAuditMerge(OutcomeIndicator.MinorFail, e.Message, new RecordMergeResult(RecordMergeStatus.Aborted, new Guid[] { survivor.Key.Value }, victims.Select(o => o.Key.Value).ToArray()));
                         throw new HL7ProcessingException(this.m_localizationService.GetString("error.messaging.hl7.messages.errorPerformingMerge"), null, null, 0, 0, ex);
                     }
                 }
