@@ -28,6 +28,15 @@ namespace SanteDB.Messaging.HL7
         // Trace source name
         public const string TraceSourceName = "SanteDB.Messaging.HL7";
 
+        /// <summary>
+        /// The group to which the data originally belongs or should be placed
+        /// </summary>
+        public const string GroupTag = "$v2.group";
+        /// <summary>
+        /// The segment in which the data should be placed
+        /// </summary>
+        public const string SegmentTag = "$v2.segment";
+
         // Focal object
         public const string FocalObjectTag = "$hl7.focal";
 

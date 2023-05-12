@@ -106,7 +106,7 @@ namespace SanteDB.Messaging.HL7.Messages
         {
             try
             {
-                var patient = insertBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
+                var patient = insertBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == Hl7Constants.SegmentTag && t.Value == "PID"));
                 patient.AddAnnotation(V2_FOCAL);
                 if (patient == null)
                 {
@@ -144,7 +144,7 @@ namespace SanteDB.Messaging.HL7.Messages
         {
             try
             {
-                var patient = updateBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == "$v2.segment" && t.Value == "PID"));
+                var patient = updateBundle.Item.OfType<Patient>().FirstOrDefault(it => it.Tags.Any(t => t.TagKey == Hl7Constants.SegmentTag && t.Value == "PID"));
                 if (patient == null)
                 {
                     this.m_traceSource.TraceError("Message did not contain a patient");
@@ -194,8 +194,8 @@ namespace SanteDB.Messaging.HL7.Messages
 
                 foreach (var mrgPair in mergePairs)
                 { 
-                    var survivor = mrgPair.Item.OfType<Patient>().FirstOrDefault(o => o.GetTag("$v2.segment") == "PID");
-                    var victims = mrgPair.Item.OfType<Patient>().Where(o => o.GetTag("$v2.segment") == "MRG");
+                    var survivor = mrgPair.Item.OfType<Patient>().FirstOrDefault(o => o.GetTag(Hl7Constants.SegmentTag) == "PID");
+                    var victims = mrgPair.Item.OfType<Patient>().Where(o => o.GetTag(Hl7Constants.SegmentTag) == "MRG");
                     try
                     {
                         if (survivor == null || !victims.Any())

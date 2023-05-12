@@ -24,6 +24,7 @@ using NHapi.Base.Util;
 using NHapi.Model.V25.Segment;
 using SanteDB.Core;
 using SanteDB.Core.Model.Collection;
+using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.Interfaces;
 using SanteDB.Core.Services;
 using SanteDB.Messaging.HL7.Configuration;
@@ -139,7 +140,7 @@ namespace SanteDB.Messaging.HL7.Utils
                             retVal.Item.AddRange(parsed.Item.Select(i =>
                             {
                                 var ret = i.Clone();
-                                (ret as ITaggable)?.AddTag("$v2.group", current.GetStructureName());
+                                (ret as ITaggable)?.AddTag(Hl7Constants.GroupTag, current.GetStructureName());
                                 return ret;
                             }));
                             retVal.FocalObjects.AddRange(parsed.FocalObjects);
@@ -169,7 +170,7 @@ namespace SanteDB.Messaging.HL7.Utils
                                 retVal.Item.AddRange(parsed.Select(i =>
                                 {
                                     var ret = i.Clone();
-                                    (ret as ITaggable)?.AddTag("$v2.segment", current.GetStructureName());
+                                    (ret as ITaggable)?.AddTag(Hl7Constants.SegmentTag, current.GetStructureName());
                                     return ret;
                                 }));
                             }
