@@ -17,7 +17,7 @@
  - the License.
  -
  - User: fyfej
- - Date: 2023-3-10
+ - Date: 2023-5-19
  -->
 <SanteDBConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.10.0.23074" xmlns="http://santedb.org/configuration">
   <sections>
