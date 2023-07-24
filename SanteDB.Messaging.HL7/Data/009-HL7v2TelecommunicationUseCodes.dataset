@@ -7,7 +7,7 @@
       <oid>1.3.6.1.4.1.33349.3.1.5.9.3.200.201</oid>
       <url>http://terminology.hl7.org/CodeSystem/v2-0201</url>
       <name>HL7v2 Telecoms</name>
-      <description>HL7 Version 2 Telecom types (code table 202)</description>
+      <description>HL7 Version 2 Telecom types (code table 201)</description>
     </CodeSystem>
   </update>
   <update insertIfNotExists="true">
@@ -16,7 +16,7 @@
       <authority>V2TelecomEquipmentTypes</authority>
       <oid>1.3.6.1.4.1.33349.3.1.5.9.3.200.202</oid>
       <url>http://hl7.org/fhir/v2/0202</url>
-      <description>HL7 Version 2 Telecom Equipment Type</description>
+      <description>HL7 Version 2 Telecom Equipment Type (Table 202)</description>
     </CodeSystem>
   </update>
   <update insertIfNotExists="true">
