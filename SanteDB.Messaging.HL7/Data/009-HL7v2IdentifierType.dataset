@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
-<dataset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" id="HL7v2 Identifier Types" xmlns="http://santedb.org/data">
+<dataset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" id="HL7v2 Identifier Types v2" xmlns="http://santedb.org/data">
   <update skipIfError="false" insertIfNotExists="true">
     <CodeSystem xmlns="http://santedb.org/model">
       <id>c4184b13-0934-4e8d-bff7-bafa72fe917e</id>
-      <name>HL7 Version 2 Identifier Types</name>
+      <name>HL7v2 Identifier Types</name>
+      <description>HL7 Version 2 Identification Use Type Codes (table 0203)</description>
       <oid>1.3.6.1.4.1.33349.3.1.5.9.3.200.203</oid>
       <authority>203</authority>
       <url>http://terminology.hl7.org/CodeSystem/v2-0203</url>

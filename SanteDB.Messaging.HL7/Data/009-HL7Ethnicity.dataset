@@ -4,6 +4,7 @@
     <CodeSystem xmlns="http://santedb.org/model">
       <id>6d25254c-0dac-4f17-bc66-48cda7515012</id>
       <name>HL7v2 Ethnic Groups</name>
+      <description>HL7 Version 2 Ethnic Group Codes (table 0189)</description>
       <oid>1.3.6.1.4.1.33349.3.1.5.9.3.200.189</oid>
       <authority>0189</authority>
       <url>http://terminology.hl7.org/CodeSystem/v2-0189</url>

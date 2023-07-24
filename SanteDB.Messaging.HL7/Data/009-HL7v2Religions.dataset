@@ -7,6 +7,7 @@
       <oid>1.3.6.1.4.1.33349.3.1.5.9.3.200.6</oid>
       <authority>0006</authority>
       <url>http://terminology.hl7.org/CodeSystem/v2-2.4</url>
+      <description>HL7 Version 2 Religion Codes (table 6)</description>
     </CodeSystem>
   </update>
   <update insertIfNotExists="true">
