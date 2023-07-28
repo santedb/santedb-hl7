@@ -1018,7 +1018,7 @@ namespace SanteDB.Messaging.HL7
 
             var refTerm = ApplicationServiceContext.Current.GetService<IConceptRepositoryService>().GetConceptReferenceTerm(concept.Key.Value, domain, exact);
             me.Identifier.Value = refTerm?.Mnemonic;
-            me.NameOfCodingSystem.Value = refTerm.LoadProperty<CodeSystem>(nameof(ReferenceTerm.CodeSystem))?.Authority;
+            me.NameOfCodingSystem.Value = refTerm.LoadProperty<CodeSystem>(nameof(ReferenceTerm.CodeSystem))?.Domain;
             return me;
         }
     }
