@@ -57,6 +57,9 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
     [Description("ER7 over TCP")]
     public class TcpTransport : ITransportProtocol
     {
+        /// <summary>
+        /// Diagnostic tracer.
+        /// </summary>
         protected readonly Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
 
         #region ITransportProtocol Members

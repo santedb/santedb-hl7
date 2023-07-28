@@ -65,8 +65,10 @@ namespace SanteDB.Messaging.HL7.Messages
         {
         }
 
-        // Tracer
-        public static readonly Tracer m_tracer = Tracer.GetTracer(typeof(QbpMessageHandler));
+        /// <summary>
+        /// Diagnostic tracer
+        /// </summary>
+        protected static readonly Tracer m_tracer = Tracer.GetTracer(typeof(QbpMessageHandler));
 
         /// <summary>
         /// Gets the supported triggers
@@ -270,8 +272,9 @@ namespace SanteDB.Messaging.HL7.Messages
         /// <param name="results">The results that matches the query</param>
         /// <param name="map">The HL7 query parameter mapping</param>
         /// <param name="request">The original request message</param>
-        /// <param name="count">The number of results that the user requested</param>
         /// <param name="offset">The offset to the first result</param>
+        /// <param name="count">The number of results that the user requested</param>
+        /// <param name="totalResults">The total number of results present on the server.</param>
         /// <param name="queryId">The unique query identifier used</param>
         /// <param name="filter">The filter in HDSI format which was provided</param>
         /// <returns>The constructed result message</returns>

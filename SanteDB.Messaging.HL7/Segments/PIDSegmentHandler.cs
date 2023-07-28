@@ -92,6 +92,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// </summary>
         /// <param name="data">The data to be created</param>
         /// <param name="context">The message in which the segment is created</param>
+        /// <param name="exportDomains">Identity domains that should be created in the segment.</param>
         /// <returns>The segments to add to the messge</returns>
         public virtual IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, IdentityDomain[] exportDomains)
         {
@@ -108,7 +109,7 @@ namespace SanteDB.Messaging.HL7.Segments
 
 
             // Map patient to PID
-            if (exportDomains == null || exportDomains?.Length == 0 || exportDomains?.Any(d => d.Key == this.m_configuration.LocalAuthority.Key) == true)
+            if (exportDomains == null || exportDomains.Length == 0 || exportDomains.Any(d => d.Key == this.m_configuration.LocalAuthority.Key) == true)
             {
                 retVal.GetPatientIdentifierList(retVal.PatientIdentifierListRepetitionsUsed).FromModel(new EntityIdentifier(this.m_configuration.LocalAuthority, patient.Key.ToString()));
                 retVal.GetPatientIdentifierList(retVal.PatientIdentifierListRepetitionsUsed - 1).IdentifierTypeCode.Value = "PI";
@@ -286,6 +287,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// Parse the parse the specified segment into a patient object
         /// </summary>
         /// <param name="segment">The segment to be parsed</param>
+        /// <param name="context">The context for the segment to use during parsing.</param>
         /// <returns>The parsed patient information</returns>
         public virtual IEnumerable<IdentifiedData> Parse(ISegment segment, IEnumerable<IdentifiedData> context)
         {
