@@ -43,6 +43,9 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
     [Description("ER7 over LLP")]
     public class LlpTransport : ITransportProtocol
     {
+        /// <summary>
+        /// Logging provider.
+        /// </summary>
         protected readonly Tracer m_traceSource = new Tracer(Hl7Constants.TraceSourceName);
 
 
@@ -63,13 +66,19 @@ namespace SanteDB.Messaging.HL7.TransportProtocol
 
         #region ITransportProtocol Members
 
-        // Timeout
+        /// <summary>
+        /// Timeout
+        /// </summary>
         protected TimeSpan m_timeout;
 
-        // The socket
+        /// <summary>
+        /// The socket
+        /// </summary>
         protected TcpListener m_listener;
 
-        // Will run while true
+        /// <summary>
+        /// Set to false to end the listener process.
+        /// </summary>
         protected bool m_run = true;
 
         /// <summary>

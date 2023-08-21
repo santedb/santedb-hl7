@@ -1,9 +1,10 @@
 ﻿<?xml version="1.0"?>
-<dataset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" id="HL7v2 Contact Role Codes" xmlns="http://santedb.org/data">
+<dataset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" id="HL7v2 Contact Role Codes v2" xmlns="http://santedb.org/data">
   <update insertIfNotExists="true">
     <CodeSystem xmlns="http://santedb.org/model">
       <id>fde945a5-936b-4bfd-99c9-b41b6151748b</id>
-      <name>Contact Relationship Use Codes</name>
+      <name>HL7v2 Contact Relationship Use</name>
+      <description>HL7v2 Contact Relationship use codes (table 0131)</description>
       <oid>1.3.6.1.4.1.33349.3.1.5.9.3.200.131</oid>
       <url>http://terminology.hl7.org/CodeSystem/v2-0131</url>
     </CodeSystem>

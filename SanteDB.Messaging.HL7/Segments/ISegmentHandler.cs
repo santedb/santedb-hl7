@@ -41,6 +41,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// Parse the segment into a model object
         /// </summary>
         /// <param name="segment">The segment to be parsed</param>
+        /// <param name="context">The data which the segment applies to.</param>
         /// <returns>The parsed data</returns>
         IEnumerable<IdentifiedData> Parse(ISegment segment, IEnumerable<IdentifiedData> context);
 
@@ -49,6 +50,7 @@ namespace SanteDB.Messaging.HL7.Segments
         /// </summary>
         /// <param name="data">The data to be translated into segment(s)</param>
         /// <param name="context">The message in which the segment is created</param>
+        /// <param name="exportDomains">The identity domains to use when constructing segments.</param>
         /// <returns>The necessary segments to be added to the message</returns>
         IEnumerable<ISegment> Create(IdentifiedData data, IGroup context, IdentityDomain[] exportDomains);
 
