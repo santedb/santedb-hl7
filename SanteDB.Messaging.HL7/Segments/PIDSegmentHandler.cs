@@ -446,6 +446,14 @@ namespace SanteDB.Messaging.HL7.Segments
                             }), "PID", pidSegment.SetIDPID.Value, 21, 3, e);
                         }
 
+                        if(authority == null)
+                        {
+                            throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
+                            {
+                                param = "mother's identifiers"
+                            }), "PID", pidSegment.SetIDPID.Value, 21, 3);
+                        };
+
                         if ((authority.Key == this.m_configuration.LocalAuthority.Key || authority.DomainName == this.m_configuration.LocalAuthority.DomainName) && Guid.TryParse(id.IDNumber.Value, out Guid idNumberUuid))
                         {
                             foundMother = personService.Get(idNumberUuid) ?? patientService.Get(idNumberUuid);

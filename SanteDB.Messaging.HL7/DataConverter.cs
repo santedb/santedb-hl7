@@ -544,7 +544,7 @@ namespace SanteDB.Messaging.HL7
                             {
                                 throw new KeyNotFoundException(String.Format(ErrorMessages.TERM_NOT_FOUND, IdentifierTypeCodeSystem, cx.IdentifierTypeCode.Value));
                             }
-                            id.IdentifierTypeKey = idType?.Key;
+                            id.IdentifierTypeKey = idType?.SourceEntityKey;
                         }
 
                         if (!String.IsNullOrEmpty(cx.ExpirationDate.Value))
@@ -618,7 +618,7 @@ namespace SanteDB.Messaging.HL7
                             {
                                 throw new KeyNotFoundException(String.Format(ErrorMessages.TERM_NOT_FOUND, IdentifierTypeCodeSystem, xon.IdentifierTypeCode.Value));
                             }
-                            id.IdentifierTypeKey = idType?.Key;
+                            id.IdentifierTypeKey = idType?.SourceEntityKey;
                         }
 
                         entityIdentifiers.Add(id);
