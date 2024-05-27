@@ -138,6 +138,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (!pd1Segment.LivingArrangement.IsEmpty())
                 {
                     retVal.LivingArrangement = pd1Segment.LivingArrangement.ToConcept(LivingArrangementCodeSystem);
+                    retVal.LivingArrangementKey = retVal.LivingArrangement?.Key ?? retVal.LivingArrangementKey;
                 }
 
                 // Primary facility

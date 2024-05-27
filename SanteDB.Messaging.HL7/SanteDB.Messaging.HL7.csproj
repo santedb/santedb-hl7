@@ -183,6 +183,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Docker\Hl7Feature.xml" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\santedb-dc-core\SanteDB.Client\SanteDB.Client.csproj" />
+  </ItemGroup>
   
   <ItemGroup>
     <None Update="data\009-HL7v2ContactRole.dataset">
