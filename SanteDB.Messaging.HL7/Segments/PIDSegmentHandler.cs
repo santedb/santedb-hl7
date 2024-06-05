@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (C) 2021 - 2023, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
+ * Copyright (C) 2021 - 2024, SanteSuite Inc. and the SanteSuite Contributors (See NOTICE.md for full copyright notices)
  * Copyright (C) 2019 - 2021, Fyfe Software Inc. and the SanteSuite Contributors
  * Portions Copyright (C) 2015-2018 Mohawk College of Applied Arts and Technology
  * 
@@ -16,7 +16,7 @@
  * the License.
  * 
  * User: fyfej
- * Date: 2023-5-19
+ * Date: 2023-6-21
  */
 using NHapi.Base.Model;
 using NHapi.Model.V25.Segment;
@@ -446,7 +446,7 @@ namespace SanteDB.Messaging.HL7.Segments
                             }), "PID", pidSegment.SetIDPID.Value, 21, 3, e);
                         }
 
-                        if(authority == null)
+                        if (authority == null)
                         {
                             throw new HL7ProcessingException(this.m_localizationService.GetString("error.type.HL7ProcessingException", new
                             {
@@ -518,6 +518,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (!pidSegment.Nationality.IsEmpty())
                 {
                     retVal.Nationality = pidSegment.Nationality.ToModel();
+                    retVal.NationalityKey = retVal.Nationality?.Key ?? retVal.NationalityKey;
                 }
 
                 // Date/time of birth
@@ -533,6 +534,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (!pidSegment.AdministrativeSex.IsEmpty())
                 {
                     retVal.GenderConcept = pidSegment.AdministrativeSex.ToConcept(AdministrativeGenderCodeSystem);
+                    retVal.GenderConceptKey = retVal.GenderConcept?.Key ?? retVal.GenderConceptKey;
                 }
 
                 // Patient Alias
@@ -599,6 +601,7 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (!pidSegment.MaritalStatus.IsEmpty())
                 {
                     retVal.MaritalStatus = pidSegment.MaritalStatus.ToModel(MaritalStatusCodeSystem);
+                    retVal.MaritalStatusKey = retVal.MaritalStatus?.Key ?? retVal.MaritalStatusKey;
                 }
 
                 // Religion
@@ -606,13 +609,15 @@ namespace SanteDB.Messaging.HL7.Segments
                 if (!pidSegment.Religion.IsEmpty())
                 {
                     retVal.ReligiousAffiliation = pidSegment.Religion.ToModel(ReligionCodeSystem);
+                    retVal.ReligiousAffiliationKey = retVal.ReligiousAffiliation?.Key ?? retVal.ReligiousAffiliationKey;
                 }
 
                 // Ethinic groups
                 fieldNo = 22;
                 if (pidSegment.EthnicGroupRepetitionsUsed > 0)
                 {
-                    retVal.EthnicGroupKey = pidSegment.GetEthnicGroup().First().ToModel(EthnicGroupCodeSystem).Key;
+                    retVal.EthnicGroup = pidSegment.GetEthnicGroup().First().ToModel(EthnicGroupCodeSystem);
+                    retVal.EthnicGroupKey = retVal.EthnicGroup?.Key ?? retVal.EthnicGroupKey;
                 }
 
                 fieldNo = 18;
