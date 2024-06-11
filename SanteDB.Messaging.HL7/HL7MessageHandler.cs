@@ -102,10 +102,13 @@ namespace SanteDB.Messaging.HL7
             this.m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
             this.Starting?.Invoke(this, EventArgs.Empty);
 
-            ApplicationServiceContext.Current.Started += (o, e) =>
+            if (this.m_configuration.LocalFacility != Guid.Empty)
             {
-                this.m_localFacility = ApplicationServiceContext.Current.GetService<IRepositoryService<Place>>()?.Get(this.m_configuration.LocalFacility);
-            };
+                ApplicationServiceContext.Current.Started += (o, e) =>
+                {
+                    this.m_localFacility = ApplicationServiceContext.Current.GetService<IRepositoryService<Place>>()?.Get(this.m_configuration.LocalFacility);
+                };
+            }
 
             RemoteEndpointUtil.Current.AddEndpointProvider(this.GetRemoteEndpointInfo);
 

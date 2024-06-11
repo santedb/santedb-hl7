@@ -26,6 +26,7 @@ using SanteDB.Messaging.HL7.Configuration;
 using SanteDB.Messaging.HL7.TransportProtocol;
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -53,6 +54,35 @@ namespace SanteDB.Messaging.HL7
             this.m_serviceDefinition = serviceDefinition;
             this.m_transport = TransportUtil.CreateTransport(this.m_serviceDefinition.Address.Scheme);
             this.m_transport.MessageReceived += new EventHandler<Hl7MessageReceivedEventArgs>(m_transport_MessageReceived);
+
+            // Are the handlers for this definition set?
+            if(this.m_serviceDefinition.MessageHandlers?.Any() != true)
+            {
+                this.m_traceSource.TraceInfo("Automatically binding all available message handlers to {0}", this.m_serviceDefinition.AddressXml);
+                this.m_serviceDefinition.MessageHandlers = AppDomain.CurrentDomain.GetAllTypes()
+                    .Where(t => typeof(IHL7MessageHandler).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
+                    .Select(o =>
+                    {
+                        try
+                        {
+                            return o.CreateInjected();
+                        }
+                        catch
+                        {
+                            return null;
+                        }
+                    })
+                    .OfType<IHL7MessageHandler>()
+                    .Select(o => new HandlerDefinition()
+                    {
+                        Handler = o,
+                        Types = o.SupportedTriggers.Select(t => new MessageDefinition()
+                        {
+                            Name = t,
+                            IsQuery = t.StartsWith("QBP")
+                        }).ToList()
+                    }).ToList();
+            }
         }
 
         /// <summary>
