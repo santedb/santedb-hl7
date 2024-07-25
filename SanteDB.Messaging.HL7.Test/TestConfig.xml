@@ -118,6 +118,7 @@
            providerType="sqlite"
            staOnly="false"
            autoUpdateExisting="true"
+           loadStrategy="SyncLoad"
            autoInsertChildren="true"
            prepareStatements="true">
     <!-- Any corrective handlers should be added here

@@ -23,6 +23,7 @@ using NHapi.Model.V25.Message;
 using NHapi.Model.V25.Segment;
 using NUnit.Framework;
 using SanteDB.Core;
+using SanteDB.Core.Model;
 using SanteDB.Core.Model.Constants;
 using SanteDB.Core.Model.Entities;
 using SanteDB.Core.Model.Roles;
@@ -170,8 +171,8 @@ namespace SanteDB.Messaging.HL7.Test
                 var patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 Assert.IsTrue(messageStr.Contains(patient.Key.ToString()));
-                Assert.AreEqual(1, patient.Names.Count);
-                Assert.AreEqual("JOHNSTON", patient.Names.First().Component.First(o => o.ComponentTypeKey == NameComponentKeys.Family).Value);
+                Assert.AreEqual(1, patient.LoadProperty(o=>o.Names).Count);
+                Assert.AreEqual("JOHNSTON", patient.Names.First().LoadProperty(o=>o.Component).First(o => o.ComponentTypeKey == NameComponentKeys.Family).Value);
                 Assert.AreEqual("ROBERT", patient.Names.First().Component.First(o => o.ComponentTypeKey == NameComponentKeys.Given).Value);
             }
         }
@@ -227,7 +228,7 @@ namespace SanteDB.Messaging.HL7.Test
                 var patient = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-2"), AuthenticationContext.Current.Principal).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 Assert.IsTrue(messageStr.Contains(patient.Key.ToString()));
-                Assert.AreEqual(1, patient.Names.Count);
+                Assert.AreEqual(1, patient.LoadProperty(o=>o.Names).Count);
                 Assert.AreEqual("JOHNSTON", patient.Names.First().Component.First(o => o.ComponentTypeKey == NameComponentKeys.Family).Value);
                 Assert.AreEqual("ROBERT", patient.Names.First().Component.First(o => o.ComponentTypeKey == NameComponentKeys.Given).Value);
                 Assert.AreEqual(1, patient.Relationships.Count(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Birthplace));
