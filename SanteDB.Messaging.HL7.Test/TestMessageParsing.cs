@@ -268,10 +268,11 @@ namespace SanteDB.Messaging.HL7.Test
         {
             using (AuthenticationContext.EnterSystemContext())
             {
+                var patientRepo = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>();
                 var msg = TestUtil.GetMessage("QBP_COMPLEX_PRE");
                 var response = this.m_serviceManager.CreateInjected<AdtMessageHandler>().HandleMessage(new Hl7MessageReceivedEventArgs(msg, new Uri("test://"), new Uri("test://"), DateTime.Now));
                 Assert.AreEqual("CA", (response.GetStructure("MSA") as MSA).AcknowledgmentCode.Value, "RQ: {0}, RS: {1}", TestUtil.ToString(msg), TestUtil.ToString(response));
-                var patient = ApplicationServiceContext.Current.GetService<IRepositoryService<Patient>>().Find(o => o.Identifiers.Any(i => i.Value == "HL7-9")).SingleOrDefault();
+                var patient = patientRepo.Find(o => o.Identifiers.Any(i => i.Value == "HL7-9")).SingleOrDefault();
                 Assert.IsNotNull(patient);
                 Assert.AreEqual(9, patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).Count());
                 Assert.IsNotNull(patient.LoadCollection<EntityRelationship>(nameof(Entity.Relationships)).FirstOrDefault(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Mother));
