@@ -14,9 +14,6 @@
  - WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the 
  - License for the specific language governing permissions and limitations under 
  - the License.
- - 
- - User: fyfej
- - Date: 2023-6-21
  -->
 <Hl7QueryParameterMap xmlns="http://santedb.org/model/hl7">
   <messageType trigger="Q22" name="Find Candidates Query" response="RSP_K21" responseTrigger="K22" queryTarget="Patient"
