@@ -20,7 +20,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 	    <Product>SanteDB</Product>
-    <Copyright>Copyright (C) 2015-2021 SanteSuite Contributors (See: NOTICES)</Copyright>
+    <Copyright>Copyright (C) 2015-2025 SanteSuite Contributors (See: NOTICES)</Copyright>
     <Company>SanteSuite Contributors</Company>
     <PackageIconUrl>http://santesuite.org/assets/img/logo.png</PackageIconUrl>
     <PackageProjectUrl>http://santesuite.org</PackageProjectUrl>
