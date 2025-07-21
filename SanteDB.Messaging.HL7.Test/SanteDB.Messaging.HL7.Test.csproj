@@ -78,6 +78,8 @@
     <PackageReference Include="NHapi">
       <Version>3.2.2</Version>
     </PackageReference>
+    <PackageReference Include="SharpCompress" Version="0.40.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.1" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\SanteDB.licenseheader">
