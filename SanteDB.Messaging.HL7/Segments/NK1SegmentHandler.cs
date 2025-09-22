@@ -402,10 +402,7 @@ namespace SanteDB.Messaging.HL7.Segments
                                     Identifiers = new List<EntityIdentifier>() { id },
                                     Names = new List<EntityName>() { new EntityName(NameUseKeys.Assigned, xon.OrganizationName.Value) }
                                 };
-                                retVal.LoadProperty(o => o.Relationships).Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization)
-                                {
-                                    ClassificationKey = RelationshipClassKeys.ContainedObjectLink
-                                });
+                                retVal.LoadProperty(o => o.Relationships).Add(new EntityRelationship(EntityRelationshipTypeKeys.Scoper, organization));
                             }
                             else
                             {
