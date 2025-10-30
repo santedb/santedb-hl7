@@ -82,10 +82,9 @@ namespace SanteDB.Messaging.HL7.Client
         /// <returns><c>true</c> if the certificate chain is valid, <c>false</c> otherwise.</returns>
         private bool RemoteCertificateValidation(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
-#if DEBUG
             if (certificate != null)
             {
-                this.tracer.TraceEvent(EventLevel.Informational, "Received client certificate with subject {0}", certificate.Subject);
+                this.tracer.TraceEvent(EventLevel.Verbose, "Received client certificate with subject {0}", certificate.Subject);
             }
             if (chain != null)
             {
@@ -93,7 +92,7 @@ namespace SanteDB.Messaging.HL7.Client
 
                 foreach (var chainElement in chain.ChainElements)
                 {
-                    this.tracer.TraceEvent(EventLevel.Informational, "\tChain Element : {0}", chainElement.Certificate.Subject);
+                    this.tracer.TraceEvent(EventLevel.Verbose, "\tChain Element : {0}", chainElement.Certificate.Subject);
                 }
             }
 
@@ -101,7 +100,6 @@ namespace SanteDB.Messaging.HL7.Client
             {
                 this.tracer.TraceEvent(EventLevel.Error, "SSL Policy Error : {0}", sslPolicyErrors);
             }
-#endif
 
             // First Validate the chain
 
