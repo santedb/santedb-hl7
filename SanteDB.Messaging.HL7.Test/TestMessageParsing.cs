@@ -201,7 +201,6 @@ namespace SanteDB.Messaging.HL7.Test
 
                 // Ensure that the patient actually was persisted
                 var patientNew = ApplicationServiceContext.Current.GetService<IDataPersistenceService<Patient>>().Query(o => o.Identifiers.Any(i => i.Value == "HL7-1"), AuthenticationContext.Current.Principal).SingleOrDefault();
-
                 Assert.IsNotNull(patientNew);
                 Assert.AreEqual(1, patientNew.Names.Count);
                 Assert.AreEqual("JOHNSTON", patientNew.Names.First().Component.First(o => o.ComponentTypeKey == NameComponentKeys.Family).Value);
@@ -227,7 +226,7 @@ namespace SanteDB.Messaging.HL7.Test
                 Assert.IsNotNull(patient);
                 Assert.IsTrue(messageStr.Contains(patient.Key.ToString()));
                 Assert.AreEqual(1, patient.LoadProperty(o=>o.Names).Count);
-                Assert.AreEqual("JOHNSTON", patient.Names.First().Component.First(o => o.ComponentTypeKey == NameComponentKeys.Family).Value);
+                Assert.AreEqual("JOHNSTON", patient.Names.First().LoadProperty(o=>o.Component).First(o => o.ComponentTypeKey == NameComponentKeys.Family).Value);
                 Assert.AreEqual("ROBERT", patient.Names.First().Component.First(o => o.ComponentTypeKey == NameComponentKeys.Given).Value);
                 Assert.AreEqual(1, patient.Relationships.Count(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Birthplace));
                 Assert.AreEqual(1, patient.Relationships.Count(o => o.RelationshipTypeKey == EntityRelationshipTypeKeys.Father));
