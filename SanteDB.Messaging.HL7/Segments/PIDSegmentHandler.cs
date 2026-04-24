@@ -363,7 +363,8 @@ namespace SanteDB.Messaging.HL7.Segments
 
                         if (found != null)
                         {
-                            retVal = (Patient)found.Clone();
+                            retVal = (Patient)(found.ResolveOwnedRecord(AuthenticationContext.Current.GetAuthenticatedPrincipal()))?.Clone() ?? 
+                                found;
                             break;
                         }
                     }
@@ -795,6 +796,12 @@ namespace SanteDB.Messaging.HL7.Segments
 
                 retVal.AddTag(Hl7Constants.FocalObjectTag, "true");
                 retCollection.Add(retVal);
+
+                // Any relationships?
+                if(!retVal.Relationships.Any())
+                {
+                    retVal.Relationships = null;
+                }
 
                 return retCollection;
             }

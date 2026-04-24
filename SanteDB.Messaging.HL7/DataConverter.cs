@@ -106,7 +106,7 @@ namespace SanteDB.Messaging.HL7
             foreach (var xad in addresses)
             {
                 var entityAddress = new EntityAddress() { Component = new List<EntityAddressComponent>() };
-                var addressUse = AddressUseKeys.TemporaryAddress;
+                var addressUse = AddressUseKeys.HomeAddress;
 
                 if (!string.IsNullOrEmpty(xad.AddressType.Value) && !string.IsNullOrWhiteSpace(xad.AddressType.Value))
                 {
@@ -296,7 +296,7 @@ namespace SanteDB.Messaging.HL7
                 {
                     Component = new List<EntityNameComponent>()
                 };
-                var nameUse = nameUseKey ?? NameUseKeys.Search;
+                var nameUse = nameUseKey ?? NameUseKeys.OfficialRecord;
 
                 if (!string.IsNullOrEmpty(xpn.NameTypeCode.Value))
                 {
