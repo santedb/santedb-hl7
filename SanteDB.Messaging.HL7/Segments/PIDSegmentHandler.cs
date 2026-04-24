@@ -803,6 +803,8 @@ namespace SanteDB.Messaging.HL7.Segments
                     retVal.Relationships = null;
                 }
 
+                retVal.AddTag(SystemTagNames.External, "true");
+
                 return retCollection;
             }
             catch (HL7ProcessingException) // Just re-throw
