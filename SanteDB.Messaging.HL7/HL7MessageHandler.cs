@@ -98,6 +98,11 @@ namespace SanteDB.Messaging.HL7
         /// </summary>
         public bool Start()
         {
+            if(ApplicationServiceContext.Current.HostType == SanteDBHostType.Test)
+            {
+                return true;
+            }
+
             this.m_networkInterfaceInfo = ApplicationServiceContext.Current.GetService<INetworkInformationService>();
             this.m_configuration = ApplicationServiceContext.Current.GetService<IConfigurationManager>().GetSection<Hl7ConfigurationSection>();
             this.Starting?.Invoke(this, EventArgs.Empty);
