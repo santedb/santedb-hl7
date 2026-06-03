@@ -370,10 +370,10 @@ namespace SanteDB.Messaging.HL7.Utils
             }
 
             // HACK: Are they asking for the @PID.3.4.1 of our local auth?
-            if (retVal.TryGetValue("identifier.authority.domainName", out var localId) &&
+            if (retVal.TryGetValue("identifier.domain.domainName", out var localId) &&
                 localId.Contains(config.LocalAuthority.DomainName))
             {
-                retVal.Remove("identifier.authority.domainName");
+                retVal.Remove("identifier.domain.domainName");
                 localId = retVal.GetValues("identifier.value");
                 retVal.Remove("identifier.value");
                 retVal.Add("_id", localId);
