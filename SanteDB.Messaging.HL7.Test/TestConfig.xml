@@ -36,13 +36,11 @@
   </section>
   <section xsi:type="OrmConfigurationSection">
     <providers>
-      <add type="SanteDB.OrmLite.Providers.Firebird.FirebirdSQLProvider, SanteDB.OrmLite" invariant="FirebirdSQL" />
       <add type="SanteDB.OrmLite.Providers.Sqlite.SqliteProvider, SanteDB.OrmLite" invariant="sqlite" />
     </providers>
     <dbProviderFactories>
       <add name="SQLite Data Provider" invariant="sqlite" description=".Net Framework Data Provider for SQLite" type="Microsoft.Data.Sqlite.SqliteFactory, Microsoft.Data.Sqlite" />
       <add name="PostgreSQL Data Provider" invariant="Npgsql" description=".Net Framework Data Provider for PostgreSQL" type="Npgsql.NpgsqlFactory, Npgsql, Culture=neutral, PublicKeyToken=5d8b90d52f46fda7" />
-      <add name="Firebird Data Provider" invariant="FirebirdSQL" description="Firebird" type="FirebirdSql.Data.FirebirdClient.FirebirdClientFactory, FirebirdSql.Data.FirebirdClient, Culture=neutral, PublicKeyToken=3750abcc3150b00c" />
     </dbProviderFactories>
   </section>
   <!-- Represents this server's internal security configuration -->
