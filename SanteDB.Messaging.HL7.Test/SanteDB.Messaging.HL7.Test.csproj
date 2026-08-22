@@ -145,8 +145,6 @@
     <Folder Include="Properties\" />
   </ItemGroup>
 
-  <!-- Test Framework via Nuget does this automagically -->
-  <Import Condition="$(SolutionName.Contains('-ext'))" Project="$(SolutionDir)\santedb-data\SanteDB.Core.TestFramework.FirebirdSQL\SanteDB.Core.TestFramework.FirebirdSQL.targets" />
   <ItemGroup>
     <None Remove="C:\Users\fyfej\source\repos\santedb\santedb-server\santedb-data\SanteDB.Core.TestFramework.FirebirdSQL\\firebird\santedb_test.fdb" />
   </ItemGroup>
