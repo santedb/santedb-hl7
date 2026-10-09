@@ -102,6 +102,18 @@ namespace SanteDB.Messaging.HL7.Segments
                 xon.IdentifierTypeCode.Value = "XX";
             }
 
+            foreach(var itm in relationships.Where(o=>o.RelationshipTypeKey == EntityRelationshipTypeKeys.Duplicate && o.NegationIndicator == false))
+            {
+                var dup = retVal.GetDuplicatePatient(retVal.DuplicatePatientRepetitionsUsed);
+                var id = itm.LoadProperty(o => o.TargetEntity).LoadProperty(o => o.Identifiers);
+                dup.FromModel(id.FirstOrDefault());
+            }
+
+            if (patient.Policies?.Any() == true) {
+                retVal.ProtectionIndicator.Value = "Y";
+                retVal.PublicityCode.FromModel(patient.Policies.LastOrDefault().LoadProperty(o=>o.Policy).LoadProperty(o=>o.ClassConcept), "http://terminology.hl7.org/CodeSystem/v3-ActCode");
+            }
+
             // Protected?
             if (ApplicationServiceContext.Current.GetService<IPolicyInformationService>().GetPolicyInstance(patient, DataPolicyIdentifiers.RestrictedInformation) != null)
             {
